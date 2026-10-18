@@ -95,7 +95,7 @@ export function canPrepare(sim: Sim, a: Avatar): boolean {
 }
 
 /**
- * Võ thánh phá toái hư không: the avatar breaks through the void, leaves the world for good and
+ * Thiên nhân hợp nhất rồi phá toái hư không: the avatar breaks through the void, leaves the world for good and
  * lives on in Thiên ngoại. For the player the life still ends there (a soul cannot follow it up).
  */
 export function ascend(sim: Sim, a: Avatar): void {
@@ -687,7 +687,7 @@ export const ACTIONS: ActionDef[] = [
       st.heat = npcHeat(a);
       const soul = sim.s.soul;
       if (!sim.isPlayer(a) || soul.autoplay || !st.recipe) return;
-      // A pill brewed before keeps the heat chosen then; Nhất lưu pills and above are asked every time.
+      // A pill brewed before keeps the heat chosen then; Tông sư pills and above are asked every time.
       const last = soul.heat?.[st.recipe];
       if (last !== undefined && PILL_BY_ID[st.recipe]!.grade < 3) { st.heat = last; return; }
       if (!soul.pending) soul.pending = alchemyChoice(sim, a, st);

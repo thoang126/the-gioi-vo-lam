@@ -100,7 +100,7 @@ export const DYNASTY_END_NAMES: Record<string, string> = {
 };
 
 export const CLAN = {
-  /** Most clans that may exist at once (new ones are founded by Nhất lưu cultivators). */
+  /** Most clans that may exist at once (new ones are founded by Tông sư cultivators). */
   max: 16,
   /** Realm needed to found a clan. */
   foundRealm: 3,

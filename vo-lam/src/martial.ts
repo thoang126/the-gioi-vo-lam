@@ -24,6 +24,17 @@ export function skillLabel(name: string): string {
   return `${name} (${[kind ? KIND_NAMES[kind] : null, SKILL_GRADE_NAMES[k.grade]].filter(Boolean).join(', ')})`;
 }
 
+/**
+ * How giang hồ ranks a fighter, on top of the realm: tam lưu and nhị lưu within Hậu thiên, nhất lưu for Tiên thiên,
+ * tuyệt đỉnh for Tông sư and bán thánh from its seventh trọng. Above that the realm name says it all.
+ */
+export function jianghuTitle(a: Avatar): string | null {
+  if (a.realm === 1) return a.stage < 4 ? 'tam lưu' : 'nhị lưu';
+  if (a.realm === 2) return 'nhất lưu';
+  if (a.realm === 3) return a.stage < 6 ? 'tuyệt đỉnh' : 'bán thánh';
+  return null;
+}
+
 export function knows(a: Avatar, id: string): boolean {
   const k = SKILL_BY_ID.get(id);
   return !!k && a.skills.includes(k.name);

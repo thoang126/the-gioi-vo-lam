@@ -56,10 +56,10 @@ export function phaseExecute(sim: Sim): void {
   }
 }
 
-/** The sea crossing is the only risky leg; a Tuyệt đỉnh master walks the waves (đạp sóng mà đi). */
+/** The sea crossing is the only risky leg; a Tông sư walks the waves (đạp sóng mà đi). */
 function crossLeg(sim: Sim, a: Avatar, from: string, to: string): boolean {
   const sea = SEA_ROUTES.some(([x, y]) => (from === x && to === y) || (from === y && to === x));
-  if (!sea || a.realm >= 4) return true;
+  if (!sea || a.realm >= 3) return true;
   if (a.linhThach >= 20) a.linhThach -= 20;
   const roll = sim.rng.next();
   if (roll < 0.02) {

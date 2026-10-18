@@ -9,7 +9,7 @@ hiệp lữ, kẻ thù của kiếp trước, hoặc đi ngang bia mộ của ch
 
 ```bash
 npm install          # hoặc dùng chung node_modules của ../game
-npm test             # 53 test: như bản tu tiên, thêm võ công, môn phái và chữ võ hiệp
+npm test             # 54 test: như bản tu tiên, thêm võ công, môn phái, danh xưng giang hồ và chữ võ hiệp
 npm run sim -- --years 300 --seed 7 --news
 npm run analyze -- --worlds 30 --years 400
 npm run build        # ra dist/index.html
@@ -22,18 +22,22 @@ Bản lưu dùng khóa riêng (`van-kiep-giang-ho/…`), không đụng tới b�
 
 ### Cảnh giới võ học
 
-| Cảnh giới | Tầng | Thọ nguyên | Ghi chú |
+Theo thang phổ biến nhất của truyện võ hiệp mạng: Hậu thiên → Tiên thiên → Tông sư → Đại tông sư → Thiên nhân hợp nhất
+→ phá toái hư không. Tam lưu, nhị lưu, nhất lưu, tuyệt đỉnh (kiểu Kim Dung) là **danh xưng giang hồ** đặt lên trên
+cảnh giới, không phải cảnh giới riêng.
+
+| Cảnh giới | Tầng | Thọ nguyên | Giang hồ gọi là |
 |---|---|---|---|
-| Người thường | | 70 | Có tư chất và nội công thì đang luyện tới Tam lưu |
-| Tam lưu | nhất trọng … cửu trọng | 80 | |
-| Nhị lưu | sơ nhập, tiểu thành, đại thành, viên mãn | 90 | |
-| Nhất lưu | như trên | 100 | Cao thủ, được lập gia tộc |
-| Tuyệt đỉnh | như trên | 110 | Đạp sóng vượt biển, không sợ đắm thuyền |
-| Tiên thiên, Tông sư, Đại tông sư, Bán thánh | như trên | 130–220 | Truyền thuyết |
-| Võ thánh | như trên | 300 | Đột phá cuối là **phá toái hư không**, rời nhân gian |
+| Người thường | | 70 | |
+| Hậu thiên | nhất trọng … cửu trọng | 85 | tam lưu (trọng 1–4), nhị lưu (trọng 5–9) |
+| Tiên thiên | sơ kỳ, trung kỳ, hậu kỳ, viên mãn | 100 | nhất lưu |
+| Tông sư | nhất trọng … cửu trọng | 120 | tuyệt đỉnh; từ thất trọng là bán thánh |
+| Đại tông sư | sơ kỳ … viên mãn | 150 | |
+| Thiên nhân hợp nhất | sơ kỳ … viên mãn | 200 | Đột phá cuối là **phá toái hư không**, rời nhân gian |
 
 Không có thiên kiếp: đột phá là đả thông kinh mạch, thất bại thì mất công lực, trọng thương hoặc tẩu hỏa nhập ma.
-Id cảnh giới trong code vẫn là của bản tu tiên (`luyen_khi`, `truc_co`…), để event nhập từ Luân Hồi Vạn Kiếp trỏ đúng.
+Phá toái hư không còn phải qua sáu đạo quan ải của hư không. Id cảnh giới trong code là sáu cảnh giới đầu của bản tu
+tiên, bậc theo bậc (`luyen_khi` là Hậu thiên, `truc_co` là Tiên thiên…), để event nhập từ Luân Hồi Vạn Kiếp trỏ đúng bậc.
 
 ### Tư chất thay linh căn
 
@@ -87,7 +91,7 @@ gọi chỗ này là Yêu vực.
 `tools/wuxia-content.ts` đọc nội dung tu tiên và:
 - đổi tên võ công, nội công, binh khí, đan dược, trạng thái trận đấu theo id;
 - đổi thuật ngữ trong mọi chuỗi theo bảng `tools/wuxia-text.ts` (linh thạch → lượng bạc, tu vi → công lực,
-  tông môn → môn phái, Trúc Cơ → Nhị lưu, phi thăng → phá toái hư không…);
+  tông môn → môn phái, Trúc Cơ → Tiên thiên, phi thăng → phá toái hư không…);
 - bỏ những event vẫn còn mang chất tu tiên: giữ 212/242;
 - thu nhỏ quà thọ nguyên cỡ tu tiên (300–2.400 năm) về cỡ võ hiệp; thay thần thú bằng mãnh thú.
 

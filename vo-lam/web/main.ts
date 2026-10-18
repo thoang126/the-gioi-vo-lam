@@ -2,7 +2,7 @@ import {
   advance, choose, createWorld, setAutoplay, Sim, YEAR_OFFSET, ACTION_BY_ID, MEMORIES,
   REGIONS, ROUTES, SEA_ROUTES, SECTS, SECT_RANKS, REALMS, WORLDS, ELEMENT_NAMES,
   REGION_BY_ID, SECT_BY_ID, ROOT_BY_ID, ORIGIN_BY_ID, PHYSIQUE_BY_ID, relationWord, EVENT_BY_ID, LHVK, pathNames, rebirthRootChance,
-  CODEX, SOUL_TITLES, codexProgress, SECT_ARTS, skillById, skillLabel, pillFor, itemName, parseKey, HERB_BY_ID, PILL_BY_ID, migrateWorld, PROVINCES, WORLD_LAYOUT, CLAN, CLAN_KIND_NAMES, TRAIT_BY_ID, DYNASTY_END_NAMES, runBattle, sealOf, tacticOf, TACTIC_NAMES, TACTIC_IDS,
+  CODEX, SOUL_TITLES, codexProgress, SECT_ARTS, skillById, skillLabel, jianghuTitle, pillFor, itemName, parseKey, HERB_BY_ID, PILL_BY_ID, migrateWorld, PROVINCES, WORLD_LAYOUT, CLAN, CLAN_KIND_NAMES, TRAIT_BY_ID, DYNASTY_END_NAMES, runBattle, sealOf, tacticOf, TACTIC_NAMES, TACTIC_IDS,
 } from '../src/index';
 import type { Avatar, EventKind, LifeRecord, WorldEvent, WorldState } from '../src/types';
 import type { FightRecord, SoulSeal, TacticId } from '../src/index';
@@ -443,7 +443,8 @@ function avatarBlock(sim: Sim, a: Avatar, isPlayer: boolean): string {
     doing = `<div class="meter act"><span>${esc(def?.label ?? '')}${travelling ? `: đang trên đường tới ${esc(REGION_BY_ID[act.regionId ?? a.regionId]!.name)}` : `: còn ${Math.max(0, act.endMonth - s.month)} tháng`}</span><div class="track"><span style="width:${((done / total) * 100).toFixed(0)}%"></span></div></div>`;
   }
   const g = isPlayer && a.alive ? goal(sim, a) : null;
-  return `<div class="who"><h2>${esc(a.name)}</h2><span class="realm">${esc(sim.realmLabel(a))}</span></div>
+  const rank = jianghuTitle(a);
+  return `<div class="who"><h2>${esc(a.name)}</h2><span class="realm">${esc(sim.realmLabel(a))}${rank ? `<br><span class="small muted">giang hồ xếp hàng ${rank}</span>` : ''}</span></div>
     <div class="small muted">${a.gender === 'male' ? 'Nam' : 'Nữ'}, ${age} tuổi · ${a.alive ? esc(REGION_BY_ID[a.regionId]!.name) : `mất năm ${yearOf(a.deathMonth ?? 0)}: ${esc(a.deathText ?? '')}`}</div>
     ${g ? `<p class="goal">${esc(g)}</p>` : ''}
     ${doing}

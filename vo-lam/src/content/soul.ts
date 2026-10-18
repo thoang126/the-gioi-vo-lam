@@ -58,10 +58,10 @@ const has = (soul: Soul, cat: string, id: string) => (soul.codex[cat] ?? []).inc
 
 export const SOUL_TITLES: SoulTitle[] = [
   { id: 'ten_lives', name: 'Mười kiếp luân hồi', desc: 'Sống qua mười kiếp', points: 20, progress: (s) => [s.lives.length, 10] },
-  { id: 'qi', name: 'Bước vào võ lâm', desc: 'Lần đầu tới Tam lưu', points: 20, progress: (s) => [Math.min(1, maxRealm(s)), 1] },
-  { id: 'foundation', name: 'Nhị lưu hảo thủ', desc: 'Lần đầu tới Nhị lưu', points: 50, progress: (s) => [Math.min(2, maxRealm(s)), 2] },
-  { id: 'core', name: 'Cao thủ nhất lưu', desc: 'Lần đầu tới Nhất lưu', points: 150, progress: (s) => [Math.min(3, maxRealm(s)), 3] },
-  { id: 'soul', name: 'Tuyệt đỉnh cao thủ', desc: 'Lần đầu tới Tuyệt đỉnh', points: 400, progress: (s) => [Math.min(4, maxRealm(s)), 4] },
+  { id: 'qi', name: 'Bước vào võ lâm', desc: 'Lần đầu tới Hậu thiên', points: 20, progress: (s) => [Math.min(1, maxRealm(s)), 1] },
+  { id: 'foundation', name: 'Tiên thiên cao thủ', desc: 'Lần đầu tới Tiên thiên', points: 50, progress: (s) => [Math.min(2, maxRealm(s)), 2] },
+  { id: 'core', name: 'Một đời tông sư', desc: 'Lần đầu tới Tông sư', points: 150, progress: (s) => [Math.min(3, maxRealm(s)), 3] },
+  { id: 'soul', name: 'Đại tông sư', desc: 'Lần đầu tới Đại tông sư', points: 400, progress: (s) => [Math.min(4, maxRealm(s)), 4] },
   { id: 'ten_mortals', name: 'Mười kiếp người thường', desc: 'Mười kiếp không luyện võ', points: 30, progress: (s) => [count(s, (l) => l.realm === 0), 10] },
   { id: 'peaceful', name: 'Thọ chung chính tẩm', desc: 'Ba lần chết già', points: 30, progress: (s) => [count(s, (l) => l.cause === 'old_age'), 3] },
   { id: 'short', name: 'Hoa chưa kịp nở', desc: 'Ba kiếp chết trước mười hai tuổi', points: 15, progress: (s) => [count(s, (l) => l.diedMonth - l.bornMonth < 144), 3] },
@@ -86,5 +86,5 @@ export const SOUL_TITLES: SoulTitle[] = [
   { id: 'eighteen_arts', name: 'Thập bát ban võ nghệ', desc: 'Luyện thành mười tám võ công khác nhau qua các kiếp', points: 80, progress: (s) => [(s.codex.skills ?? []).length, 18] },
   { id: 'ultimate', name: 'Tuyệt kỹ trong tay', desc: 'Luyện thành một tuyệt kỹ', points: 120,
     progress: (s) => [Math.min(1, (s.codex.skills ?? []).filter((id) => BATTLE_CONTENT.skills.find((k) => k.id === id)?.ultimate).length), 1] },
-  { id: 'ascend', name: 'Phá toái hư không', desc: 'Võ thánh phá toái hư không, rời khỏi nhân gian', points: 1000, progress: (s) => [count(s, (l) => l.cause === 'ascension'), 1] },
+  { id: 'ascend', name: 'Phá toái hư không', desc: 'Thiên nhân hợp nhất rồi phá toái hư không, rời khỏi nhân gian', points: 1000, progress: (s) => [count(s, (l) => l.cause === 'ascension'), 1] },
 ];

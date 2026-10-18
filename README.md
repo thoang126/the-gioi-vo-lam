@@ -23,6 +23,6 @@ Kế hoạch gốc: `plans/fork-cultivation-world-simulator.md`.
 
 ## Vạn Kiếp Giang Hồ (`vo-lam/`)
 
-Bản võ hiệp tách từ `game/`: cảnh giới Tam lưu … Võ thánh, võ công có môn loại, 13 môn phái truyền võ công theo
+Bản võ hiệp tách từ `game/`: cảnh giới Hậu thiên … Thiên nhân hợp nhất và phá toái hư không, võ công có môn loại, 13 môn phái truyền võ công theo
 cấp bậc, sư phụ dạy đồ đệ, võ quán, bí kíp. Nội dung Luân Hồi Vạn Kiếp được đổi sang chữ võ hiệp bằng
 `vo-lam/tools/wuxia-content.ts`. Xem `vo-lam/README.md`.

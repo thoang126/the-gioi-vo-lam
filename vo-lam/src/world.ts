@@ -137,7 +137,7 @@ function seedSettlements(sim: Sim): void {
 function seedImmortals(sim: Sim): void {
   const r = REALMS[REALMS.length - 1]!;
   for (let i = 0; i < 5; i++) {
-    const age = sim.rng.int(120, 280);
+    const age = sim.rng.int(60, 150);
     const root = rootAtLeast(sim, 3);
     const a = sim.createAvatar({ regionId: sim.rng.pick(['lang_tieu', 'dao_tri', 'luan_hoi_tri']), birthMonth: -age * 12, originId: 'commoner', race: 'human', ...root });
     a.realm = r.rank;

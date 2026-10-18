@@ -27,7 +27,7 @@ export interface Fighter {
   base: CombatStats;
   /**
    * The realm's battle factor. Thủ scales with it, so the defence constant must too, or from
-   * Tuyệt đỉnh up every hit shrinks to nothing and no fight ever ends (it did: 0% KO).
+   * Đại tông sư up every hit shrinks to nothing and no fight ever ends (it did: 0% KO).
    */
   defK: number;
   hp: number;

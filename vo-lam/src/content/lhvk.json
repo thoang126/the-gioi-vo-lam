@@ -4076,7 +4076,7 @@
      "luyen_khi"
     ]
    },
-   "text": "{opener} khí huyết suy dần. Nhị lưu vẫn xa vời.",
+   "text": "{opener} khí huyết suy dần. Tiên thiên vẫn xa vời.",
    "choices": [
     {
      "id": "teach",
@@ -4236,7 +4236,7 @@
      3800
     ]
    },
-   "text": "{opener} Tông sư đạo thể đã bắt đầu hòa vào hư không, mà quan ải kế tiếp còn rất xa.",
+   "text": "{opener} Thiên nhân hợp nhất đạo thể đã bắt đầu hòa vào hư không, mà quan ải kế tiếp còn rất xa.",
    "choices": [
     {
      "id": "teach",
@@ -8545,7 +8545,7 @@
     ]
    },
    "text": [
-    "{opener} tóc mai đã bạc. Sư đệ năm nào giờ đã Nhị lưu, còn ngươi vẫn dậm chân tại chỗ.",
+    "{opener} tóc mai đã bạc. Sư đệ năm nào giờ đã Tiên thiên, còn ngươi vẫn dậm chân tại chỗ.",
     "{opener} soi xuống mặt hồ, ngươi thấy mấy sợi tóc bạc. Công lực vẫn kẹt ở chỗ cũ.",
     "{opener} đệ tử mới nhập môn đã gọi ngươi là sư thúc. Ngươi cười gượng."
    ],
@@ -8580,7 +8580,7 @@
    },
    "text": [
     "{opener} soi xuống mặt hồ, ngươi thấy mấy sợi tóc bạc. Công lực vẫn kẹt ở chỗ cũ.",
-    "{opener} ở phường thị, du hiệp trẻ hơn ngươi mấy chục tuổi đã Nhị lưu, đi ngang không thèm chào.",
+    "{opener} ở phường thị, du hiệp trẻ hơn ngươi mấy chục tuổi đã Tiên thiên, đi ngang không thèm chào.",
     "{opener} ngươi ngồi đếm số lượng bạc còn lại, tính xem đủ mua mấy viên đan. Không đủ một viên Tiểu Hoàn đan."
    ],
    "effects": {
@@ -13765,7 +13765,7 @@
   {
    "id": "defy_heaven_trash",
    "name": "Phế vật nghịch thiên",
-   "description": "Sinh ra tạp tư chất trở xuống mà đạt Nhất lưu.",
+   "description": "Sinh ra tạp tư chất trở xuống mà đạt Tông sư.",
    "priority": 95,
    "conditions": {
     "birth_spirit_root_max": "tap_linh_can",
@@ -13775,7 +13775,7 @@
   {
    "id": "sword_immortal",
    "name": "Kiếm Tiên",
-   "description": "Kiếm ý thông thần, đạt Nhất lưu.",
+   "description": "Kiếm ý thông thần, đạt Tông sư.",
    "priority": 90,
    "conditions": {
     "has_flag": [
@@ -13865,7 +13865,7 @@
   {
    "id": "grandmaster",
    "name": "Nhất đại tông sư",
-   "description": "Đạt Nhất lưu và có truyền nhân.",
+   "description": "Đạt Tông sư và có truyền nhân.",
    "priority": 55,
    "conditions": {
     "has_flag": [
@@ -13974,7 +13974,7 @@
   {
    "id": "servant_to_immortal",
    "name": "Tạp dịch thành tiên",
-   "description": "Từ tạp dịch đệ tử đạt Nhị lưu.",
+   "description": "Từ tạp dịch đệ tử đạt Tiên thiên.",
    "priority": 78,
    "conditions": {
     "has_flag": [
@@ -13986,7 +13986,7 @@
   {
    "id": "late_bloomer",
    "name": "Đại khí vãn thành",
-   "description": "Lên núi muộn mà đạt Nhị lưu.",
+   "description": "Lên núi muộn mà đạt Tiên thiên.",
    "priority": 68,
    "conditions": {
     "has_flag": [

@@ -7,7 +7,7 @@ import {
 import { ALCHEMY, HERBS, HERB_BY_ID, PILLS, PILL_BY_ID, RECIPES, RECIPE_BY_PILL, STARTER_RECIPES } from '../src/content/alchemy';
 import type { Avatar, WorldState } from '../src/types';
 
-/** The player's avatar turned into a grown Tam lưu cultivator who knows the craft. */
+/** The player's avatar turned into a grown Hậu thiên cultivator who knows the craft. */
 function alchemistPlayer(seed: number): { s: WorldState; sim: Sim; a: Avatar } {
   const s = createWorld(seed, { warmupYears: 20 });
   const sim = new Sim(s);

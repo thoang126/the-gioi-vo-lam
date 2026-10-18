@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { advance, createWorld, LHVK, REALMS, SECTS, Sim, TECHNIQUES, sealOf } from '../src/index';
 import { ACTION_BY_ID, startAction } from '../src/actions';
 import { BATTLE_CONTENT } from '../src/battle-engine/content';
-import { knows, learnSkill, skillById, skillLabel } from '../src/martial';
+import { jianghuTitle, knows, learnSkill, skillById, skillLabel } from '../src/martial';
 import { SECT_ARTS, SKILL_KINDS, SKILLS_BY_RANK, WANDERER_SKILLS } from '../src/content/wuxia';
 import { stillCultivation } from '../tools/wuxia-text';
 
@@ -28,8 +28,14 @@ describe('võ công content', () => {
     expect(skillLabel('Liệt Phong Kiếm Pháp')).toBe('Liệt Phong Kiếm Pháp (kiếm pháp, thượng thừa)');
   });
 
+  it('ranks fighters the way giang hồ does, on top of the realm', () => {
+    const at = (realm: number, stage: number) => jianghuTitle({ realm, stage } as never);
+    expect([at(0, 0), at(1, 0), at(1, 4), at(2, 0), at(3, 5), at(3, 6), at(4, 0)])
+      .toEqual([null, 'tam lưu', 'nhị lưu', 'nhất lưu', 'tuyệt đỉnh', 'bán thánh', null]);
+  });
+
   it('reads as võ hiệp: realm names and the imported events carry no tu tiên words', () => {
-    expect(REALMS.map((r) => r.name).slice(0, 5)).toEqual(['Người thường', 'Tam lưu', 'Nhị lưu', 'Nhất lưu', 'Tuyệt đỉnh']);
+    expect(REALMS.map((r) => r.name)).toEqual(['Người thường', 'Hậu thiên', 'Tiên thiên', 'Tông sư', 'Đại tông sư', 'Thiên nhân hợp nhất']);
     for (const e of LHVK.events) expect(stillCultivation(JSON.stringify(e)), e.id).toBeNull();
     // Event võ công and nội công still resolve to things a fight can use.
     for (const s of Object.values(LHVK.skills)) expect(BATTLE_CONTENT.skills.some((k) => k.name === s.name), s.name).toBe(true);

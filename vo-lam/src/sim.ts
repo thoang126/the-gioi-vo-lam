@@ -219,7 +219,7 @@ export class Sim {
     if (r.rank === 0) {
       if (a.tuVi >= r.stageCost) {
         a.realm = 1; a.stage = 0; a.tuVi = 0;
-        this.log('realm', `${a.name} luyện thành chân khí đầu tiên, bước vào hàng Tam lưu.`, [a.id], { regionId: a.regionId });
+        this.log('realm', `${a.name} luyện thành chân khí đầu tiên, bước vào hàng Hậu thiên.`, [a.id], { regionId: a.regionId });
       }
       return;
     }

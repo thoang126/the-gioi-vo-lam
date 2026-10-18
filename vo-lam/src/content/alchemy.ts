@@ -1,4 +1,4 @@
-// Đan đạo: linh dược mọc theo vùng, đan dược, đan phương. Đan đột phá Nhị lưu, Nhất lưu, Tuyệt đỉnh
+// Đan đạo: linh dược mọc theo vùng, đan dược, đan phương. Đan đột phá Tiên thiên, Tông sư, Đại tông sư
 // dùng chung id với vật phẩm của Luân Hồi Vạn Kiếp, nên event nào cần "Tiểu Hoàn đan" cũng nhận đan tự luyện.
 
 import type { Element } from './cultivation';
@@ -7,7 +7,7 @@ export interface HerbDef {
   id: string;
   name: string;
   element: Element | null;
-  /** 1 Tam lưu … 4 Tuyệt đỉnh: who can gather it, and roughly what it is worth. */
+  /** 1 Hậu thiên … 4 Đại tông sư: who can gather it, and roughly what it is worth. */
   grade: number;
   regions: string[];
 }
@@ -54,17 +54,17 @@ export interface PillDef {
 }
 
 export const PILLS: PillDef[] = [
-  { id: 'tu_khi_dan', name: 'Tụ Khí đan', grade: 1, effect: { kind: 'cultivate', maxRealm: 1, months: 12 }, toxicity: 8, price: 20, desc: 'Gom chân khí vào đan điền, bằng một năm luyện công của võ nhân Tam lưu.' },
+  { id: 'tu_khi_dan', name: 'Tụ Khí đan', grade: 1, effect: { kind: 'cultivate', maxRealm: 1, months: 12 }, toxicity: 8, price: 20, desc: 'Gom chân khí vào đan điền, bằng một năm luyện công của võ nhân Hậu thiên.' },
   { id: 'tuc_cot_dan', name: 'Tục Cốt đan', grade: 1, effect: { kind: 'heal' }, toxicity: 4, price: 20, desc: 'Nối gân liền xương, thương thế lành ngay.' },
   { id: 'thanh_tam_dan', name: 'Thanh Tâm đan', grade: 1, effect: { kind: 'detox', amount: 40 }, toxicity: 0, price: 25, desc: 'Gột đan độc tích trong kinh mạch.' },
-  { id: 'truc_co_dan', name: 'Tiểu Hoàn đan', grade: 2, effect: { kind: 'breakthrough', realm: 'truc_co', bonus: 0.2 }, toxicity: 10, price: 50, desc: 'Đan đột phá Nhị lưu.' },
-  { id: 'boi_nguyen_dan', name: 'Bồi Nguyên đan', grade: 2, effect: { kind: 'cultivate', maxRealm: 2, months: 18 }, toxicity: 10, price: 120, desc: 'Bồi bổ nguyên khí cho võ nhân Nhị lưu.' },
+  { id: 'truc_co_dan', name: 'Tiểu Hoàn đan', grade: 2, effect: { kind: 'breakthrough', realm: 'truc_co', bonus: 0.2 }, toxicity: 10, price: 50, desc: 'Đan đột phá Tiên thiên.' },
+  { id: 'boi_nguyen_dan', name: 'Bồi Nguyên đan', grade: 2, effect: { kind: 'cultivate', maxRealm: 2, months: 18 }, toxicity: 10, price: 120, desc: 'Bồi bổ nguyên khí cho võ nhân Tiên thiên.' },
   { id: 'dien_tho_dan', name: 'Diên Thọ đan', grade: 2, effect: { kind: 'lifespan', years: 10 }, toxicity: 12, price: 300, desc: 'Thêm mười năm thọ nguyên. Mỗi kiếp chỉ có tác dụng một lần.' },
   { id: 'huyet_luyen_dan', name: 'Huyết Luyện đan', grade: 2, effect: { kind: 'cultivate', maxRealm: 3, months: 30 }, toxicity: 28, price: 150, desc: 'Ma đan luyện từ huyết tinh: công lực tăng vọt, đan độc rất nặng.' },
-  { id: 'ket_kim_dan', name: 'Đại Hoàn đan', grade: 3, effect: { kind: 'breakthrough', realm: 'kim_dan', bonus: 0.18 }, toxicity: 12, price: 300, desc: 'Đan đột phá Nhất lưu.' },
-  { id: 'ngung_nguyen_dan', name: 'Ngưng Nguyên đan', grade: 3, effect: { kind: 'cultivate', maxRealm: 3, months: 18 }, toxicity: 10, price: 500, desc: 'Ngưng tụ chân nguyên cho võ nhân Nhất lưu.' },
+  { id: 'ket_kim_dan', name: 'Đại Hoàn đan', grade: 3, effect: { kind: 'breakthrough', realm: 'kim_dan', bonus: 0.18 }, toxicity: 12, price: 300, desc: 'Đan đột phá Tông sư.' },
+  { id: 'ngung_nguyen_dan', name: 'Ngưng Nguyên đan', grade: 3, effect: { kind: 'cultivate', maxRealm: 3, months: 18 }, toxicity: 10, price: 500, desc: 'Ngưng tụ chân nguyên cho võ nhân Tông sư.' },
   { id: 'truong_xuan_dan', name: 'Trường Xuân đan', grade: 3, effect: { kind: 'lifespan', years: 15 }, toxicity: 14, price: 2500, desc: 'Thêm mười lăm năm thọ nguyên. Mỗi kiếp chỉ có tác dụng một lần.' },
-  { id: 'hoa_anh_dan', name: 'Tuyết Liên đan', grade: 4, effect: { kind: 'breakthrough', realm: 'nguyen_anh', bonus: 0.15 }, toxicity: 14, price: 1800, desc: 'Đan đột phá Tuyệt đỉnh.' },
+  { id: 'hoa_anh_dan', name: 'Tuyết Liên đan', grade: 4, effect: { kind: 'breakthrough', realm: 'nguyen_anh', bonus: 0.15 }, toxicity: 14, price: 1800, desc: 'Đan đột phá Đại tông sư.' },
 ];
 
 export interface RecipeDef {

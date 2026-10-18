@@ -5,8 +5,8 @@ bản 1.0, các giai đoạn trình bày và phát hành) nằm ở `../game/doc
 
 ## Đã làm khi tách bản
 
-- Cảnh giới võ học (Người thường, Tam lưu … Võ thánh), tư chất thay linh căn, nội công thay công pháp; không thiên kiếp,
-  phá toái hư không thay phi thăng.
+- Cảnh giới võ học theo thang Hậu thiên → Tiên thiên → Tông sư → Đại tông sư → Thiên nhân hợp nhất → phá toái hư không;
+  tam lưu … tuyệt đỉnh, bán thánh là danh xưng giang hồ. Tư chất thay linh căn, nội công thay công pháp; không thiên kiếp.
 - 59 võ công có môn loại và phẩm; 13 môn phái (3 mới: Thiên Trụ tự, Thái Huyền quán, Hành Khất bang), mỗi phái có
   nội công và bộ võ công riêng truyền theo cấp bậc.
 - Học võ công từ môn phái, sư phụ (người mới vào phái được phân sư phụ), võ quán, bí kíp.
@@ -15,23 +15,23 @@ bản 1.0, các giai đoạn trình bày và phát hành) nằm ở `../game/doc
 
 ## Chỉ số
 
-`npm run analyze -- --worlds 20 --years 400`, ngày tách bản:
+`npm run analyze -- --worlds 20 --years 400`, sau khi đổi sang thang Hậu thiên … Thiên nhân hợp nhất:
 
 | Chỉ số | Chọn ngẫu nhiên | Chủ động luyện công |
 |---|---|---|
-| Tới Tam lưu | 55% | 51% |
-| Tới Nhị lưu | 30% | 23% |
-| Tới Nhất lưu | 8,9% | 10% |
-| Tới Tuyệt đỉnh | 3,0% | 1,9% |
-| Lựa chọn mỗi kiếp (p50) | 21 | 21 |
-| Kiếp 3–10 phút | 54% | 51% |
-| Gặp lại tiền kiếp | 42% | 32% |
+| Tới Hậu thiên | 43% | 51% |
+| Tới Tiên thiên (nhất lưu) | 13% | 12% |
+| Tới Tông sư (tuyệt đỉnh) | 4,5% | 2,9% |
+| Tới Đại tông sư | 0% | 0% |
+| Lựa chọn mỗi kiếp (p50) | 20 | 22 |
+| Kiếp 3–10 phút | 50% | 57% |
+| Gặp lại tiền kiếp | 40% | 27% |
 
 Mẫu khoảng 100 kiếp mỗi cột: chênh vài điểm giữa hai cột là nhiễu.
 
-Một thế giới 300 năm (seed 7) còn sống 673 người: 212 Tam lưu, 65 Nhị lưu, 22 Nhất lưu, 5 Tuyệt đỉnh, 4 Tiên thiên;
-một người lên Võ thánh và phá toái hư không. Mô phỏng chậm hơn bản tu tiên khoảng 2 lần (10 so với 5 giây cho 300 năm),
-vì 55% dân số luyện võ so với 30% có linh căn: nhiều người tu luyện, ra quyết định và đánh nhau hơn.
+Bốn thế giới 300 năm (seed 7, 11, 23, 31): 22–31 Tiên thiên, 10–19 Tông sư, 4–10 Đại tông sư, 0–1 Thiên nhân hợp nhất
+còn sống; 0–1 lần phá toái hư không mỗi thế giới. Chưởng môn đại phái phần lớn là Tông sư hoặc Đại tông sư. Mô phỏng 300
+năm mất khoảng 6–7 giây (bản tu tiên khoảng 5 giây): 55% dân số luyện võ so với 30% có linh căn.
 
 ## Tiếp theo
 

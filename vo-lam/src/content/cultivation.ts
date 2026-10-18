@@ -15,23 +15,21 @@ export interface Realm {
   breakthrough: { base: number; retryYears: number; bolts: number; survive: number } | null;
 }
 
-const SUB = ['sơ nhập', 'tiểu thành', 'đại thành', 'viên mãn'];
+const KY = ['sơ kỳ', 'trung kỳ', 'hậu kỳ', 'viên mãn'];
 const TRONG = ['nhất trọng', 'nhị trọng', 'tam trọng', 'tứ trọng', 'ngũ trọng', 'lục trọng', 'thất trọng', 'bát trọng', 'cửu trọng'];
 
-// Ids are those of the tu tiên game, so imported events that name a realm still mean the same rung.
-// Lifespans are a martial artist's. Stage costs are set so that a sect disciple of middling talent spends about
-// 20 years in Tam lưu, 25 in Nhị lưu and 30 in Nhất lưu: a master is made in one life, not in three.
+// The common web-novel ladder of võ đạo: Hậu thiên → Tiên thiên → Tông sư → Đại tông sư → Thiên nhân hợp nhất,
+// then phá toái hư không. Giang hồ ranks (tam lưu … tuyệt đỉnh, bán thánh) are titles on top of it (martial.ts).
+// Ids are the tu tiên game's first six realms, rank for rank, so imported events that name a realm keep its rung.
+// Stage costs: a sect disciple of middling talent spends about 40 years in Hậu thiên and 25 in Tiên thiên; Tông sư
+// and above take the better part of a gifted life, so Đại tông sư are few and phá toái hư không a legend.
 export const REALMS: Realm[] = [
   { id: 'pham_nhan', name: 'Người thường', rank: 0, lifespan: 70, stages: [''], stageCost: 40, cultivationMult: 1, battleMult: 0.5, breakthrough: null },
-  { id: 'luyen_khi', name: 'Tam lưu', rank: 1, lifespan: 80, stages: TRONG, stageCost: 30, cultivationMult: 0.9, battleMult: 1, breakthrough: { base: 0.62, retryYears: 2, bolts: 0, survive: 1 } },
-  { id: 'truc_co', name: 'Nhị lưu', rank: 2, lifespan: 90, stages: SUB, stageCost: 140, cultivationMult: 1.5, battleMult: 3, breakthrough: { base: 0.33, retryYears: 3, bolts: 0, survive: 1 } },
-  { id: 'kim_dan', name: 'Nhất lưu', rank: 3, lifespan: 100, stages: SUB, stageCost: 400, cultivationMult: 3.5, battleMult: 9, breakthrough: { base: 0.19, retryYears: 4, bolts: 0, survive: 1 } },
-  { id: 'nguyen_anh', name: 'Tuyệt đỉnh', rank: 4, lifespan: 110, stages: SUB, stageCost: 900, cultivationMult: 7, battleMult: 27, breakthrough: { base: 0.12, retryYears: 5, bolts: 0, survive: 1 } },
-  { id: 'hoa_than', name: 'Tiên thiên', rank: 5, lifespan: 130, stages: SUB, stageCost: 2100, cultivationMult: 14, battleMult: 81, breakthrough: { base: 0.08, retryYears: 6, bolts: 0, survive: 1 } },
-  { id: 'dung_hu', name: 'Tông sư', rank: 6, lifespan: 150, stages: SUB, stageCost: 4200, cultivationMult: 28, battleMult: 243, breakthrough: { base: 0.08, retryYears: 8, bolts: 0, survive: 1 } },
-  { id: 'hop_the', name: 'Đại tông sư', rank: 7, lifespan: 180, stages: SUB, stageCost: 8400, cultivationMult: 56, battleMult: 729, breakthrough: { base: 0.08, retryYears: 10, bolts: 0, survive: 1 } },
-  { id: 'do_kiep', name: 'Bán thánh', rank: 8, lifespan: 220, stages: SUB, stageCost: 16800, cultivationMult: 112, battleMult: 2187, breakthrough: { base: 0.08, retryYears: 12, bolts: 0, survive: 1 } },
-  { id: 'dai_thua', name: 'Võ thánh', rank: 9, lifespan: 300, stages: SUB, stageCost: 33600, cultivationMult: 224, battleMult: 6561, breakthrough: { base: 0.25, retryYears: 15, bolts: 3, survive: 0.9 } },
+  { id: 'luyen_khi', name: 'Hậu thiên', rank: 1, lifespan: 85, stages: TRONG, stageCost: 60, cultivationMult: 1, battleMult: 1, breakthrough: { base: 0.4, retryYears: 3, bolts: 0, survive: 1 } },
+  { id: 'truc_co', name: 'Tiên thiên', rank: 2, lifespan: 100, stages: KY, stageCost: 140, cultivationMult: 1.5, battleMult: 3, breakthrough: { base: 0.19, retryYears: 4, bolts: 0, survive: 1 } },
+  { id: 'kim_dan', name: 'Tông sư', rank: 3, lifespan: 120, stages: TRONG, stageCost: 350, cultivationMult: 3.5, battleMult: 9, breakthrough: { base: 0.12, retryYears: 5, bolts: 0, survive: 1 } },
+  { id: 'nguyen_anh', name: 'Đại tông sư', rank: 4, lifespan: 150, stages: KY, stageCost: 3000, cultivationMult: 7, battleMult: 27, breakthrough: { base: 0.08, retryYears: 6, bolts: 0, survive: 1 } },
+  { id: 'hoa_than', name: 'Thiên nhân hợp nhất', rank: 5, lifespan: 200, stages: KY, stageCost: 9000, cultivationMult: 14, battleMult: 81, breakthrough: { base: 0.03, retryYears: 15, bolts: 6, survive: 0.88 } },
 ];
 
 export const BREAKTHROUGH = {
@@ -158,7 +156,7 @@ export const PHYSIQUES: Physique[] = [
   { id: 'thien_sinh_kiem_cot', name: 'Thiên sinh kiếm cốt', weight: 20, desc: 'Kiếm pháp nhanh, hay gặp Kiếm mộ' },
   { id: 'luan_hoi_chi_the', name: 'Luân hồi chi thể', weight: 15, desc: 'Ngộ tính +8, Tâm tính +8, nhớ rõ tiền kiếp hơn' },
   { id: 'linh_lung_tam', name: 'Thất khiếu linh lung tâm', weight: 15, desc: 'Tâm tính +20, khó tẩu hỏa nhập ma' },
-  { id: 'cuu_am_tuyet_mach', name: 'Cửu âm tuyệt mạch', weight: 15, desc: 'Ngộ tính +15, luyện công ×1,5, chết trước 20 tuổi nếu chưa tới Nhị lưu' },
+  { id: 'cuu_am_tuyet_mach', name: 'Cửu âm tuyệt mạch', weight: 15, desc: 'Ngộ tính +15, luyện công ×1,5, chết trước 20 tuổi nếu chưa tới Tiên thiên' },
   { id: 'doc_the', name: 'Bách độc bất xâm', weight: 20, desc: 'Trăm thứ độc không làm gì được' },
 ];
 

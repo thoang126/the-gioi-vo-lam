@@ -1,5 +1,5 @@
 // Gia tộc, thế gia: dynasties that outlive their members. Children inherit the clan, the head
-// passes to the strongest heir, clans feud and marry their children to each other, and a Nhất lưu
+// passes to the strongest heir, clans feud and marry their children to each other, and a Tông sư
 // cultivator with children may found a new one.
 
 import { REALMS } from './content/cultivation';
@@ -248,7 +248,7 @@ function marriage(sim: Sim, x: ClanState, y: ClanState, byClan: Record<string, A
   }
 }
 
-/** A Nhất lưu cultivator with living children, outside any clan, may found one. */
+/** A Tông sư cultivator with living children, outside any clan, may found one. */
 function foundClans(sim: Sim, living: Avatar[]): void {
   const open = Object.values(sim.s.clans!).filter((c) => c.extinctMonth === null).length;
   if (open >= CLAN.max) return;

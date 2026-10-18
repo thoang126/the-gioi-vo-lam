@@ -185,7 +185,7 @@ export const ROUTES: [string, string, number][] = [
   ['tong_da', 'kinh_thanh', 1], ['tong_da', 'trung_nguyen', 1],
   ['nam_thien_mon', 'lang_tieu', 1], ['nam_thien_mon', 'dao_tri', 1], ['nam_thien_mon', 'luan_hoi_tri', 1], ['dao_tri', 'hon_don_hai', 1], ['lang_tieu', 'luan_hoi_tri', 1],
 ];
-/** Sea crossings: risky for anyone below Tuyệt đỉnh. The first is the classic biển Đông crossing. */
+/** Sea crossings: risky for anyone below Tông sư. The first is the classic biển Đông crossing. */
 export const SEA_ROUTES: [string, string][] = [['ben_cang', 'phuong_thi'], ['ben_cang', 'dao_tan_tu'], ['phuong_thi', 'dao_tan_tu'], ['dao_tan_tu', 'bong_lai']];
 export const SEA_ROUTE: [string, string] = SEA_ROUTES[0]!;
 

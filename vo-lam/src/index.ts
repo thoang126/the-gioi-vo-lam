@@ -6,7 +6,7 @@ export { runBattle, sealOf, tacticOf, TACTIC_NAMES, TACTIC_IDS } from './battle-
 export type { FightRecord, SoulSeal, TacticId } from './battle-engine';
 export { ACTION_BY_ID, pillFor } from './actions';
 export { itemName, parseKey } from './alchemy';
-export { skillById, skillLabel, knows, learnSkill } from './martial';
+export { skillById, skillLabel, knows, learnSkill, jianghuTitle } from './martial';
 export { SECT_ARTS, KIND_NAMES, SKILL_KINDS, NEW_SKILLS } from './content/wuxia';
 export { HERBS, PILLS, RECIPES, HERB_BY_ID, PILL_BY_ID, QUALITY_NAMES } from './content/alchemy';
 export { EVENT_BY_ID, LHVK } from './content/lhvk';
