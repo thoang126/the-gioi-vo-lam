@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "sim": "tsx tools/sim.ts",
     "build": "tsx tools/build-web.ts",
-    "import:lhvk": "tsx tools/import-lhvk.ts"
+    "import:lhvk": "tsx tools/import-lhvk.ts",
+    "analyze": "tsx tools/analyze.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

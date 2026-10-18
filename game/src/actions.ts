@@ -154,8 +154,8 @@ export const ACTIONS: ActionDef[] = [
     score: (_sim, a) => 0.3 + (a.originId === 'merchant' ? 0.9 : 0) + a.persona.ambition * 0.3 - a.persona.caution * 0.3,
     region: (_sim, a) => (inWorld(a) === 'mortal' ? 'sa_mac' : 'phuong_thi'),
     finish: (sim, a) => {
-      if (sim.rng.chance(0.12)) {
-        if (sim.rng.chance(0.25)) { sim.kill(a, 'battle', 'Bị sơn tặc chặn đường giết hại'); return; }
+      if (sim.rng.chance(0.06)) {
+        if (sim.rng.chance(0.1)) { sim.kill(a, 'battle', 'Bị sơn tặc chặn đường giết hại'); return; }
         a.linhThach = Math.floor(a.linhThach / 2);
         if (sim.isPlayer(a)) sim.log('battle', `Sơn tặc chặn đường. ${a.name} mất nửa gia sản mới giữ được mạng.`, [a.id], { regionId: a.regionId });
         return;
@@ -172,7 +172,7 @@ export const ACTIONS: ActionDef[] = [
     score: (_sim, a) => 0.2 + (a.originId === 'martial_clan' ? 0.6 : 0) + a.persona.ambition * 0.4 - a.persona.caution * 0.2,
     region: () => 'bien_ai',
     finish: (sim, a) => {
-      if (sim.rng.chance(0.1)) { sim.kill(a, 'war', 'Tử trận nơi biên ải'); return; }
+      if (sim.rng.chance(0.05)) { sim.kill(a, 'war', 'Tử trận nơi biên ải'); return; }
       a.renown += 15;
       a.stats.canCot = Math.min(100, a.stats.canCot + 2);
       a.linhThach += 30;

@@ -92,17 +92,14 @@ export function playerPhase(sim: Sim): boolean {
   }
 
   if (a.action || sim.age(a) < 12) return false;
+  const ranked = rankActions(sim, a);
   const habit = soul.habit;
-  if (habit && habit.left > 0) {
-    const def = ACTION_BY_ID[habit.id];
-    if (def && def.available(sim, a)) {
-      habit.left -= 1;
-      startAction(sim, a, def);
-      return false;
-    }
+  if (habit && habit.sig === situation(sim, a) && sim.month - habit.askedAt < ASK_EVERY_YEARS * 12) {
+    const def = habit.id ? ACTION_BY_ID[habit.id] : undefined;
+    const next = def && def.available(sim, a) ? def : ranked[0]?.def;
+    if (next) { startAction(sim, a, next); return false; }
   }
   soul.habit = null;
-  const ranked = rankActions(sim, a);
   if (soul.autoplay) {
     if (ranked[0]) startAction(sim, a, ranked[0].def);
     return false;
@@ -113,7 +110,7 @@ export function playerPhase(sim: Sim): boolean {
     prompt: `${a.name}, ${sim.age(a)} tuổi, ${sim.realmLabel(a)}, đang ở ${REGION_BY_ID[a.regionId]!.name}. Tiếp theo làm gì?`,
     options: [
       ...ranked.slice(0, 4).map((r) => ({ id: r.def.id, label: r.def.label, hint: hintFor(sim, a, r.def.id) })),
-      { id: 'auto', label: 'Thuận theo tâm tính', hint: 'Để nhân vật tự quyết lần này' },
+      { id: 'auto', label: 'Thuận theo tâm tính', hint: 'Để nhân vật tự quyết cho tới ngã rẽ sau' },
     ],
   };
   return true;
@@ -140,20 +137,31 @@ export function resolvePending(sim: Sim, optionId: string): void {
   const a = playerAvatar(sim);
   if (!a || !a.alive) return;
   if (p.kind === 'event') { resolveStoryChoice(sim, a, p, optionId); return; }
+  const sig = situation(sim, a);
   if (optionId === 'auto') {
     const best = rankActions(sim, a)[0];
     if (best) startAction(sim, a, best.def);
+    soul.habit = { id: null, askedAt: sim.month, sig };
     return;
   }
   const def = ACTION_BY_ID[optionId];
   if (def && def.available(sim, a)) {
     startAction(sim, a, def);
-    soul.habit = { id: def.id, left: HABIT_REPEATS };
+    soul.habit = { id: def.id, askedAt: sim.month, sig };
   }
 }
 
-/** A chosen action runs this many extra times before the next crossroad. */
-export const HABIT_REPEATS = 2;
+/** Without a change of situation, the player is asked "what next" at most this often. */
+export const ASK_EVERY_YEARS = 5;
+
+/**
+ * What makes a new "what next" question worth asking: realm, sect and rank, world, having a
+ * technique, being ready to break through, being injured.
+ */
+function situation(sim: Sim, a: Avatar): string {
+  return [a.realm, a.sectId ?? '-', a.sectRank ?? '-', REGION_BY_ID[a.regionId]!.world, a.technique ? 1 : 0,
+    sim.readyToBreak(a) && a.breakthroughCooldownUntil <= sim.month ? 1 : 0, a.injuredUntil > sim.month ? 1 : 0].join('|');
+}
 
 // ---- past lives ----------------------------------------------------------------------------
 

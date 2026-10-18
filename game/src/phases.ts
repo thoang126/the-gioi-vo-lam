@@ -103,7 +103,7 @@ function meet(sim: Sim, a: Avatar, b: Avatar): void {
   const rel = a.relations[b.id];
   if (hostile(sim, a, b) && (!rel || rel.kind === 'enemy' || rel.kind === 'rival')) {
     if (sim.rng.chance(0.5)) {
-      const res = duel(sim, a, b, 0.3);
+      const res = duel(sim, a, b, 0.2);
       const why = atWar(sim, a.sectId, b.sectId) ? 'Hai phái đang giao chiến' : 'Chính tà bất lưỡng lập';
       if (res.killed) sim.kill(res.loser, 'battle', `${why}, bị ${res.winner.name} hạ sát`, res.winner);
       else sim.log('battle', `${why}: ${a.name} và ${b.name} chạm trán. ${res.winner.name} thắng, ${res.loser.name} trọng thương bỏ chạy.`, [a.id, b.id], { regionId: a.regionId });
@@ -321,7 +321,7 @@ export function phaseWorld(sim: Sim): void {
     const dead: Avatar[] = [];
     for (const a of living.filter((x) => x.regionId === target)) {
       if (a.realm === 0) {
-        if (sim.rng.chance(0.15)) { dead.push(a); sim.kill(a, 'beast', `Chết trong đợt thú triều từ ${src}`); }
+        if (sim.rng.chance(0.15 * (sim.age(a) < 12 ? MORTALITY.childDisasterMult : 1))) { dead.push(a); sim.kill(a, 'beast', `Chết trong đợt thú triều từ ${src}`); }
       } else if (!fightBeast(sim, a, 2) && sim.rng.chance(0.25)) {
         dead.push(a);
         sim.kill(a, 'beast', `Tử chiến trấn giữ ${REGION_BY_ID[target]!.name} trong đợt thú triều`);
@@ -343,7 +343,7 @@ export function phaseWorld(sim: Sim): void {
   if (sim.rng.chance(0.06)) {
     const dead: Avatar[] = [];
     for (const a of living.filter((x) => (x.regionId === 'bien_ai' || x.regionId === 'lang_que') && x.realm === 0 && x.gender === 'male' && sim.age(x) >= 16 && sim.age(x) <= 50)) {
-      if (sim.rng.chance(0.2)) { dead.push(a); sim.kill(a, 'war', 'Bị trưng binh, tử trận nơi biên ải'); }
+      if (sim.rng.chance(0.08)) { dead.push(a); sim.kill(a, 'war', 'Bị trưng binh, tử trận nơi biên ải'); }
     }
     sim.log('world', `Chiến loạn ở biên ải Đại Hạ. Lệnh trưng binh về tới từng làng.${dead.length ? ` ${dead.length} người không trở về.` : ''}`, dead.map((d) => d.id), { regionId: 'bien_ai', major: true });
   }
@@ -352,7 +352,7 @@ export function phaseWorld(sim: Sim): void {
     const place = sim.rng.pick(['lang_que', 'kinh_thanh', 'chan_nui']);
     const dead: Avatar[] = [];
     for (const a of living.filter((x) => x.regionId === place && x.realm === 0)) {
-      if (sim.rng.chance(0.1)) { dead.push(a); sim.kill(a, 'illness', 'Mất trong trận dịch'); }
+      if (sim.rng.chance(0.05 * (sim.age(a) < 12 ? MORTALITY.childDisasterMult : 1))) { dead.push(a); sim.kill(a, 'illness', 'Mất trong trận dịch'); }
     }
     sim.log('world', `Dịch bệnh ở ${REGION_BY_ID[place]!.name}.${dead.length ? ` ${dead.length} người qua đời.` : ''}`, dead.map((d) => d.id), { regionId: place, major: true });
   }

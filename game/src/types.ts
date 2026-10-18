@@ -185,8 +185,11 @@ export interface Soul {
   metThisLife: number[];
   pending: PendingChoice | null;
   autoplay: boolean;
-  /** The player's chosen action keeps repeating this many more times before asking again. */
-  habit: { id: string; left: number } | null;
+  /**
+   * The player's way of life: the chosen action keeps going (or, after "thuận theo tâm tính",
+   * the AI picks) until the situation changes or ASK_EVERY_YEARS pass, then the player is asked again.
+   */
+  habit: { id: string | null; askedAt: number; sig: string } | null;
   story: StoryState;
   /** While the soul waits in the cycle of rebirth: the month it is born again. */
   rebirthAt: number | null;

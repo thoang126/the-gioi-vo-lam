@@ -12,6 +12,7 @@ npm install
 npm test            # 14 test: tái lập theo seed và lựa chọn, lưu/tải, dân số, tông môn, luân hồi, event
 npm run import:lhvk # nhập lại event từ repo luan-hoi-van-kiep (mặc định ../../luan-hoi-van-kiep)
 npm run sim -- --years 300 --seed 7 --news   # mô phỏng không giao diện để cân bằng
+npm run analyze -- --worlds 30 --years 400   # chỉ số trải nghiệm người chơi (nhịp, lựa chọn, cái chết, tiến trình)
 npm run build       # ra dist/index.html, mở thẳng bằng trình duyệt
 ```
 
@@ -60,6 +61,10 @@ mỗi kiếp phàm nhân liên tiếp thêm 15%, tối đa 75%, về lại 30% k
 32,6% (trước 21,4%).
 
 Toàn bộ engine deterministic: cùng seed và cùng chuỗi lựa chọn cho ra đúng một thế giới, đến từng byte.
+
+## Lộ trình
+
+Xem `docs/roadmap.md`: định nghĩa bản 1.0, bảng chỉ số đo được, sáu giai đoạn.
 
 ## Nguồn gốc và giấy phép
 

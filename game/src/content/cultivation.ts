@@ -48,7 +48,10 @@ export const MORTALITY = {
     { ages: [3, 5], annual: 0.005 },
     { ages: [6, 12], annual: 0.0015 },
   ],
-  natural: { mortal: { a: 0.0003, b: 8 }, cultivator: { a: 0.00002, b: 10 } },
+  // Mortal curve gentler than LHVK (a 0.0003, b 8): with that, mortals died around 45; here the median adult reaches ~60.
+  natural: { mortal: { a: 0.0002, b: 7 }, cultivator: { a: 0.00002, b: 10 } },
+  /** Children are sheltered in beast tides and epidemics: their risk is multiplied by this. */
+  childDisasterMult: 0.4,
   oldAgeRatio: 0.85,
 };
 

@@ -422,7 +422,7 @@ function choiceCard(sim: Sim): string {
       <p class="prompt">${esc(p.prompt)}</p>${options}</div>`;
   }
   return `<div class="card choice"><div class="eyebrow">${esc(titleFor())}</div><p class="prompt">${esc(p.prompt)}</p>${options}
-    ${p.kind === 'action' ? '<p class="small muted" style="margin:0">Việc ngươi chọn sẽ được làm 3 lần liền rồi mới hỏi lại.</p>' : ''}</div>`;
+    ${p.kind === 'action' ? '<p class="small muted" style="margin:0">Việc ngươi chọn thành nếp sống. Ngươi sẽ được hỏi lại khi hoàn cảnh đổi (cảnh giới, tông môn, thương thế…) hoặc sau 5 năm.</p>' : ''}</div>`;
 }
 
 function chronicle(sim: Sim): string {
