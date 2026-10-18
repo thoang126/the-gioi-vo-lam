@@ -1,0 +1,4 @@
+node_modules/
+dist/
+# vo-lam shares game/node_modules through a symlink
+node_modules

@@ -20,3 +20,9 @@ Thanh Vân châu nằm bên kia biển Đông so với Đại Hạ, và Tiên gi
 Game mới dựng từ Luân Hồi Vạn Kiếp theo kiến trúc mô phỏng thế giới của cultivation-world-simulator:
 thế giới tự vận hành, người chơi là một linh hồn luân hồi trong đó. Xem `game/README.md`.
 Kế hoạch gốc: `plans/fork-cultivation-world-simulator.md`.
+
+## Vạn Kiếp Giang Hồ (`vo-lam/`)
+
+Bản võ hiệp tách từ `game/`: cảnh giới Tam lưu … Võ thánh, võ công có môn loại, 13 môn phái truyền võ công theo
+cấp bậc, sư phụ dạy đồ đệ, võ quán, bí kíp. Nội dung Luân Hồi Vạn Kiếp được đổi sang chữ võ hiệp bằng
+`vo-lam/tools/wuxia-content.ts`. Xem `vo-lam/README.md`.
