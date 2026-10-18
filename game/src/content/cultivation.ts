@@ -114,6 +114,11 @@ export const SPIRIT_ROOTS: SpiritRoot[] = [
 ];
 /** GDD phụ lục A.2: P(có linh căn) = 30% × hệ số xuất thân. */
 export const ROOTED_CHANCE = 0.3;
+/**
+ * Tiên duyên of the player's soul (GDD LHVK 13.3: "kiếp đầu tiên có duyên tiên"). Only the
+ * "has a root at all" step is raised; the split among root tiers stays as in SPIRIT_ROOTS.
+ */
+export const TIEN_DUYEN = { firstLifeBonus: 0.3, perMortalLife: 0.15, maxChance: 0.75 };
 
 export interface Origin {
   id: string;

@@ -269,8 +269,8 @@ export class Sim {
     return `${sur} ${first}`;
   }
 
-  rollRoot(rootedMult: number): { rootId: string; elements: Element[] } {
-    if (!this.rng.chance(ROOTED_CHANCE * rootedMult)) return { rootId: 'none', elements: [] };
+  rollRoot(rootedMult: number, minChance = 0): { rootId: string; elements: Element[] } {
+    if (!this.rng.chance(Math.max(minChance, ROOTED_CHANCE * rootedMult))) return { rootId: 'none', elements: [] };
     const root = this.rng.weighted(SPIRIT_ROOTS.filter((r) => r.tier > 0), (r) => r.weight);
     const pool = root.pool === 'mutant' ? MUTANT_ELEMENTS : BASIC_ELEMENTS;
     const count = this.rng.int(root.count[0], root.count[1]);
@@ -295,6 +295,8 @@ export class Sim {
     gender?: Gender;
     statBonus?: number;
     luckBonus?: number;
+    /** Floor for P(has a spirit root), used by the player's tiên duyên. */
+    rootedChance?: number;
   }): Avatar {
     const region = REGION_BY_ID[opts.regionId]!;
     const origin = opts.originId
@@ -303,7 +305,7 @@ export class Sim {
         ? ORIGINS.filter((o) => o.regionKinds.includes(region.kind))
         : ORIGINS.filter((o) => o.id === 'commoner'), (o) => o.weight);
     const gender: Gender = opts.gender ?? (this.rng.chance(0.5) ? 'male' : 'female');
-    const root = opts.rootId ? { rootId: opts.rootId, elements: opts.elements ?? [] } : this.rollRoot(origin.rootedMult ?? 1);
+    const root = opts.rootId ? { rootId: opts.rootId, elements: opts.elements ?? [] } : this.rollRoot(origin.rootedMult ?? 1, opts.rootedChance ?? 0);
     const stat = () => this.rng.normal(50, 15, 1, 100) + (opts.statBonus ?? 0);
     const stats = {
       canCot: Math.min(100, stat() + (origin.canCot ?? 0)),

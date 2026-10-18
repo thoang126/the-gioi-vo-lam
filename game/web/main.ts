@@ -1,7 +1,7 @@
 import {
   advance, choose, createWorld, setAutoplay, Sim, YEAR_OFFSET, ACTION_BY_ID, MEMORIES,
   REGIONS, ROUTES, SEA_ROUTE, SECTS, SECT_RANKS, REALMS, WORLDS, ELEMENT_NAMES,
-  REGION_BY_ID, SECT_BY_ID, ROOT_BY_ID, ORIGIN_BY_ID, PHYSIQUE_BY_ID, relationWord, EVENT_BY_ID, LHVK, pathNames,
+  REGION_BY_ID, SECT_BY_ID, ROOT_BY_ID, ORIGIN_BY_ID, PHYSIQUE_BY_ID, relationWord, EVENT_BY_ID, LHVK, pathNames, rebirthRootChance,
 } from '../src/index';
 import type { Avatar, EventKind, LifeRecord, WorldEvent, WorldState } from '../src/types';
 
@@ -445,7 +445,8 @@ function livesView(): string {
   const mem = (Object.keys(MEMORIES) as (keyof typeof MEMORIES)[]).map((k) => `<li>${esc(MEMORIES[k].name)}: cấp ${soul.memories[k]}/${MEMORIES[k].max} <span class="muted small">(${esc(MEMORIES[k].desc)})</span></li>`).join('');
   const lives = soul.lives.slice().reverse().map((l) => `<tr><td class="num">${l.index + 1}</td><td><button class="linkish" data-avatar="${l.avatarId}">${esc(l.name)}</button><br><span class="small muted">${yearOf(l.bornMonth)}–${yearOf(l.diedMonth)}, ${esc(REGION_BY_ID[l.bornRegion]!.name)}</span></td>
     <td>${esc(REALMS[l.realm]!.name)}${l.paths?.length ? `<br><span class="small muted">${esc(l.paths.join(', '))}</span>` : ''}</td><td class="small">${esc(l.causeText)}</td><td class="num">${l.daoQua.toLocaleString('vi-VN')}</td></tr>`).join('');
-  return `<p class="small">${soul.points} Luân Hồi Điểm. Mở ký ức tiền kiếp ở cầu Nại Hà sau mỗi lần chết.</p><ul class="rels">${mem}</ul>
+  return `<p class="small">${soul.points} Luân Hồi Điểm. Mở ký ức tiền kiếp ở cầu Nại Hà sau mỗi lần chết.</p>
+    <p class="small">Tiên duyên kiếp tới: <b>${Math.round(rebirthRootChance(soul.lives) * 100)}%</b> sinh ra có linh căn. Gốc là 30%; kiếp đầu được 60%, mỗi kiếp phàm nhân liên tiếp thêm 15%, tối đa 75%.</p><ul class="rels">${mem}</ul>
     ${lives ? `<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Kiếp</th><th>Tên</th><th>Cảnh giới</th><th>Kết cục</th><th>Đạo Quả</th></tr></thead><tbody>${lives}</tbody></table></div>` : '<p class="muted small" style="margin-top:12px">Đây là kiếp đầu tiên.</p>'}`;
 }
 

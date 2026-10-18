@@ -2,7 +2,7 @@
 // boundaries the world pauses on a PendingChoice (CWS "roleplay mode", here the default).
 // On death the soul waits some years in the cycle of rebirth, then is born again elsewhere.
 
-import { REALMS, TECHNIQUES } from './content/cultivation';
+import { REALMS, ROOTED_CHANCE, TECHNIQUES, TIEN_DUYEN } from './content/cultivation';
 import { REGIONS, WORLDS, type WorldId } from './content/world';
 import { rankActions, startAction, ACTION_BY_ID } from './actions';
 import { REGION_BY_ID, SECT_BY_ID, Sim, relationWord } from './sim';
@@ -233,7 +233,7 @@ function rebirthChoice(sim: Sim): PendingChoice {
   const last = soul.lives[soul.lives.length - 1];
   return {
     kind: 'rebirth',
-    prompt: `Hồn ngươi rời khỏi xác ${last?.name}. Bên cầu Nại Hà, ngươi còn ${soul.points} Luân Hồi Điểm.`,
+    prompt: `Hồn ngươi rời khỏi xác ${last?.name}. Bên cầu Nại Hà, ngươi còn ${soul.points} Luân Hồi Điểm. Tiên duyên kiếp tới: ${Math.round(rebirthRootChance(soul.lives) * 100)}% sinh ra có linh căn.`,
     options,
   };
 }
@@ -257,11 +257,19 @@ function scheduleRebirth(sim: Sim): void {
   sim.s.soul.rebirthAt = sim.month + sim.rng.int(3, 30) * 12;
 }
 
+/** P(has a spirit root) for the soul's next birth: higher in the first life and after mortal lives in a row. */
+export function rebirthRootChance(lives: { rootId: string }[]): number {
+  let mortalStreak = 0;
+  for (let i = lives.length - 1; i >= 0 && lives[i]!.rootId === 'none'; i--) mortalStreak += 1;
+  const bonus = (lives.length === 0 ? TIEN_DUYEN.firstLifeBonus : 0) + mortalStreak * TIEN_DUYEN.perMortalLife;
+  return Math.min(TIEN_DUYEN.maxChance, ROOTED_CHANCE + bonus);
+}
+
 export function reborn(sim: Sim): Avatar {
   const soul = sim.s.soul;
   const world = sim.rng.weighted(Object.keys(WORLDS) as WorldId[], (w) => WORLDS[w].weight);
   const region = sim.rng.weighted(REGIONS.filter((r) => r.world === world && r.population > 0 && r.kind !== 'sect'), (r) => r.population);
-  const a = sim.createAvatar({ regionId: region.id, statBonus: soul.memories.manhBa, luckBonus: soul.memories.luck * 2 });
+  const a = sim.createAvatar({ regionId: region.id, statBonus: soul.memories.manhBa, luckBonus: soul.memories.luck * 2, rootedChance: rebirthRootChance(soul.lives) });
   a.soulLife = soul.lives.length;
   soul.currentAvatarId = a.id;
   soul.rebirthAt = null;

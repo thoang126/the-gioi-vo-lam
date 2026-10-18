@@ -106,3 +106,16 @@ describe('the player soul', () => {
   });
 });
 
+
+describe('tiên duyên', () => {
+  it('raises the root chance in the first life and after mortal lives, capped', async () => {
+    const { rebirthRootChance } = await import('../src/index');
+    const mortal = { rootId: 'none' };
+    const rooted = { rootId: 'tam_linh_can' };
+    expect(rebirthRootChance([])).toBeCloseTo(0.6);
+    expect(rebirthRootChance([rooted])).toBeCloseTo(0.3);
+    expect(rebirthRootChance([rooted, mortal])).toBeCloseTo(0.45);
+    expect(rebirthRootChance([mortal, mortal, mortal, mortal])).toBeCloseTo(0.75);
+    expect(rebirthRootChance([mortal, rooted])).toBeCloseTo(0.3);
+  });
+});

@@ -51,6 +51,14 @@ diễn dịch `src/story.ts`, giữ đúng luật của game gốc:
 - **Chưa nhập:** danh sách tin tức người quen trong `people.yaml` và thiên phú (`traits.yaml`); thế giới mới đã có
   cơ chế gặp gỡ và tin giang hồ riêng.
 
+## Tiên duyên
+
+70% số người sinh ra không có linh căn (GDD Luân Hồi Vạn Kiếp 3.3). Thế giới vẫn giữ tỉ lệ đó cho mọi NPC,
+nhưng linh hồn người chơi có tiên duyên (`TIEN_DUYEN` trong `src/content/cultivation.ts`): kiếp đầu 60% có linh căn,
+mỗi kiếp phàm nhân liên tiếp thêm 15%, tối đa 75%, về lại 30% khi đã có linh căn. Chỉ bước "có linh căn hay không"
+được nâng; tỉ lệ giữa các loại linh căn giữ nguyên. Đo trên 172 kiếp: có linh căn 43,6% (trước 28,6%), tới Luyện Khí
+32,6% (trước 21,4%).
+
 Toàn bộ engine deterministic: cùng seed và cùng chuỗi lựa chọn cho ra đúng một thế giới, đến từng byte.
 
 ## Nguồn gốc và giấy phép
