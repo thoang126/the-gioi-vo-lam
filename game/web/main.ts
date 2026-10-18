@@ -2,6 +2,7 @@ import {
   advance, choose, createWorld, setAutoplay, Sim, YEAR_OFFSET, ACTION_BY_ID, MEMORIES,
   REGIONS, ROUTES, SEA_ROUTE, SECTS, SECT_RANKS, REALMS, WORLDS, ELEMENT_NAMES,
   REGION_BY_ID, SECT_BY_ID, ROOT_BY_ID, ORIGIN_BY_ID, PHYSIQUE_BY_ID, relationWord, EVENT_BY_ID, LHVK, pathNames, rebirthRootChance,
+  CODEX, SOUL_TITLES, codexProgress, migrateWorld,
 } from '../src/index';
 import type { Avatar, EventKind, LifeRecord, WorldEvent, WorldState } from '../src/types';
 
@@ -10,7 +11,7 @@ const PREFS_KEY = 'van-kiep-thien-ha/prefs';
 const TICK_MS = 250;
 const AUTOSAVE_MS = 15000;
 
-type Tab = 'news' | 'sects' | 'people' | 'here' | 'profile' | 'lives';
+type Tab = 'news' | 'sects' | 'people' | 'here' | 'profile' | 'lives' | 'codex';
 type MapView = 'all' | 'mortal' | 'cultivation';
 type NewsFilter = 'all' | 'war' | 'sect' | 'life' | 'fortune';
 
@@ -50,7 +51,7 @@ function loadOrCreate(): WorldState {
     if (raw) {
       const parsed = JSON.parse(raw) as WorldState;
       // Saves from before the story events lack the per-life story state; start a fresh world for those.
-      if (parsed.version === 1 && parsed.soul?.story) return parsed;
+      if (parsed.version === 1 && parsed.soul?.story) return migrateWorld(parsed);
     }
   } catch { /* storage unavailable */ }
   return createWorld(Math.floor(Math.random() * 2 ** 31));
@@ -131,6 +132,7 @@ function skeleton(): void {
 }
 
 function render(): void {
+  updateBia();
   const sim = new Sim(s);
   sim.reindex();
   const waiting = s.soul.pending !== null;
@@ -180,7 +182,7 @@ function intro(): string {
 function tabs(): string {
   const list: [Tab, string][] = [['news', 'Tin giang hồ'], ['sects', 'Tông môn'], ['people', 'Cao thủ'], ['here', ui.region ? REGION_BY_ID[ui.region]!.name : 'Địa danh']];
   if (ui.avatar) list.push(['profile', 'Hồ sơ']);
-  list.push(['lives', 'Tiền kiếp']);
+  list.push(['codex', 'Kiếp Sách'], ['lives', 'Tiền kiếp']);
   return list.map(([id, label]) => `<button class="tab" role="tab" id="tab-${id}" aria-controls="tabpanel" aria-selected="${ui.tab === id}" tabindex="${ui.tab === id ? 0 : -1}" data-tab="${id}">${esc(label)}</button>`).join('');
 }
 
@@ -272,6 +274,7 @@ function tabContent(sim: Sim): string {
     }
     case 'profile': return profile(sim, sim.get(ui.avatar));
     case 'lives': return livesView();
+    case 'codex': return codexView();
   }
 }
 
@@ -440,14 +443,70 @@ function chronicle(sim: Sim): string {
   return feed(s.events.filter((e) => e.avatarIds.includes(a.id)).slice(-80).reverse(), (e) => Math.max(0, Math.floor((e.month - a.birthMonth) / 12)), rewrite);
 }
 
+// ---- Vạn Cổ Bia: best lives on this device, across every world and soul ------------------------
+
+const BIA_KEY = 'van-kiep-thien-ha/van-co-bia';
+interface BiaEntry { key: string; name: string; realm: number; daoQua: number; years: number; cause: string; titles: string[]; year: number }
+
+function loadBia(): BiaEntry[] {
+  try { return JSON.parse(localStorage.getItem(BIA_KEY) ?? '[]'); } catch { return []; }
+}
+
+/** Adds the lives this soul closed since the last look; keeps the 20 highest Đạo Quả. */
+function updateBia(): void {
+  const bia = loadBia();
+  const keys = new Set(bia.map((b) => b.key));
+  let changed = false;
+  for (const l of s.soul.lives) {
+    const key = `${s.seed}:${l.avatarId}`;
+    if (keys.has(key)) continue;
+    bia.push({ key, name: l.name, realm: l.realm, daoQua: l.daoQua, years: Math.floor((l.diedMonth - l.bornMonth) / 12), cause: l.causeText, titles: l.titles, year: yearOf(l.diedMonth) });
+    changed = true;
+  }
+  if (!changed) return;
+  bia.sort((x, y) => y.daoQua - x.daoQua);
+  try { localStorage.setItem(BIA_KEY, JSON.stringify(bia.slice(0, 20))); } catch { /* storage unavailable */ }
+}
+
+function codexView(): string {
+  const soul = s.soul;
+  const p = codexProgress(soul);
+  const goals = SOUL_TITLES.filter((t) => !soul.achievements.includes(t.id))
+    .map((t) => ({ t, pr: t.progress(soul) })).sort((x, y) => y.pr[0] / y.pr[1] - x.pr[0] / x.pr[1]).slice(0, 3);
+  const bar = (cur: number, target: number) => `<div class="meter act"><div class="track"><span style="width:${Math.min(100, (cur / target) * 100).toFixed(0)}%"></span></div></div>`;
+  const titles = SOUL_TITLES.map((t) => {
+    const done = soul.achievements.includes(t.id);
+    const [cur, target] = t.progress(soul);
+    return `<li class="${done ? 'done' : ''}"><b>${esc(t.name)}</b> <span class="muted small">${esc(t.desc)} · ${t.points} điểm${done ? '' : ` · ${Math.min(cur, target).toLocaleString('vi-VN')}/${target.toLocaleString('vi-VN')}`}</span></li>`;
+  }).join('');
+  const cats = CODEX.map((c) => {
+    const got = new Set(soul.codex[c.id] ?? []);
+    const n = c.entries.filter((e) => got.has(e.id)).length;
+    return `<div class="codex-cat"><div class="codex-head"><b>${esc(c.name)}</b><span class="small muted">${n}/${c.entries.length}</span></div>
+      <div class="codex-grid">${c.entries.map((e) => got.has(e.id) ? `<span class="codex-item on">${esc(e.name)}</span>` : '<span class="codex-item">???</span>').join('')}</div></div>`;
+  }).join('');
+  return `<p class="small">Kiếp Sách ghi lại mọi thứ linh hồn này đã từng là: <b>${p.have}/${p.total}</b> mục (${Math.round((p.have / p.total) * 100)}%).</p>
+    ${goals.length ? `<div class="goals"><div class="eyebrow">Mục tiêu kế tiếp</div>${goals.map(({ t, pr }) => `<div class="goal-row"><span><b>${esc(t.name)}</b> <span class="small muted">${esc(t.desc)} · +${t.points} điểm</span></span>${bar(pr[0], pr[1])}</div>`).join('')}</div>` : ''}
+    <details class="rels-box"><summary class="eyebrow">Danh hiệu linh hồn (${soul.achievements.length}/${SOUL_TITLES.length})</summary><ul class="soul-titles">${titles}</ul></details>
+    ${cats}`;
+}
+
 function livesView(): string {
   const soul = s.soul;
-  const mem = (Object.keys(MEMORIES) as (keyof typeof MEMORIES)[]).map((k) => `<li>${esc(MEMORIES[k].name)}: cấp ${soul.memories[k]}/${MEMORIES[k].max} <span class="muted small">(${esc(MEMORIES[k].desc)})</span></li>`).join('');
+  const mem = (Object.keys(MEMORIES) as (keyof typeof MEMORIES)[]).map((k) => `<li>${esc(MEMORIES[k].name)}: cấp ${soul.memories[k] ?? 0}/${MEMORIES[k].max} <span class="muted small">(${esc(MEMORIES[k].desc)})</span></li>`).join('');
   const lives = soul.lives.slice().reverse().map((l) => `<tr><td class="num">${l.index + 1}</td><td><button class="linkish" data-avatar="${l.avatarId}">${esc(l.name)}</button><br><span class="small muted">${yearOf(l.bornMonth)}–${yearOf(l.diedMonth)}, ${esc(REGION_BY_ID[l.bornRegion]!.name)}</span></td>
-    <td>${esc(REALMS[l.realm]!.name)}${l.paths?.length ? `<br><span class="small muted">${esc(l.paths.join(', '))}</span>` : ''}</td><td class="small">${esc(l.causeText)}</td><td class="num">${l.daoQua.toLocaleString('vi-VN')}</td></tr>`).join('');
+    <td>${esc(REALMS[l.realm]!.name)}${l.paths?.length ? `<br><span class="small muted">${esc(l.paths.join(', '))}</span>` : ''}${l.titles.length ? `<br><span class="small" style="color:var(--gold)">${esc(l.titles.join(', '))}</span>` : ''}</td><td class="small">${esc(l.causeText)}</td><td class="num">${l.daoQua.toLocaleString('vi-VN')}</td></tr>`).join('');
   return `<p class="small">${soul.points} Luân Hồi Điểm. Mở ký ức tiền kiếp ở cầu Nại Hà sau mỗi lần chết.</p>
     <p class="small">Tiên duyên kiếp tới: <b>${Math.round(rebirthRootChance(soul.lives) * 100)}%</b> sinh ra có linh căn. Gốc là 30%; kiếp đầu được 60%, mỗi kiếp phàm nhân liên tiếp thêm 15%, tối đa 75%.</p><ul class="rels">${mem}</ul>
-    ${lives ? `<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Kiếp</th><th>Tên</th><th>Cảnh giới</th><th>Kết cục</th><th>Đạo Quả</th></tr></thead><tbody>${lives}</tbody></table></div>` : '<p class="muted small" style="margin-top:12px">Đây là kiếp đầu tiên.</p>'}`;
+    ${lives ? `<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Kiếp</th><th>Tên</th><th>Cảnh giới</th><th>Kết cục</th><th>Đạo Quả</th></tr></thead><tbody>${lives}</tbody></table></div>` : '<p class="muted small" style="margin-top:12px">Đây là kiếp đầu tiên.</p>'}
+    ${biaView()}`;
+}
+
+function biaView(): string {
+  const bia = loadBia().slice(0, 10);
+  if (!bia.length) return '';
+  return `<div class="eyebrow" style="margin-top:16px">Vạn Cổ Bia · những kiếp rực rỡ nhất trên máy này</div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>Tên</th><th>Cảnh giới</th><th>Kết cục</th><th>Đạo Quả</th></tr></thead><tbody>${bia.map((b, i) => `<tr><td class="num">${i + 1}</td><td>${esc(b.name)}<br><span class="small muted">mất năm ${b.year}, ${b.years} tuổi${b.titles.length ? ` · ${esc(b.titles.join(', '))}` : ''}</span></td><td>${esc(REALMS[b.realm]!.name)}</td><td class="small">${esc(b.cause)}</td><td class="num">${b.daoQua.toLocaleString('vi-VN')}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
 // ---- interaction ----------------------------------------------------------------------------

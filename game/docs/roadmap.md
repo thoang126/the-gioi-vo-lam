@@ -47,14 +47,23 @@ Giai đoạn 3 xử lý phần này bằng ngã rẽ đột phá đúng nghĩa v
 - Tử suất người phàm giãn ra, tuổi thọ trung vị khoảng 60; trẻ em chịu 40% rủi ro trong thú triều và dịch bệnh.
 - Công cụ `npm run analyze` để đo mọi thay đổi sau này.
 
-### 2. Mục tiêu của linh hồn (1–2 tuần)
+### 2. Mục tiêu của linh hồn (đã xong)
 
 - **Kiếp Sách:** album các linh căn, thể chất, đạo đồ, danh hiệu, cách chết đã gặp (GDD Luân Hồi Vạn Kiếp mục 9).
 - **Danh hiệu linh hồn:** "Mười kiếp phàm nhân", "Đồ đệ ba đời", "Tự tay dựng mộ mình"…, thưởng Luân Hồi Điểm.
 - **Vạn Cổ Bia:** bảng xếp hạng Đạo Quả của các kiếp trong máy.
 - **Thêm ký ức tiền kiếp:** "Lục đạo thị giác" (thấy tỉ lệ thành công), "Ấn khố".
 - **Kết thúc lớn:** phi thăng khép lại một linh hồn bằng màn tổng kết; có thể bắt đầu linh hồn mới trong cùng thế giới.
-- Đạt khi: người chơi luôn thấy mục tiêu kế tiếp trong tab Tiền kiếp.
+- Đạt khi: người chơi luôn thấy mục tiêu kế tiếp, trong tab Kiếp Sách.
+- Đã làm:
+  - 41 danh hiệu cuối đời của Luân Hồi Vạn Kiếp (`titles.yaml`), tối đa 3 mỗi kiếp, hiện trên bia mộ. Các cơ chế thế giới
+    (vượt biển, võ lâm đại hội, khoa cử, tòng quân, thu đồ đệ, giết kình địch) bật đúng cờ để danh hiệu nhận ra.
+  - Kiếp Sách 112 mục trong 8 nhóm; 19 danh hiệu linh hồn cộng Luân Hồi Điểm; 3 mục tiêu gần xong nhất luôn hiện ở đầu tab.
+  - Vạn Cổ Bia: 20 kiếp có Đạo Quả cao nhất trên máy, giữ qua mọi thế giới.
+  - Ký ức "Lục đạo thị giác" (200 điểm): hiện tỉ lệ thành công của lựa chọn có phép thử.
+  - Phi thăng mở lựa chọn khép lại linh hồn và bắt đầu linh hồn mới trong cùng thế giới.
+  - `migrateWorld` nâng cấp bản lưu cũ, dựng lại Kiếp Sách từ hồ sơ các kiếp.
+- Chưa làm: ký ức "Ấn khố" (cần Hồn ấn ở giai đoạn 3).
 
 ### 3. Chiều sâu tu tiên (2–3 tuần)
 

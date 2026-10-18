@@ -79,6 +79,7 @@ export function attemptBreakthrough(sim: Sim, a: Avatar): void {
       a.alive = false;
       a.deathMonth = sim.month;
       a.deathCause = 'ascension';
+      sim.storyFlag(a, 'ascended');
       a.deathText = 'Vượt 27 đạo thiên kiếp, phi thăng Tiên giới';
       a.action = null;
       sim.s.stats.ascensions += 1;
@@ -141,6 +142,7 @@ export const ACTIONS: ActionDef[] = [
       const p = 0.1 + (a.stats.ngoTinh - 50) / 150 + (a.originId === 'royal' ? 0.15 : 0);
       if (sim.rng.chance(p)) {
         a.titles.push('Quan lại');
+        sim.storyFlag(a, 'scholar');
         a.renown += 20;
         a.linhThach += 50;
         sim.log('fortune', `${a.name} đỗ khoa cử, được bổ làm quan.`, [a.id], { regionId: a.regionId });
@@ -163,6 +165,7 @@ export const ACTIONS: ActionDef[] = [
       const gain = sim.rng.int(20, 80) * (a.originId === 'merchant' ? 2 : 1);
       a.linhThach += gain;
       if (gain >= 100 && !a.titles.includes('Thương nhân')) a.titles.push('Thương nhân');
+      if (a.linhThach >= 2000) sim.storyFlag(a, 'guild_master');
     },
   },
   {
@@ -172,12 +175,14 @@ export const ACTIONS: ActionDef[] = [
     score: (_sim, a) => 0.2 + (a.originId === 'martial_clan' ? 0.6 : 0) + a.persona.ambition * 0.4 - a.persona.caution * 0.2,
     region: () => 'bien_ai',
     finish: (sim, a) => {
+      sim.storyFlag(a, 'soldier');
       if (sim.rng.chance(0.05)) { sim.kill(a, 'war', 'Tử trận nơi biên ải'); return; }
       a.renown += 15;
       a.stats.canCot = Math.min(100, a.stats.canCot + 2);
       a.linhThach += 30;
       if (a.renown >= 80 && !a.titles.includes('Võ tướng')) {
         a.titles.push('Võ tướng');
+        sim.storyFlag(a, 'general');
         sim.log('fortune', `${a.name} lập công ở biên ải, được phong võ tướng.`, [a.id], { regionId: a.regionId });
       }
     },
@@ -193,6 +198,7 @@ export const ACTIONS: ActionDef[] = [
       a.persona.virtue = Math.min(1, a.persona.virtue + 0.02);
       if (!a.titles.includes('Y sư') && sim.rng.chance(0.25)) {
         a.titles.push('Y sư');
+        sim.storyFlag(a, 'saved_village');
         sim.log('fortune', `Tiếng lành đồn xa: ${a.name} được gọi là thần y.`, [a.id], { regionId: a.regionId });
       }
     },
@@ -239,6 +245,8 @@ export const ACTIONS: ActionDef[] = [
     score: (sim, a) => 0.3 + a.persona.ambition * 0.9 + (sim.canCultivate(a) ? 0.4 : 0) - a.persona.caution * 0.3,
     region: () => 'phuong_thi',
     finish: (sim, a) => {
+      sim.storyFlag(a, 'crossed_sea');
+      if (sim.isPlayer(a)) sim.s.soul.counters.crossedSea += 1;
       sim.log('travel', `${a.name} tới Thanh Vân châu. Núi non lơ lửng giữa trời, linh khí đậm gấp bội cố hương.`, [a.id], { regionId: a.regionId, major: false });
     },
   },
@@ -401,6 +409,7 @@ export const ACTIONS: ActionDef[] = [
     finish: (sim, a, t) => {
       if (!t || !t.alive || t.regionId !== a.regionId) return;
       sim.relate(a, t, 'disciple', 'master', 60);
+      sim.storyFlag(a, 'has_disciple');
       if (!t.technique) t.technique = sim.pickTechnique(Math.min(3, a.technique?.grade ?? 1), t.elements);
       if (a.sectId && !t.sectId) { t.sectId = a.sectId; t.sectRank = 'chan_truyen'; }
       else if (a.sectId && t.sectId === a.sectId && (t.sectRank === 'ngoai_mon' || t.sectRank === 'tap_dich')) t.sectRank = 'chan_truyen';
@@ -424,6 +433,7 @@ export const ACTIONS: ActionDef[] = [
       const verb = deadly ? 'sinh tử chiến' : 'giao thủ';
       if (res.killed) {
         sim.kill(res.loser, 'battle', `Chết trong trận ${verb} với kình địch ${res.winner.name}`, res.winner);
+        sim.storyFlag(res.winner, 'rival_slain');
       } else {
         sim.log('battle', `${a.name} và kình địch ${t.name} ${verb}. ${res.winner.name} thắng, ${res.loser.name} trọng thương.`, [a.id, t.id], { regionId: a.regionId, major: a.realm >= 3 });
         const rel = a.relations[t.id];

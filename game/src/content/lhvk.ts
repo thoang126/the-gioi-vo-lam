@@ -70,6 +70,11 @@ export interface Modifiers {
 
 export interface PathDef { id: string; name: string; slot: PathSlot; description: string; bio: string; modifiers?: Modifiers }
 
+export interface TitleConditions extends Conditions {
+  death_cause?: string[]; fortune_min?: number; crossroads_min?: number; birth_spirit_root_max?: string; event?: string[]; age_min?: number;
+}
+export interface TitleDef { id: string; name: string; description: string; priority: number; conditions: TitleConditions }
+
 interface Lhvk {
   eventConfig: {
     pacing: { childhood: { maxAge: number; counts: number[] }; mortal: number[]; cultivator: Record<string, number[]>; quietWeight: number };
@@ -86,6 +91,8 @@ interface Lhvk {
   narration: { openers: string[]; beastPrefixes: string[]; beastSpecies: Record<string, string[]>; beastLands: string[] };
   birthMods: { origins: Record<string, Modifiers>; roots: Record<string, Modifiers>; physiques: Record<string, Modifiers> };
   deathCauses: Record<string, { name: string; told: unknown }>;
+  titles: TitleDef[];
+  scoring: { realmWeight: number; fortuneWeight: number; titleWeight: number; ascensionBonus: number; maxTitles: number };
 }
 
 export const LHVK = raw as unknown as Lhvk;

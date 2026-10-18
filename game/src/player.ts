@@ -8,14 +8,19 @@ import { rankActions, startAction, ACTION_BY_ID } from './actions';
 import { REGION_BY_ID, SECT_BY_ID, Sim, relationWord } from './sim';
 import type { Avatar, PendingChoice } from './types';
 import { joinSect } from './phases';
-import { autoChoose, newStory, pathNames, resolveStoryChoice, storyYear } from './story';
+import { autoChoose, lifeTitles, newStory, pathNames, resolveStoryChoice, storyYear } from './story';
+import { LHVK } from './content/lhvk';
+import { SOUL_TITLES } from './content/soul';
 
 export const MEMORIES = {
   manhBa: { name: 'Mạnh Bà quên uống', desc: '+1 mọi chỉ số gốc mỗi cấp', cost: (lvl: number) => 30 * (lvl + 1), max: 10 },
   luck: { name: 'Luân hồi khí vận', desc: '+2 Khí vận mỗi cấp', cost: (lvl: number) => 40 * (lvl + 1), max: 5 },
   technique: { name: 'Tàn niệm công pháp', desc: '5%/cấp sinh ra đã nhớ công pháp kiếp trước', cost: (lvl: number) => 150 * (lvl + 1), max: 3 },
+  sight: { name: 'Lục đạo thị giác', desc: 'Thấy tỉ lệ thành công trước khi chọn', cost: () => 200, max: 1 },
 } as const;
 type MemoryKey = keyof typeof MEMORIES;
+
+export type { MemoryKey };
 
 export function playerAvatar(sim: Sim): Avatar | undefined {
   return sim.get(sim.s.soul.currentAvatarId);
@@ -83,6 +88,10 @@ export function playerPhase(sim: Sim): boolean {
 
   reunions(sim, a);
   if ((sim.month - a.birthMonth) % 12 === 0) {
+    if (a.sectRank === 'chuong_mon' && !soul.story.flags.sect_leader_counted) {
+      soul.story.flags.sect_leader_counted = true;
+      soul.counters.sectLeader += 1;
+    }
     const p = storyYear(sim, a);
     if (p) {
       if (soul.autoplay) resolveStoryChoice(sim, a, p, autoChoose(sim, a, p));
@@ -187,6 +196,7 @@ function reunions(sim: Sim, a: Avatar): void {
       text += ` Sát khí trong mắt ${o.name} bùng lên, dù chính kẻ đó cũng không hiểu vì sao.`;
       if (!a.relations[o.id]) sim.relate(a, o, 'rival', 'rival', -40);
     }
+    soul.counters.reunions += 1;
     sim.log('past_life', text, [a.id, o.id], { regionId: a.regionId });
   }
   for (const g of sim.s.graves) {
@@ -194,6 +204,7 @@ function reunions(sim: Sim, a: Avatar): void {
     const key = -(g.avatarId + 1);
     if (soul.metThisLife.includes(key)) continue;
     soul.metThisLife.push(key);
+    soul.counters.ownGraves += 1;
     sim.log('past_life', `${a.name} đi ngang một ngôi mộ cũ: "${g.name}, ${REALMS[g.realm]!.name}". Lồng ngực bỗng nhói lên. Đó là mộ của chính ngươi ở kiếp thứ ${g.soulLife + 1}.`, [a.id], { regionId: a.regionId });
     if (sim.canCultivate(a)) sim.addTuVi(a, sim.cultivationPerMonth(a) * 24);
   }
@@ -205,7 +216,16 @@ export function checkPlayerDeath(sim: Sim): void {
   const a = playerAvatar(sim);
   if (!a || a.alive) return;
   const index = soul.lives.length;
-  const dq = sim.daoQua(a) + (a.deathCause === 'ascension' ? 5000 : 0);
+  // Life titles (GDD 6.3) first, then the world's own honours (võ lâm minh chủ, quan lại…) if room is left.
+  const titleIds = lifeTitles(sim, a);
+  const named = titleIds.map((id) => LHVK.titles.find((t) => t.id === id)!.name);
+  for (const t of a.titles) if (named.length < LHVK.scoring.maxTitles && !named.includes(t)) named.push(t);
+  a.titles = named;
+  const dq = sim.daoQua(a) + (a.deathCause === 'ascension' ? LHVK.scoring.ascensionBonus : 0);
+  remember(sim, 'paths', soul.story.pathHistory.map((h) => h.id));
+  remember(sim, 'realms', REALMS.filter((r) => r.rank <= a.realm).map((r) => r.id));
+  remember(sim, 'titles', titleIds);
+  remember(sim, 'deaths', [a.deathCause ?? 'illness']);
   soul.lives.push({
     index, avatarId: a.id, name: a.name, bornMonth: a.birthMonth, diedMonth: a.deathMonth ?? sim.month,
     bornRegion: a.bornRegion, diedRegion: a.regionId, realm: a.realm, stage: a.stage, rootId: a.rootId,
@@ -224,16 +244,43 @@ export function checkPlayerDeath(sim: Sim): void {
   soul.pending = null;
   soul.habit = null;
   sim.log('soul', `Kiếp thứ ${index + 1} khép lại: ${a.name}, ${sim.realmLabel(a)}, hưởng ${sim.age(a)} tuổi. ${a.deathText}. Đạo Quả ${dq}, nhận ${gained} Luân Hồi Điểm.`, [a.id], { regionId: a.regionId, major: a.realm >= 3 });
+  checkSoulTitles(sim, a.id);
   if (soul.autoplay) { scheduleRebirth(sim); return; }
   soul.pending = rebirthChoice(sim);
+}
+
+/** Adds entries to the soul's Kiếp Sách. */
+function remember(sim: Sim, category: string, ids: string[]): void {
+  const list = (sim.s.soul.codex[category] ??= []);
+  for (const id of ids) if (!list.includes(id)) list.push(id);
+}
+
+/** Awards soul titles whose goal is now met, logging each with its Luân Hồi Điểm. */
+export function checkSoulTitles(sim: Sim, avatarId: number): string[] {
+  const soul = sim.s.soul;
+  const earned: string[] = [];
+  for (const t of SOUL_TITLES) {
+    if (soul.achievements.includes(t.id)) continue;
+    const [cur, target] = t.progress(soul);
+    if (cur < target) continue;
+    soul.achievements.push(t.id);
+    soul.points += t.points;
+    earned.push(t.id);
+    sim.log('soul', `Danh hiệu linh hồn: ${t.name} (${t.desc}). Nhận ${t.points} Luân Hồi Điểm.`, [avatarId]);
+  }
+  return earned;
 }
 
 function rebirthChoice(sim: Sim): PendingChoice {
   const soul = sim.s.soul;
   const options = [{ id: 'reborn', label: 'Uống canh Mạnh Bà, đầu thai', hint: 'Thế giới sẽ trôi thêm vài năm tới vài chục năm' }];
+  const lastLife = soul.lives[soul.lives.length - 1];
+  if (lastLife?.cause === 'ascension') {
+    options.unshift({ id: 'new_soul', label: 'Khép lại linh hồn này, bắt đầu một linh hồn mới', hint: 'Đã phi thăng: các kiếp cũ vào Vạn Cổ Bia, thế giới vẫn giữ nguyên' });
+  }
   for (const key of Object.keys(MEMORIES) as MemoryKey[]) {
     const m = MEMORIES[key];
-    const lvl = soul.memories[key];
+    const lvl = soul.memories[key] ?? 0;
     if (lvl >= m.max) continue;
     const cost = m.cost(lvl);
     if (soul.points >= cost) options.push({ id: `mem_${key}`, label: `Mở ký ức: ${m.name} cấp ${lvl + 1} (${cost} điểm)`, hint: m.desc });
@@ -251,12 +298,19 @@ function resolveRebirth(sim: Sim, optionId: string): void {
   if (optionId.startsWith('mem_')) {
     const key = optionId.slice(4) as MemoryKey;
     const m = MEMORIES[key];
-    if (m && soul.points >= m.cost(soul.memories[key]) && soul.memories[key] < m.max) {
-      soul.points -= m.cost(soul.memories[key]);
-      soul.memories[key] += 1;
+    const lvl = soul.memories[key] ?? 0;
+    if (m && soul.points >= m.cost(lvl) && lvl < m.max) {
+      soul.points -= m.cost(lvl);
+      soul.memories[key] = lvl + 1;
     }
     soul.pending = rebirthChoice(sim);
     return;
+  }
+  if (optionId === 'new_soul') {
+    Object.assign(soul, {
+      lives: [], points: 0, memories: { manhBa: 0, luck: 0, technique: 0, sight: 0 }, pastLinks: {}, metThisLife: [],
+      codex: {}, achievements: [], counters: { reunions: 0, ownGraves: 0, sectLeader: 0, crossedSea: 0 },
+    });
   }
   scheduleRebirth(sim);
 }
@@ -283,6 +337,11 @@ export function reborn(sim: Sim): Avatar {
   soul.rebirthAt = null;
   soul.metThisLife = [];
   soul.story = newStory();
+  soul.story.birthRoot = a.rootId;
+  remember(sim, 'roots', [a.rootId]);
+  remember(sim, 'origins', [a.originId]);
+  remember(sim, 'birthplaces', [region.id]);
+  if (a.physiqueId) remember(sim, 'physiques', [a.physiqueId]);
   const last = soul.lives[soul.lives.length - 1];
   if (last?.technique && sim.rootTier(a) > 0 && sim.rng.chance(0.05 * soul.memories.technique)) {
     a.technique = TECHNIQUES.find((t) => t.name === last.technique) ?? a.technique;

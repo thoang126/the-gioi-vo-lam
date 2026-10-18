@@ -336,6 +336,7 @@ export function phaseWorld(sim: Sim): void {
       const champ = fighters.map((a) => ({ a, s: a.stats.canCot + a.renown / 2 + sim.rng.range(0, 30) })).sort((p, q) => q.s - p.s)[0]!.a;
       champ.renown += 30;
       if (!champ.titles.includes('Võ lâm minh chủ')) champ.titles.push('Võ lâm minh chủ');
+      sim.storyFlag(champ, 'martial_champion');
       sim.log('world', `Võ lâm đại hội ở Thiên Trụ sơn. ${champ.name} đánh bại quần hùng, được tôn làm võ lâm minh chủ.`, [champ.id], { regionId: 'thien_tru', major: true });
     }
   }

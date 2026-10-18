@@ -80,6 +80,11 @@ export class Sim {
     return this.s.soul.currentAvatarId === a.id;
   }
 
+  /** World mechanics that match a story flag (crossed the sea, won the võ lâm đại hội…) set it for the player. */
+  storyFlag(a: Avatar, flag: string): void {
+    if (this.isPlayer(a)) this.s.soul.story.flags[flag] = true;
+  }
+
   // ---- derived values -------------------------------------------------------------------
 
   age(a: Avatar): number {

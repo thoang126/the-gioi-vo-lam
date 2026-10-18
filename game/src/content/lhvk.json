@@ -14038,6 +14038,490 @@
    }
   }
  },
+ "titles": [
+  {
+   "id": "ascended",
+   "name": "Hợp đạo thiên địa",
+   "description": "Vượt thiên kiếp cuối cùng, hóa vào đại đạo.",
+   "priority": 100,
+   "conditions": {
+    "death_cause": [
+     "ascension"
+    ]
+   }
+  },
+  {
+   "id": "first_ascender",
+   "name": "Phi thăng tiên nhân",
+   "description": "Vượt thiên kiếp, rời Tu chân giới lên Tiên giới.",
+   "priority": 90,
+   "conditions": {
+    "has_flag": [
+     "ascended"
+    ]
+   }
+  },
+  {
+   "id": "defy_heaven_trash",
+   "name": "Phế vật nghịch thiên",
+   "description": "Sinh ra tạp linh căn trở xuống mà đạt Kim Đan.",
+   "priority": 95,
+   "conditions": {
+    "birth_spirit_root_max": "tap_linh_can",
+    "realm_min": "kim_dan"
+   }
+  },
+  {
+   "id": "sword_immortal",
+   "name": "Kiếm Tiên",
+   "description": "Kiếm ý thông thần, đạt Kim Đan.",
+   "priority": 90,
+   "conditions": {
+    "has_flag": [
+     "sword_intent"
+    ],
+    "realm_min": "kim_dan"
+   }
+  },
+  {
+   "id": "blood_demon",
+   "name": "Huyết Ma",
+   "description": "Đi con đường huyết tế.",
+   "priority": 85,
+   "conditions": {
+    "has_flag": [
+     "demonic_path"
+    ]
+   }
+  },
+  {
+   "id": "hundred_year_mortal",
+   "name": "Trăm tuổi phàm nhân",
+   "description": "Không tu tiên mà sống qua trăm tuổi.",
+   "priority": 80,
+   "conditions": {
+    "realm_max": "pham_nhan",
+    "age_min": 100
+   }
+  },
+  {
+   "id": "chosen_one",
+   "name": "Thiên tuyển chi nhân",
+   "description": "Gặp từ bốn kỳ ngộ trở lên.",
+   "priority": 75,
+   "conditions": {
+    "fortune_min": 4
+   }
+  },
+  {
+   "id": "died_for_a_pill",
+   "name": "Chết vì một bình đan",
+   "description": "Dùng đan đột phá rồi tẩu hỏa nhập ma.",
+   "priority": 70,
+   "conditions": {
+    "has_flag": [
+     "used_pill"
+    ],
+    "death_cause": [
+     "qi_deviation"
+    ]
+   }
+  },
+  {
+   "id": "devoted_lover",
+   "name": "Đạo lữ si tình",
+   "description": "Si tình mà có được người thương.",
+   "priority": 65,
+   "conditions": {
+    "has_flag": [
+     "devoted_heart",
+     "has_partner"
+    ]
+   }
+  },
+  {
+   "id": "avenger",
+   "name": "Huyết hận đã báo",
+   "description": "Báo được thù sư phụ.",
+   "priority": 60,
+   "conditions": {
+    "has_flag": [
+     "revenge_done"
+    ]
+   }
+  },
+  {
+   "id": "emperor",
+   "name": "Cửu ngũ chí tôn",
+   "description": "Ngồi lên long ỷ.",
+   "priority": 60,
+   "conditions": {
+    "has_flag": [
+     "emperor"
+    ]
+   }
+  },
+  {
+   "id": "grandmaster",
+   "name": "Nhất đại tông sư",
+   "description": "Đạt Kim Đan và có truyền nhân.",
+   "priority": 55,
+   "conditions": {
+    "has_flag": [
+     "has_disciple"
+    ],
+    "realm_min": "kim_dan"
+   }
+  },
+  {
+   "id": "martial_champion",
+   "name": "Võ lâm minh chủ",
+   "description": "Đứng đầu võ lâm đại hội.",
+   "priority": 50,
+   "conditions": {
+    "has_flag": [
+     "martial_champion"
+    ]
+   }
+  },
+  {
+   "id": "scholar",
+   "name": "Bảng vàng đề danh",
+   "description": "Đỗ đạt khoa cử.",
+   "priority": 45,
+   "conditions": {
+    "has_flag": [
+     "scholar"
+    ]
+   }
+  },
+  {
+   "id": "wealthy",
+   "name": "Phú giáp nhất phương",
+   "description": "Chết với hơn ba ngàn linh thạch.",
+   "priority": 40,
+   "conditions": {
+    "linh_thach_min": 3000
+   }
+  },
+  {
+   "id": "soldier_grave",
+   "name": "Da ngựa bọc thây",
+   "description": "Tòng quân, tử trận khi còn cầm quân.",
+   "priority": 40,
+   "conditions": {
+    "has_flag": [
+     "soldier"
+    ],
+    "path": [
+     "soldier_path"
+    ],
+    "death_cause": [
+     "battle"
+    ]
+   }
+  },
+  {
+   "id": "filial",
+   "name": "Hiếu tử",
+   "description": "Vì cha mẹ mà ở lại.",
+   "priority": 30,
+   "conditions": {
+    "has_flag": [
+     "hieu_thuan",
+     "father_dead",
+     "mother_dead"
+    ],
+    "age_min": 50
+   }
+  },
+  {
+   "id": "seated_passing",
+   "name": "Tọa hóa chân nhân",
+   "description": "Tu sĩ thọ tận tọa hóa.",
+   "priority": 25,
+   "conditions": {
+    "cultivator": true,
+    "death_cause": [
+     "old_age"
+    ]
+   }
+  },
+  {
+   "id": "unbloomed",
+   "name": "Hoa chưa kịp nở",
+   "description": "Chết trước mười hai tuổi.",
+   "priority": 20,
+   "conditions": {
+    "age": [
+     0,
+     12
+    ]
+   }
+  },
+  {
+   "id": "crossed_sea",
+   "name": "Vượt biển tìm tiên",
+   "description": "Rời Phàm giới, vượt biển đến Tu chân giới.",
+   "priority": 72,
+   "conditions": {
+    "has_flag": [
+     "crossed_sea"
+    ]
+   }
+  },
+  {
+   "id": "servant_to_immortal",
+   "name": "Tạp dịch thành tiên",
+   "description": "Từ tạp dịch đệ tử đạt Trúc Cơ.",
+   "priority": 78,
+   "conditions": {
+    "has_flag": [
+     "servant"
+    ],
+    "realm_min": "truc_co"
+   }
+  },
+  {
+   "id": "late_bloomer",
+   "name": "Đại khí vãn thành",
+   "description": "Lên núi muộn mà đạt Trúc Cơ.",
+   "priority": 68,
+   "conditions": {
+    "has_flag": [
+     "late_recruit"
+    ],
+    "realm_min": "truc_co"
+   }
+  },
+  {
+   "id": "karma_returned",
+   "name": "Thiện hữu thiện báo",
+   "description": "Ơn đã gieo, ngày sau được báo.",
+   "priority": 50,
+   "conditions": {
+    "any_flag": [
+     "favor_repaid",
+     "monk_saved",
+     "kindness_returned"
+    ]
+   }
+  },
+  {
+   "id": "peaceful_mortal",
+   "name": "Thọ chung chính tẩm",
+   "description": "Phàm nhân sống tới sáu mươi, ra đi thanh thản.",
+   "priority": 15,
+   "conditions": {
+    "realm_max": "pham_nhan",
+    "age_min": 60,
+    "death_cause": [
+     "old_age"
+    ]
+   }
+  },
+  {
+   "id": "still_water",
+   "name": "Tâm như chỉ thủy",
+   "description": "Tâm tính lúc mất từ 90 trở lên, sau tuổi ba mươi.",
+   "priority": 35,
+   "conditions": {
+    "stat_min": {
+     "tam_tinh": 90
+    },
+    "age_min": 30
+   }
+  },
+  {
+   "id": "lonely_star",
+   "name": "Thiên sát cô tinh",
+   "description": "Mệnh khắc người thân, mất cả người bên gối.",
+   "priority": 58,
+   "conditions": {
+    "trait": [
+     "kin_curse"
+    ],
+    "has_flag": [
+     "partner_lost"
+    ]
+   }
+  },
+  {
+   "id": "guild_master",
+   "name": "Đại thương gia",
+   "description": "Lập thương hội mười hai phủ.",
+   "priority": 62,
+   "conditions": {
+    "has_flag": [
+     "guild_master"
+    ]
+   }
+  },
+  {
+   "id": "upright_official",
+   "name": "Thanh thiên",
+   "description": "Làm quan không nhận một đồng hối lộ.",
+   "priority": 60,
+   "conditions": {
+    "has_flag": [
+     "upright"
+    ]
+   }
+  },
+  {
+   "id": "corrupt_official",
+   "name": "Tham quan",
+   "description": "Nhận hối lộ, xử oan người lương thiện.",
+   "priority": 55,
+   "conditions": {
+    "has_flag": [
+     "corrupt"
+    ]
+   }
+  },
+  {
+   "id": "great_general",
+   "name": "Trấn Bắc tướng quân",
+   "description": "Tử thủ giữ được thành.",
+   "priority": 66,
+   "conditions": {
+    "has_flag": [
+     "general"
+    ]
+   }
+  },
+  {
+   "id": "miracle_healer",
+   "name": "Thần y",
+   "description": "Vào vùng dịch cứu sống cả thành.",
+   "priority": 64,
+   "conditions": {
+    "has_flag": [
+     "saved_village"
+    ]
+   }
+  },
+  {
+   "id": "master_smith",
+   "name": "Thần tượng",
+   "description": "Rèn ra kiếm có linh.",
+   "priority": 58,
+   "conditions": {
+    "has_flag": [
+     "master_smith"
+    ]
+   }
+  },
+  {
+   "id": "redeemed_demon",
+   "name": "Phóng hạ đồ đao",
+   "description": "Từ bỏ ma đạo giữa đường.",
+   "priority": 74,
+   "conditions": {
+    "has_flag": [
+     "left_demonic"
+    ]
+   }
+  },
+  {
+   "id": "great_benefactor",
+   "name": "Đại thiện nhân",
+   "description": "Dành vãn niên làm việc thiện.",
+   "priority": 32,
+   "conditions": {
+    "has_flag": [
+     "merit"
+    ]
+   }
+  },
+  {
+   "id": "four_generations",
+   "name": "Tứ đại đồng đường",
+   "description": "Thành gia, con hiếu cháu đàn, sống quá sáu mươi.",
+   "priority": 52,
+   "conditions": {
+    "has_flag": [
+     "grandchild",
+     "filial_child"
+    ],
+    "age_min": 60
+   }
+  },
+  {
+   "id": "rival_slain",
+   "name": "Đạp kình địch",
+   "description": "Thắng trận sinh tử với kình địch cả đời.",
+   "priority": 76,
+   "conditions": {
+    "has_flag": [
+     "rival_slain"
+    ]
+   }
+  },
+  {
+   "id": "rival_reconciled",
+   "name": "Không đánh không quen",
+   "description": "Kình địch hóa tri kỷ.",
+   "priority": 70,
+   "conditions": {
+    "has_flag": [
+     "rival_reconciled"
+    ]
+   }
+  },
+  {
+   "id": "lifelong_partner",
+   "name": "Bạch đầu giai lão",
+   "description": "Bạn đời còn bên cạnh tới lúc sáu mươi.",
+   "priority": 54,
+   "conditions": {
+    "npc": [
+     "partner"
+    ],
+    "age_min": 60
+   }
+  },
+  {
+   "id": "betrayed",
+   "name": "Nuôi ong tay áo",
+   "description": "Bị đồ đệ phản bội.",
+   "priority": 44,
+   "conditions": {
+    "has_flag": [
+     "betrayed_by_disciple"
+    ]
+   }
+  },
+  {
+   "id": "surpassed_master",
+   "name": "Thanh xuất ư lam",
+   "description": "Vượt qua chính sư phụ của mình.",
+   "priority": 64,
+   "conditions": {
+    "has_flag": [
+     "surpassed_master"
+    ]
+   }
+  },
+  {
+   "id": "saved_master",
+   "name": "Tôn sư trọng đạo",
+   "description": "Liều mạng cứu sư phụ khỏi vòng vây.",
+   "priority": 62,
+   "conditions": {
+    "has_flag": [
+     "saved_master"
+    ]
+   }
+  }
+ ],
+ "scoring": {
+  "realmWeight": 100,
+  "fortuneWeight": 50,
+  "titleWeight": 30,
+  "ascensionBonus": 5000,
+  "maxTitles": 3
+ },
  "deathCauses": {
   "old_age": {
    "name": "Thọ tận tọa hóa",

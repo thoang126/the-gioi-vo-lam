@@ -32,6 +32,7 @@ export function createWorld(seed: number, opts: CreateOptions = {}): WorldState 
       lives: [], currentAvatarId: null, points: 0,
       memories: { manhBa: 0, luck: 0, technique: 0 },
       pastLinks: {}, metThisLife: [], pending: null, autoplay: opts.autoplay ?? false, rebirthAt: null, habit: null, story: newStory(),
+      codex: {}, achievements: [], counters: { reunions: 0, ownGraves: 0, sectLeader: 0, crossedSea: 0 },
     },
     stats: { births: 0, deaths: 0, ascensions: 0, maxRealmEver: 0 },
   };
@@ -122,6 +123,27 @@ function seedSettlements(sim: Sim): void {
       }
     }
   }
+}
+
+/** Fills fields added after a save was written, so older saves keep working. */
+export function migrateWorld(s: WorldState): WorldState {
+  const soul = s.soul;
+  soul.codex ??= {};
+  soul.achievements ??= [];
+  soul.counters ??= { reunions: 0, ownGraves: 0, sectLeader: 0, crossedSea: 0 };
+  soul.memories.sight ??= 0;
+  for (const l of soul.lives) l.paths ??= [];
+  // Saves from before Kiếp Sách: rebuild what the life records still tell.
+  if (!Object.keys(soul.codex).length && soul.lives.length) {
+    const add = (cat: string, id: string) => { const l = (soul.codex[cat] ??= []); if (!l.includes(id)) l.push(id); };
+    for (const l of soul.lives) {
+      add('roots', l.rootId);
+      add('birthplaces', l.bornRegion);
+      add('deaths', l.cause);
+      for (const r of REALMS) if (r.rank <= l.realm) add('realms', r.id);
+    }
+  }
+  return s;
 }
 
 export interface StepResult {

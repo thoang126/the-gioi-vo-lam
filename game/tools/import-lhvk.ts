@@ -68,6 +68,9 @@ const out = {
     roots: byId(read('birth/spirit-roots.yaml'), (o: { modifiers?: unknown }) => o.modifiers ?? {}),
     physiques: byId(read('birth/physiques.yaml'), (o: { modifiers?: unknown }) => o.modifiers ?? {}),
   },
+  // Life titles (GDD 6.3), without the two that need Tiên giới realms.
+  titles: read('scoring/titles.yaml').filter((t: { conditions: { realm_min?: string } }) => !(t.conditions.realm_min && IMMORTAL_REALMS.has(realmIdOf(t.conditions.realm_min)))),
+  scoring: read('scoring/scoring.yaml'),
   deathCauses: byId(read('mortality/mortality.yaml').causes, (c: { name: string; told?: unknown }) => ({ name: c.name, told: c.told ?? null })),
 };
 

@@ -171,6 +171,8 @@ export interface StoryState {
   pathHistory: { slot: string; id: string; from: number; to: number | null }[];
   /** Age of the last yearly story roll. */
   lastYear: number;
+  /** Spirit root the character was born with (titles like "Phế vật nghịch thiên" look at it). */
+  birthRoot?: string;
 }
 
 export interface Soul {
@@ -178,7 +180,7 @@ export interface Soul {
   currentAvatarId: number | null;
   points: number;
   /** Levels of past-life memories (GDD LHVK §9). */
-  memories: { manhBa: number; luck: number; technique: number };
+  memories: { manhBa: number; luck: number; technique: number; sight?: number };
   /** Avatars bound to a past incarnation: id → what they were to it. */
   pastLinks: Record<number, { life: number; kind: RelationKind | 'self_grave' }>;
   /** Past-life reunions already shown in the current life. */
@@ -191,6 +193,11 @@ export interface Soul {
    */
   habit: { id: string | null; askedAt: number; sig: string } | null;
   story: StoryState;
+  /** Kiếp Sách: everything this soul has been, by category. */
+  codex: Record<string, string[]>;
+  /** Soul titles earned (ids from content/soul.ts). */
+  achievements: string[];
+  counters: { reunions: number; ownGraves: number; sectLeader: number; crossedSea: number };
   /** While the soul waits in the cycle of rebirth: the month it is born again. */
   rebirthAt: number | null;
 }

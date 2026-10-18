@@ -9,7 +9,7 @@ bia mộ của chính mình.
 
 ```bash
 npm install
-npm test            # 14 test: tái lập theo seed và lựa chọn, lưu/tải, dân số, tông môn, luân hồi, event
+npm test            # 19 test: tái lập theo seed và lựa chọn, lưu/tải, dân số, tông môn, luân hồi, event
 npm run import:lhvk # nhập lại event từ repo luan-hoi-van-kiep (mặc định ../../luan-hoi-van-kiep)
 npm run sim -- --years 300 --seed 7 --news   # mô phỏng không giao diện để cân bằng
 npm run analyze -- --worlds 30 --years 400   # chỉ số trải nghiệm người chơi (nhịp, lựa chọn, cái chết, tiến trình)
@@ -51,6 +51,15 @@ diễn dịch `src/story.ts`, giữ đúng luật của game gốc:
 - **Người quen nhờ cậy:** 6 event `acquaintance` chọn `{who}` trong số người thật có quan hệ với người chơi.
 - **Chưa nhập:** danh sách tin tức người quen trong `people.yaml` và thiên phú (`traits.yaml`); thế giới mới đã có
   cơ chế gặp gỡ và tin giang hồ riêng.
+
+## Mục tiêu của linh hồn
+
+- **Danh hiệu cuối đời:** 41 danh hiệu của Luân Hồi Vạn Kiếp, tối đa 3 mỗi kiếp, cộng vào Đạo Quả và hiện trên bia mộ.
+- **Kiếp Sách:** 112 mục trong 8 nhóm (linh căn, thể chất, xuất thân, nơi sinh, đạo đồ, cảnh giới, danh hiệu, cách chết).
+- **Danh hiệu linh hồn:** 19 thành tựu (`src/content/soul.ts`), mỗi cái cộng Luân Hồi Điểm; tab Kiếp Sách hiện 3 mục tiêu gần nhất.
+- **Vạn Cổ Bia:** 20 kiếp có Đạo Quả cao nhất trên máy, giữ qua mọi thế giới.
+- **Ký ức Lục đạo thị giác:** thấy tỉ lệ thành công trước khi chọn.
+- **Phi thăng:** có thể khép lại linh hồn và bắt đầu linh hồn mới.
 
 ## Tiên duyên
 

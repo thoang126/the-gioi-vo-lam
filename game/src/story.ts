@@ -518,7 +518,12 @@ function offerEvent(x: Ctx, e: StoryEvent, options: { choice: Choice; index: num
   const prompt = render(x, e.text, vars);
   const data: Record<string, string | number> = { event: e.id, prompt };
   for (const [k, v] of Object.entries(x.cast)) if (v !== undefined) data[`cast_${k}`] = v;
-  return { kind: 'event', prompt: `${e.title}. ${prompt}`, options: options.map(({ choice, index }) => ({ id: `c${index}`, label: choice.label })), data };
+  const sight = (x.sim.s.soul.memories.sight ?? 0) > 0;
+  const odds = (index: number) => {
+    const p = sight ? choiceOdds(x.sim, x.a, e.id, `c${index}`) : null;
+    return p === null ? undefined : `Lục đạo thị giác: ${Math.round(p * 100)}% thành công`;
+  };
+  return { kind: 'event', prompt: `${e.title}. ${prompt}`, options: options.map(({ choice, index }) => ({ id: `c${index}`, label: choice.label, hint: odds(index) })), data };
 }
 
 /** Runs once per year of the player's life. Returns a choice when one is needed. */
@@ -643,3 +648,41 @@ export function pathNames(sim: Sim): string[] {
   return Object.values(sim.s.soul.story.paths).filter((p): p is { id: string; since: number } => !!p).map((p) => PATH_BY_ID[p.id]?.name ?? p.id);
 }
 
+
+// ---- life titles (GDD LHVK 6.3) -------------------------------------------------------------
+
+const LHVK_CAUSE: Partial<Record<DeathCause, string>> = {
+  child: 'illness', beast: 'battle', war: 'battle', sea: 'illness', doom: 'illness',
+};
+
+/** Up to `maxTitles` life titles by priority, evaluated when the player's character dies. */
+export function lifeTitles(sim: Sim, a: Avatar): string[] {
+  const st = sim.s.soul.story;
+  const x: Ctx = { sim, a, st, cast: {} };
+  const cause = a.deathCause ? (LHVK_CAUSE[a.deathCause] ?? a.deathCause) : null;
+  const birthRoot = st.birthRoot ?? a.rootId;
+  const won = LHVK.titles.filter((t) => {
+    const c = t.conditions;
+    if (c.death_cause && (!cause || !c.death_cause.includes(cause))) return false;
+    if (c.fortune_min !== undefined && a.fortunes < c.fortune_min) return false;
+    if (c.crossroads_min !== undefined && st.crossroads < c.crossroads_min) return false;
+    if (c.birth_spirit_root_max && rootTierOf(birthRoot) > rootTierOf(c.birth_spirit_root_max)) return false;
+    if (c.event && !c.event.some((id) => (st.seen[id] ?? 0) > 0)) return false;
+    if (c.age_min !== undefined && sim.age(a) < c.age_min) return false;
+    const { death_cause: _d, fortune_min: _f, crossroads_min: _c, birth_spirit_root_max: _b, event: _e, age_min: _a, ...rest } = c;
+    return matches(x, rest);
+  });
+  return won.sort((p, q) => q.priority - p.priority).slice(0, LHVK.scoring.maxTitles).map((t) => t.id);
+}
+
+/** Success chance of a choice, when it can be known before choosing (Lục đạo thị giác). */
+export function choiceOdds(sim: Sim, a: Avatar, eventId: string, optionId: string): number | null {
+  const ch = EVENT_BY_ID[eventId]?.choices?.[Number(optionId.slice(1))];
+  const check = ch?.check;
+  if (!check || 'battle' in check) return null;
+  if ('chance' in check) return check.chance;
+  const x: Ctx = { sim, a, st: sim.s.soul.story, cast: {} };
+  const v = statValue(x, check.stat);
+  if ('min' in check) return v >= (typeof check.min === 'number' ? check.min : rootTierOf(check.min)) ? 1 : 0;
+  return Math.min(0.95, Math.max(0.05, 0.5 + (v - check.difficulty) / 100));
+}
