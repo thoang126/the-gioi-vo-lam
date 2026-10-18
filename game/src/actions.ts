@@ -660,7 +660,7 @@ export const ACTIONS: ActionDef[] = [
     },
     finish: (sim, a, _t, st) => {
       const r = st?.recipe ? RECIPE_BY_PILL[st.recipe] : undefined;
-      if (!r) return;
+      if (!r || !a.alchemy) return;
       const res = brew(sim, a, r, st?.heat ?? 0);
       if (sim.isPlayer(a)) {
         if (res.quality !== null) { const l = (sim.s.soul.codex.pills ??= []); if (!l.includes(r.pill)) l.push(r.pill); }

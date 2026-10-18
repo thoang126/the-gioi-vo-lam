@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advance, choose, createWorld, migrateWorld, REALMS, REGION_BY_ID, Sim } from '../src/index';
+import { advance, choose, createWorld, LHVK, migrateWorld, REALMS, REGION_BY_ID, Sim } from '../src/index';
 import { ACTION_BY_ID, breakthroughChance, pillFor, startAction } from '../src/actions';
 import {
   addItem, autoUsePills, brew, countItem, itemName, learnAlchemy, sellSurplus, takeItem,
@@ -102,6 +102,8 @@ describe('brewing', () => {
 
   it('stops the world at the furnace for the player and brews with the heat chosen', () => {
     const { s, sim, a } = alchemistPlayer(6);
+    // Life milestones (Chọn đạo…) could send the character off to a sect mid-brew; keep them out of the way.
+    for (const e of LHVK.events) if (e.kind === 'milestone') s.soul.story.seen[e.id] = 1;
     for (const [h, n] of RECIPE_BY_PILL.tu_khi_dan!.ingredients) addItem(a, h, 1, n);
     startAction(sim, a, ACTION_BY_ID.luyen_dan!);
     expect(a.action?.recipe).toBe('tu_khi_dan');
