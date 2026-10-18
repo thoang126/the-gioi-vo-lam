@@ -1,6 +1,7 @@
 import type { Element } from './content/cultivation';
 import type { SectRankId, WorldId } from './content/world';
 import type { FightRecord, SoulSeal, TacticId } from './battle-engine';
+import type { ClanKind, Race } from './content/peoples';
 
 export type Gender = 'male' | 'female';
 export type RelationKind = 'master' | 'disciple' | 'partner' | 'rival' | 'friend' | 'enemy' | 'parent' | 'child';
@@ -89,6 +90,10 @@ export interface Avatar {
   /** Set on the avatar the player's soul currently inhabits, and kept on past incarnations. */
   soulLife: number | null;
   titles: string[];
+  /** Missing on avatars from older saves: human. */
+  race?: Race;
+  traits?: string[];
+  clanId?: string | null;
 }
 
 export type EventKind =
@@ -125,6 +130,22 @@ export interface SectState {
   relations: Record<string, number>;
   wars: Record<string, { since: number }>;
   prestige: number;
+}
+
+/** A clan (gia tộc, thế gia). Founding clans come from content; new ones are founded in play. */
+export interface ClanState {
+  id: string;
+  name: string;
+  surname: string;
+  kind: ClanKind;
+  seat: string;
+  headId: number | null;
+  prestige: number;
+  /** Other clan id → stance −100…100. */
+  relations: Record<string, number>;
+  foundedMonth: number;
+  extinctMonth: number | null;
+  technique: { name: string; grade: number; element: Element | null } | null;
 }
 
 export interface ChoiceOption {
@@ -200,7 +221,7 @@ export interface Soul {
   codex: Record<string, string[]>;
   /** Soul titles earned (ids from content/soul.ts). */
   achievements: string[];
-  counters: { reunions: number; ownGraves: number; sectLeader: number; crossedSea: number };
+  counters: { reunions: number; ownGraves: number; sectLeader: number; crossedSea: number; clanHead?: number; clanFounded?: number; yeuLives?: number };
   /** No breakthrough crossroad before this month (the player chose "chưa vội"). */
   btSnoozeUntil?: number;
   /** Tactic the player's characters fight with (GDD 8.5). */
@@ -224,6 +245,8 @@ export interface WorldState {
   /** Dead avatars are pruned from `avatars` after a while; graves keep the memory. */
   graves: Grave[];
   sects: Record<string, SectState>;
+  /** Missing in saves from before clans. */
+  clans?: Record<string, ClanState>;
   events: WorldEvent[];
   /** Region id → month the secret realm closes, when open. */
   secretRealmOpenUntil: number;

@@ -10,3 +10,4 @@ export { pathNames } from './story';
 export * from './content/cultivation';
 export * from './content/world';
 export type * from './types';
+export { CLAN, CLANS, CLAN_KIND_NAMES, TRAITS, TRAIT_BY_ID } from './content/peoples';

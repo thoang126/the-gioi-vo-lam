@@ -51,6 +51,7 @@ header.bar { display: grid; grid-template-columns: auto 1fr auto; align-items: c
 .seg-btn:first-child { border-left: none; }
 .seg-btn:hover:not(:disabled) { background: var(--paper-3); }
 .seg-btn.on { background: var(--ink); color: var(--paper); }
+#mapview { flex-wrap: wrap; max-width: 100%; justify-self: auto; }
 .seg.small .seg-btn { padding: 4px 10px; font-size: .82rem; }
 .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
 .btn { border: 1px solid var(--line); background: var(--paper-2); padding: 6px 12px; border-radius: 4px; }
@@ -72,6 +73,9 @@ label.toggle { display: inline-flex; align-items: center; gap: 6px; font-size: .
 .map-wrap { border: 1px solid var(--line); border-radius: 4px; background: var(--sea); overflow: hidden; }
 .map-wrap svg { display: block; width: 100%; height: auto; max-height: 70vh; }
 .land { fill: var(--paper-2); stroke: var(--ink); stroke-opacity: .45; stroke-width: 1.3; }
+.land.evil { fill: color-mix(in srgb, var(--paper-2) 82%, #7a1f1f); }
+.land.wildland { fill: color-mix(in srgb, var(--paper-2) 82%, #2f6b3a); }
+.land.heaven { fill: color-mix(in srgb, var(--paper-2) 85%, #c9a227); stroke-dasharray: 6 4; }
 .route { stroke: var(--ink); stroke-opacity: .18; stroke-width: 1.2; fill: none; }
 .route.sea { stroke: var(--seal); stroke-opacity: .7; stroke-dasharray: 6 5; }
 .war-line { stroke: var(--seal); stroke-width: 2.5; stroke-dasharray: 3 4; fill: none; }
@@ -84,6 +88,8 @@ label.toggle { display: inline-flex; align-items: center; gap: 6px; font-size: .
 .region text { font-family: var(--font-display); font-weight: 700; font-size: 14px; fill: var(--ink); paint-order: stroke; stroke: var(--paper-2); stroke-width: 4px; stroke-linejoin: round; }
 .region .count { font-family: var(--font-body); font-size: 10.5px; font-weight: 500; fill: var(--ink-2); }
 .view-mortal .region text, .view-cultivation .region text { font-size: 12px; }
+.view-overseas .region text, .view-demonic .region text, .view-demon_beast .region text { font-size: 10px; }
+.view-overseas .region .count, .view-demonic .region .count, .view-demon_beast .region .count { font-size: 8px; }
 .view-mortal .region .count, .view-cultivation .region .count { font-size: 9.5px; }
 .player-ring { fill: none; stroke: var(--seal); stroke-width: 2.5; }
 .player-ring.waiting { animation: pulse 1.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }

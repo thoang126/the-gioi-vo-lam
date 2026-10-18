@@ -4,6 +4,9 @@ import {
 } from './content/cultivation';
 import { REGIONS, ROUTES, SECTS, SECT_RANKS, WORLDS, type Region, type SectDef } from './content/world';
 import { LHVK, PATH_BY_ID, type Modifiers } from './content/lhvk';
+import {
+  CLAN, CLAN_ORIGIN, TRAITS, TRAIT_BY_ID, TRAIT_COUNT, YEU_BIRTH_CHANCE, YEU_LIFESPAN_MULT, YEU_SURNAMES, type Race,
+} from './content/peoples';
 import { Rng } from './rng';
 import type {
   Avatar, DeathCause, EventKind, Gender, Grave, RelationKind, WorldEvent, WorldState,
@@ -93,8 +96,11 @@ export class Sim {
   }
 
   lifespan(a: Avatar): number {
-    return REALMS[a.realm]!.lifespan + (a.physiqueId === 'hoang_co_thanh_the' ? 30 : 0) + a.lifespanBonus
-      + (this.mods(a).lifespanBonus ?? 0);
+    let traitBonus = 0;
+    for (const t of a.traits ?? []) traitBonus += TRAIT_BY_ID[t]?.modifiers?.lifespanBonus ?? 0;
+    const base = REALMS[a.realm]!.lifespan * (a.race === 'yeu' ? YEU_LIFESPAN_MULT : 1);
+    return Math.round(base) + (a.physiqueId === 'hoang_co_thanh_the' ? 30 : 0) + a.lifespanBonus
+      + (this.mods(a).lifespanBonus ?? 0) + (this.isPlayer(a) ? 0 : traitBonus);
   }
 
   /**
@@ -105,6 +111,7 @@ export class Sim {
     if (!this.isPlayer(a)) return NO_MODS;
     const parts: Modifiers[] = [];
     for (const p of Object.values(this.s.soul.story.paths)) if (p) parts.push(PATH_BY_ID[p.id]?.modifiers ?? {});
+    for (const t of a.traits ?? []) parts.push(TRAIT_BY_ID[t]?.modifiers ?? {});
     for (const m of [LHVK.birthMods.origins[a.originId], LHVK.birthMods.roots[a.rootId], a.physiqueId ? LHVK.birthMods.physiques[a.physiqueId] : undefined]) {
       if (m) parts.push({ eventTagWeightMult: m.eventTagWeightMult, fortuneWeightMult: m.fortuneWeightMult, calamityWeightMult: m.calamityWeightMult });
     }
@@ -164,6 +171,7 @@ export class Sim {
   /** True when the avatar sits at the top stage with enough tu vi for the next big realm. */
   readyToBreak(a: Avatar): boolean {
     const r = REALMS[a.realm]!;
+    if (REGION_BY_ID[a.regionId]!.world === 'immortal' && r.rank >= REALMS.length - 1) return false;
     return r.breakthrough !== null && a.stage === r.stages.length - 1 && a.tuVi >= r.stageCost;
   }
 
@@ -263,8 +271,21 @@ export class Sim {
 
   // ---- birth --------------------------------------------------------------------------
 
-  makeName(gender: Gender): string {
-    const sur = this.rng.pick(NAMES.surnames);
+  rollTraits(): string[] {
+    let r = this.rng.next();
+    let n = 0;
+    while (n < TRAIT_COUNT.length - 1 && r >= TRAIT_COUNT[n]!) { r -= TRAIT_COUNT[n]!; n += 1; }
+    const out: string[] = [];
+    for (let i = 0; i < n; i++) {
+      const pool = TRAITS.filter((t) => !out.includes(t.id) && !out.some((o) => TRAIT_BY_ID[o]!.excludes?.includes(t.id) || t.excludes?.includes(o)));
+      if (!pool.length) break;
+      out.push(this.rng.weighted(pool, (t) => t.weight).id);
+    }
+    return out;
+  }
+
+  makeName(gender: Gender, surname?: string): string {
+    const sur = surname ?? this.rng.pick(NAMES.surnames);
     const pool = gender === 'male' ? NAMES.male : NAMES.female;
     const first = this.rng.pick(pool);
     if (this.rng.chance(NAMES.doubleGivenChance)) {
@@ -302,9 +323,18 @@ export class Sim {
     luckBonus?: number;
     /** Floor for P(has a spirit root), used by the player's tiên duyên. */
     rootedChance?: number;
+    race?: Race;
+    /** Born into this clan: takes its surname, origin and clan technique. */
+    clanId?: string;
+    /** Children of known parents inherit a clan only from them. */
+    noClan?: boolean;
   }): Avatar {
     const region = REGION_BY_ID[opts.regionId]!;
-    const origin = opts.originId
+    const race: Race = opts.race ?? (region.world === 'demon_beast' && this.rng.chance(YEU_BIRTH_CHANCE) ? 'yeu' : 'human');
+    let clan = opts.clanId ? this.s.clans?.[opts.clanId] : undefined;
+    const origin = clan && !opts.originId
+      ? ORIGIN_BY_ID[CLAN_ORIGIN[clan.kind]]!
+      : opts.originId
       ? ORIGIN_BY_ID[opts.originId]!
       : this.rng.weighted(ORIGINS.filter((o) => o.regionKinds.includes(region.kind)).length
         ? ORIGINS.filter((o) => o.regionKinds.includes(region.kind))
@@ -326,10 +356,30 @@ export class Sim {
     if (physiqueId === 'linh_lung_tam') stats.tamTinh = Math.min(100, stats.tamTinh + 20);
     if (physiqueId === 'cuu_am_tuyet_mach') stats.ngoTinh = Math.min(100, stats.ngoTinh + 15);
 
+    const traits = this.rollTraits();
+    const STAT_FIELD = { can_cot: 'canCot', ngo_tinh: 'ngoTinh', khi_van: 'khiVan', tam_tinh: 'tamTinh', mi_luc: 'miLuc' } as const;
+    for (const t of traits) {
+      for (const [k, v] of Object.entries(TRAIT_BY_ID[t]!.statMods ?? {})) {
+        const f = STAT_FIELD[k as keyof typeof STAT_FIELD];
+        stats[f] = Math.max(1, Math.min(100, stats[f] + v!));
+      }
+    }
+    // Children of the old houses of a world are born into one of its clans.
+    if (!clan && !opts.originId && !opts.noClan && this.s.clans) {
+      const kinds = Object.entries(CLAN_ORIGIN).filter(([k, o]) => o === origin.id && (k !== 'yeu')).map(([k]) => k);
+      const open = Object.values(this.s.clans).filter((c) => c.extinctMonth === null && REGION_BY_ID[c.seat]!.world === region.world
+        && (race === 'yeu' ? c.kind === 'yeu' : kinds.includes(c.kind)));
+      const atSeat = open.filter((c) => c.seat === region.id);
+      // Branch families (chi thứ) at the seat keep a clan going even when the main line thins out.
+      const branch = Object.values(this.s.clans).filter((c) => c.extinctMonth === null && c.seat === region.id && (c.kind === 'yeu') === (race === 'yeu'));
+      if (atSeat.length && this.rng.chance(0.7)) clan = this.rng.pick(atSeat);
+      else if (branch.length && this.rng.chance(CLAN.branchBirth)) clan = this.rng.pick(branch);
+      else if (open.length && this.rng.chance(race === 'yeu' ? 0.15 : 0.3)) clan = this.rng.pick(open);
+    }
     const virtueBase = (stats.tamTinh - 50) / 60 + this.rng.range(-0.6, 0.6);
     const a: Avatar = {
       id: this.s.nextId++,
-      name: this.makeName(gender),
+      name: this.makeName(gender, clan?.surname ?? (race === 'yeu' ? this.rng.pick(YEU_SURNAMES) : undefined)),
       gender,
       birthMonth: opts.birthMonth ?? this.s.month,
       regionId: region.id,
@@ -373,8 +423,12 @@ export class Sim {
       relations: {},
       soulLife: null,
       titles: [],
+      race,
+      traits,
+      clanId: clan?.id ?? null,
     };
-    if (root.rootId !== 'none' && origin.clanTechnique) a.technique = this.pickTechnique(1, a.elements);
+    if (root.rootId !== 'none' && clan?.technique) a.technique = { ...clan.technique };
+    else if (root.rootId !== 'none' && origin.clanTechnique) a.technique = this.pickTechnique(1, a.elements);
     this.s.avatars[a.id] = a;
     this.s.stats.births += 1;
     return a;
@@ -385,7 +439,9 @@ export class Sim {
     const band = MORTALITY.childhood.find((b) => age >= b.ages[0]! && age <= b.ages[1]!);
     if (!band) return 0;
     const cc = Math.min(2.5, Math.max(0.4, 1 - (a.stats.canCot - 50) * 0.02));
-    return band.annual * cc * (ORIGIN_BY_ID[a.originId]?.childMortalityMult ?? 1);
+    let traitMult = 1;
+    for (const t of a.traits ?? []) traitMult *= TRAIT_BY_ID[t]?.modifiers?.childMortalityMult ?? 1;
+    return band.annual * cc * (ORIGIN_BY_ID[a.originId]?.childMortalityMult ?? 1) * traitMult;
   }
 }
 

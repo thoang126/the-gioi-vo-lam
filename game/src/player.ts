@@ -13,6 +13,8 @@ import { joinSect } from './phases';
 import { autoChoose, lifeTitles, newStory, pathNames, resolveStoryChoice, storyYear } from './story';
 import { LHVK } from './content/lhvk';
 import { SOUL_TITLES } from './content/soul';
+import { CLAN_KIND_NAMES, CLANS, TRAIT_BY_ID } from './content/peoples';
+import { clanOf, foundClan, setHead } from './clans';
 
 export const MEMORIES = {
   manhBa: { name: 'Mạnh Bà quên uống', desc: '+1 mọi chỉ số gốc mỗi cấp', cost: (lvl: number) => 30 * (lvl + 1), max: 10 },
@@ -95,6 +97,46 @@ function resolveOffer(sim: Sim, choice: PendingChoice, optionId: string): void {
       else sim.relate(a, rival, 'rival', 'rival', -40);
       sim.log('sect', `${a.name} tranh chức chưởng môn ${sect.name} nhưng thua ${rival.name}.`, [a.id, rival.id], { regionId: a.regionId });
     }
+  } else if (d.offer === 'clan_head') {
+    const clan = sim.s.clans?.[String(d.clan)];
+    const rival = sim.get(Number(d.rival));
+    if (!clan || optionId !== 'accept' || !rival || !rival.alive || a.clanId !== clan.id) {
+      if (rival) sim.relate(a, rival, 'friend', 'friend', 40);
+      sim.log('relation', `${a.name} cúi đầu trước ${rival?.name ?? 'người kế vị'} ở từ đường ${clan?.name ?? ''}.`, [a.id], { regionId: a.regionId });
+      return;
+    }
+    const res = duel(sim, a, rival, 0.05);
+    if (res.winner === a) {
+      setHead(sim, clan, a);
+      sim.log('world', clan.kind === 'royal'
+        ? `${a.name} đánh bại ${rival.name}, lên ngôi hoàng đế Đại Hạ.`
+        : `${a.name} thắng ${rival.name} trước từ đường, lên làm ${clan.kind === 'yeu' ? 'tộc trưởng' : 'gia chủ'} ${clan.name}.`, [a.id, rival.id], { regionId: a.regionId, major: true });
+    } else {
+      if (res.killed) sim.kill(a, 'battle', `Chết trong trận tranh ${clan.kind === 'royal' ? 'ngôi' : 'chức gia chủ'} với ${rival.name}`, rival);
+      else sim.relate(a, rival, 'rival', 'rival', -40);
+      sim.log('relation', `${a.name} tranh chức với ${rival.name} nhưng thua.`, [a.id, rival.id], { regionId: a.regionId });
+    }
+  } else if (d.offer === 'clan_marriage') {
+    const o = sim.get(Number(d.other));
+    const x = sim.s.clans?.[String(d.a)];
+    const y = sim.s.clans?.[String(d.b)];
+    if (!o || !o.alive || !x || !y) return;
+    if (optionId === 'accept') {
+      sim.relate(a, o, 'partner', 'partner', 50);
+      sim.s.soul.story.flags.married = true;
+      if (a.realm >= 1 && o.realm >= 1) sim.s.soul.story.flags.dao_partner = true;
+      x.relations[y.id] = y.relations[x.id] = Math.min(100, (x.relations[y.id] ?? 0) + 15);
+      sim.log('relation', `${x.name} và ${y.name} kết thông gia: ${a.name} thành thân với ${o.name}.`, [a.id, o.id], { regionId: a.regionId });
+    } else {
+      x.relations[y.id] = y.relations[x.id] = (x.relations[y.id] ?? 0) - 15;
+      const head = sim.get(clanOf(sim, a)?.headId);
+      if (head && head.id !== a.id) { const r = a.relations[head.id]; if (r) r.bond -= 20; }
+      sim.log('relation', `${a.name} cự tuyệt hôn sự gia tộc sắp đặt. Hai nhà mất mặt.`, [a.id, o.id], { regionId: a.regionId });
+    }
+  } else if (d.offer === 'found_clan') {
+    if (optionId !== 'accept' || a.clanId) return;
+    const kids = Object.entries(a.relations).filter(([, r]) => r.kind === 'child').map(([id]) => sim.get(Number(id))).filter((k): k is Avatar => !!k?.alive);
+    foundClan(sim, a, kids);
   } else if (d.offer === 'partner') {
     const o = sim.get(Number(d.other));
     if (!o || !o.alive) return;
@@ -300,7 +342,8 @@ function reunions(sim: Sim, a: Avatar): void {
 export function checkPlayerDeath(sim: Sim): void {
   const soul = sim.s.soul;
   const a = playerAvatar(sim);
-  if (!a || a.alive) return;
+  // An ascended avatar lives on in Tiên giới, but the soul's life with it is over.
+  if (!a || (a.alive && a.deathCause !== 'ascension')) return;
   const index = soul.lives.length;
   // Life titles (GDD 6.3) first, then the world's own honours (võ lâm minh chủ, quan lại…) if room is left.
   const titleIds = lifeTitles(sim, a);
@@ -325,6 +368,8 @@ export function checkPlayerDeath(sim: Sim): void {
   }
   const gained = Math.floor(dq / 100) + 10;
   soul.points += gained;
+  if (a.race === 'yeu') soul.counters.yeuLives = (soul.counters.yeuLives ?? 0) + 1;
+  if (a.alive) { a.deathCause = null; a.deathText = null; a.deathMonth = null; }
   soul.currentAvatarId = null;
   soul.metThisLife = [];
   soul.pending = null;
@@ -432,12 +477,18 @@ export function reborn(sim: Sim): Avatar {
   remember(sim, 'origins', [a.originId]);
   remember(sim, 'birthplaces', [region.id]);
   if (a.physiqueId) remember(sim, 'physiques', [a.physiqueId]);
+  remember(sim, 'traits', a.traits ?? []);
+  if (a.clanId && CLANS.some((c) => c.id === a.clanId)) remember(sim, 'clans', [a.clanId]);
+  for (const t of a.traits ?? []) for (const f of TRAIT_BY_ID[t]?.startFlags ?? []) soul.story.flags[f] = true;
   const last = soul.lives[soul.lives.length - 1];
   if (last?.technique && sim.rootTier(a) > 0 && sim.rng.chance(0.05 * soul.memories.technique)) {
     a.technique = TECHNIQUES.find((t) => t.name === last.technique) ?? a.technique;
     sim.log('soul', `${a.name} vừa biết nói đã lẩm nhẩm khẩu quyết ${a.technique?.name}. Người lớn tưởng trẻ con nói mớ.`, [a.id], { regionId: a.regionId });
   }
   const origin = { commoner: 'nhà nông', beggar: 'kẻ ăn mày', merchant: 'nhà buôn', martial_clan: 'võ lâm thế gia', cultivator_clan: 'tu tiên thế gia', sect_born: 'tông môn', royal: 'hoàng tộc' }[a.originId] ?? '';
-  sim.log('soul', `Kiếp thứ ${soul.lives.length + 1}: một tiếng khóc chào đời trong ${origin} ở ${region.name} (${WORLDS[world].name}). Đứa trẻ tên ${a.name}.`, [a.id], { regionId: region.id, major: false });
+  const clan = clanOf(sim, a);
+  const house = clan ? `${CLAN_KIND_NAMES[clan.kind].toLowerCase()} ${clan.name}` : origin;
+  const traits = (a.traits ?? []).map((t) => TRAIT_BY_ID[t]?.name).filter(Boolean);
+  sim.log('soul', `Kiếp thứ ${soul.lives.length + 1}: ${a.race === 'yeu' ? 'một yêu tộc nhỏ mở mắt' : 'một tiếng khóc chào đời'} trong ${house} ở ${region.name} (${WORLDS[world].name}). Đứa trẻ tên ${a.name}.${traits.length ? ` Trời sinh: ${traits.join(', ')}.` : ''}`, [a.id], { regionId: region.id, major: false });
   return a;
 }

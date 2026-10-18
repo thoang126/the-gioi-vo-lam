@@ -13970,6 +13970,352 @@
    "Bách Chướng sơn mạch"
   ]
  },
+ "traits": [
+  {
+   "id": "cautious",
+   "name": "Cẩn trọng",
+   "kind": "talent",
+   "description": "Việc gì cũng nghĩ ba lần, hiếm khi rơi vào hiểm cảnh.",
+   "weight": 10,
+   "modifiers": {
+    "calamityWeightMult": 0.7,
+    "choiceTagMult": {
+     "cautious": 2,
+     "bold": 0.5
+    }
+   },
+   "excludes": [
+    "hot_blooded"
+   ]
+  },
+  {
+   "id": "luck_child",
+   "name": "Khí vận chi tử",
+   "kind": "talent",
+   "description": "Đi đường cũng nhặt được bảo vật.",
+   "weight": 4,
+   "statMods": {
+    "khi_van": 15
+   },
+   "modifiers": {
+    "fortuneWeightMult": 1.4
+   },
+   "excludes": [
+    "jinx"
+   ]
+  },
+  {
+   "id": "alchemy_genius",
+   "name": "Đan đạo kỳ tài",
+   "kind": "talent",
+   "description": "Ngửi mùi thảo dược là biết dược tính.",
+   "weight": 6,
+   "startFlags": [
+    "alchemy_talent"
+   ],
+   "modifiers": {
+    "eventTagWeightMult": {
+     "alchemy": 3
+    }
+   }
+  },
+  {
+   "id": "sword_heart",
+   "name": "Kiếm tâm thông minh",
+   "kind": "talent",
+   "description": "Cầm kiếm như cầm bút, tự nhiên thành chiêu.",
+   "weight": 5,
+   "startFlags": [
+    "sword_talent"
+   ],
+   "modifiers": {
+    "eventTagWeightMult": {
+     "sword": 2
+    }
+   }
+  },
+  {
+   "id": "quick_learner",
+   "name": "Thông tuệ",
+   "kind": "talent",
+   "description": "Đọc qua một lần là nhớ.",
+   "weight": 8,
+   "statMods": {
+    "ngo_tinh": 10
+   }
+  },
+  {
+   "id": "iron_body",
+   "name": "Thân thể cường tráng",
+   "kind": "talent",
+   "description": "Ít khi đau ốm.",
+   "weight": 8,
+   "statMods": {
+    "can_cot": 10
+   },
+   "modifiers": {
+    "childMortalityMult": 0.5,
+    "naturalMortalityMult": 0.8
+   },
+   "excludes": [
+    "sickly"
+   ]
+  },
+  {
+   "id": "charming",
+   "name": "Phong tư tuyệt thế",
+   "kind": "talent",
+   "description": "Đi đến đâu cũng có người ngoái nhìn.",
+   "weight": 6,
+   "statMods": {
+    "mi_luc": 15
+   },
+   "modifiers": {
+    "eventTagWeightMult": {
+     "romance": 2
+    }
+   }
+  },
+  {
+   "id": "steady_mind",
+   "name": "Đạo tâm kiên định",
+   "kind": "talent",
+   "description": "Núi lở trước mặt không đổi sắc.",
+   "weight": 6,
+   "statMods": {
+    "tam_tinh": 12
+   },
+   "modifiers": {
+    "deviationChanceMult": 0.6
+   }
+  },
+  {
+   "id": "heaven_secret",
+   "name": "Thiên cơ thuật",
+   "kind": "talent",
+   "description": "Thoáng thấy được vận số trước mỗi ngã rẽ.",
+   "weight": 2,
+   "modifiers": {
+    "revealOdds": true
+   }
+  },
+  {
+   "id": "long_life",
+   "name": "Trường thọ",
+   "kind": "talent",
+   "description": "Gia tộc nhiều người sống quá trăm tuổi.",
+   "weight": 5,
+   "modifiers": {
+    "lifespanBonus": 10,
+    "naturalMortalityMult": 0.7
+   }
+  },
+  {
+   "id": "beast_friend",
+   "name": "Thân cận yêu thú",
+   "kind": "talent",
+   "description": "Chim muông không sợ, thú dữ không cắn.",
+   "weight": 5,
+   "startFlags": [
+    "beast_affinity"
+   ]
+  },
+  {
+   "id": "frugal",
+   "name": "Cần kiệm",
+   "kind": "talent",
+   "description": "Một khối linh thạch cũng để dành.",
+   "weight": 6,
+   "modifiers": {
+    "eventTagWeightMult": {
+     "robbery": 0.5
+    }
+   }
+  },
+  {
+   "id": "righteous",
+   "name": "Hiệp nghĩa",
+   "kind": "talent",
+   "description": "Thấy chuyện bất bình chẳng tha.",
+   "weight": 7,
+   "statMods": {
+    "tam_tinh": 5
+   },
+   "modifiers": {
+    "choiceTagMult": {
+     "righteous": 2
+    }
+   },
+   "excludes": [
+    "ruthless"
+   ]
+  },
+  {
+   "id": "hot_blooded",
+   "name": "Hiếu chiến",
+   "kind": "flaw",
+   "description": "Một lời không hợp là rút đao.",
+   "weight": 8,
+   "modifiers": {
+    "eventTagWeightMult": {
+     "battle": 1.8
+    },
+    "choiceTagMult": {
+     "bold": 2,
+     "cautious": 0.5
+    }
+   }
+  },
+  {
+   "id": "suspicious",
+   "name": "Đa nghi",
+   "kind": "flaw",
+   "description": "Không tin ai, kể cả sư phụ.",
+   "weight": 7,
+   "statMods": {
+    "mi_luc": -8
+   },
+   "modifiers": {
+    "eventTagWeightMult": {
+     "mentor": 0.5,
+     "romance": 0.6
+    }
+   }
+  },
+  {
+   "id": "kin_curse",
+   "name": "Mệnh khắc người thân",
+   "kind": "flaw",
+   "description": "Người thân bên cạnh lần lượt gặp họa.",
+   "weight": 5,
+   "startFlags": [
+    "kin_cursed"
+   ],
+   "modifiers": {
+    "eventTagWeightMult": {
+     "family_death": 3
+    }
+   }
+  },
+  {
+   "id": "sickly",
+   "name": "Bệnh tật bẩm sinh",
+   "kind": "flaw",
+   "description": "Từ bé đã uống thuốc thay cơm.",
+   "weight": 7,
+   "statMods": {
+    "can_cot": -15
+   },
+   "modifiers": {
+    "childMortalityMult": 2,
+    "naturalMortalityMult": 1.5
+   }
+  },
+  {
+   "id": "jinx",
+   "name": "Xui xẻo",
+   "kind": "flaw",
+   "description": "Uống nước cũng mắc nghẹn.",
+   "weight": 6,
+   "statMods": {
+    "khi_van": -15
+   },
+   "modifiers": {
+    "calamityWeightMult": 1.3
+   }
+  },
+  {
+   "id": "dull",
+   "name": "Chậm hiểu",
+   "kind": "flaw",
+   "description": "Một khẩu quyết học ba tháng chưa thuộc.",
+   "weight": 7,
+   "statMods": {
+    "ngo_tinh": -12
+   },
+   "excludes": [
+    "quick_learner"
+   ]
+  },
+  {
+   "id": "greedy",
+   "name": "Tham lam",
+   "kind": "flaw",
+   "description": "Thấy bảo vật là mắt sáng rực.",
+   "weight": 6,
+   "statMods": {
+    "tam_tinh": -5
+   },
+   "modifiers": {
+    "choiceTagMult": {
+     "selfish": 2,
+     "bold": 1.3
+    }
+   }
+  },
+  {
+   "id": "ruthless",
+   "name": "Lòng dạ sắt đá",
+   "kind": "flaw",
+   "description": "Vì mục đích không từ thủ đoạn.",
+   "weight": 5,
+   "statMods": {
+    "tam_tinh": -10
+   },
+   "modifiers": {
+    "choiceTagMult": {
+     "evil": 2.5,
+     "righteous": 0.4
+    }
+   }
+  },
+  {
+   "id": "lovestruck",
+   "name": "Si tình",
+   "kind": "flaw",
+   "description": "Một khi đã thương thì không quay đầu.",
+   "weight": 5,
+   "startFlags": [
+    "devoted_heart"
+   ],
+   "modifiers": {
+    "eventTagWeightMult": {
+     "romance": 2
+    }
+   }
+  },
+  {
+   "id": "inner_demon",
+   "name": "Tâm ma sâu nặng",
+   "kind": "flaw",
+   "description": "Đêm đêm mộng thấy huyết hải.",
+   "weight": 4,
+   "statMods": {
+    "tam_tinh": -12
+   },
+   "modifiers": {
+    "deviationChanceMult": 1.8
+   },
+   "excludes": [
+    "steady_mind"
+   ]
+  },
+  {
+   "id": "lazy",
+   "name": "Lười biếng",
+   "kind": "flaw",
+   "description": "Ngồi thiền nửa canh giờ đã ngủ gật.",
+   "weight": 6,
+   "modifiers": {
+    "cultivationMult": 0.8
+   }
+  }
+ ],
+ "traitCount": [
+  0.4,
+  0.4,
+  0.2
+ ],
  "birthMods": {
   "origins": {
    "commoner": {},

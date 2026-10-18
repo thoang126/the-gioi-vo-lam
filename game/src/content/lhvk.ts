@@ -1,5 +1,6 @@
 // Typed view over the story content imported from Luân Hồi Vạn Kiếp (tools/import-lhvk.ts).
 import raw from './lhvk.json';
+import { EXTRA_EVENTS } from './events-extra';
 
 export type Text = string | string[];
 export type StatKey = 'can_cot' | 'ngo_tinh' | 'khi_van' | 'tam_tinh' | 'mi_luc';
@@ -96,6 +97,14 @@ interface Lhvk {
 }
 
 export const LHVK = raw as unknown as Lhvk;
+
+// LHVK events that tell of Đại Hạ or Thanh Vân châu without saying so (the sect war, the court,
+// the master slain…): keep them out of the other worlds.
+const HOME_ONLY = ['chain_master_slain', 'chain_revenge_oath', 'chain_revenge_duel', 'ms_dao', 'ms_residence', 'p_trade_expand', 'p_court_purge', 't_sect_war'];
+for (const e of LHVK.events) {
+  if (HOME_ONLY.includes(e.id) && !e.conditions?.world) e.conditions = { ...e.conditions, world: ['mortal', 'cultivation'] };
+}
+if (!LHVK.events.some((e) => e.id === EXTRA_EVENTS[0]!.id)) LHVK.events.push(...EXTRA_EVENTS);
 export const PATH_BY_ID: Record<string, PathDef> = Object.fromEntries(LHVK.paths.map((p) => [p.id, p]));
 export const EVENT_BY_ID: Record<string, StoryEvent> = Object.fromEntries(LHVK.events.map((e) => [e.id, e]));
 export const MILESTONES = LHVK.events.filter((e) => e.kind === 'milestone');

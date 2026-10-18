@@ -68,6 +68,13 @@ diễn dịch `src/story.ts`, giữ đúng luật của game gốc:
 - **Battle (GDD 8):** engine của Luân Hồi Vạn Kiếp nằm trong `src/battle-engine/` (chép nguyên, chỉ đổi import). Mọi trận
   có tên tuổi đánh bằng engine này; tab Luận Kiếm cho chọn chiến thuật, xem lại trận và cho Hồn ấn các kiếp đấu với nhau.
 
+## Sáu cõi, yêu tộc, thế gia
+
+- **Cõi:** Đại Hạ, Thanh Vân châu, Hải ngoại, Ma vực, Yêu vực, Tiên giới (chỉ tới được bằng phi thăng).
+- **Yêu tộc:** sinh ở Yêu vực, thọ nguyên ×1,5, thù với nhân tộc.
+- **Thiên phú:** 24 thiên phú/khuyết tật của Luân Hồi Vạn Kiếp.
+- **Gia tộc, thế gia:** họ và gia tộc truyền qua con cái, gia chủ kế vị, huyết thù, thông gia, khai tông lập tộc.
+
 ## Tiên duyên
 
 70% số người sinh ra không có linh căn (GDD Luân Hồi Vạn Kiếp 3.3). Thế giới vẫn giữ tỉ lệ đó cho mọi NPC,
@@ -102,6 +109,9 @@ Xem `docs/roadmap.md`: định nghĩa bản 1.0, bảng chỉ số đo được,
 | `src/sim.ts` | Trạng thái dùng chung, công thức tu vi và sức mạnh, sinh, chết |
 | `src/actions.ts` | 23 hành động và AI chấm điểm |
 | `src/phases.ts` | Các phase mỗi tháng |
+| `src/clans.ts` | Gia tộc, thế gia: kế vị, huyết thù, thông gia, nhận con nuôi, lập tộc |
+| `src/content/peoples.ts` | Thiên phú, yêu tộc, danh sách thế gia |
+| `src/content/events-extra.ts` | Event riêng cho Hải ngoại, Ma vực, Yêu vực, thế gia |
 | `src/player.ts` | Linh hồn: ngã rẽ, lời mời, gặp lại tiền kiếp, luân hồi, ký ức tiền kiếp |
 | `src/story.ts` | Bộ diễn dịch event Luân Hồi Vạn Kiếp: điều kiện, hiệu ứng, phép thử, NPC thật, đạo đồ |
 | `src/content/lhvk.json` | Event, đạo đồ, vật phẩm, pháp bảo, võ kỹ, câu mở đầu nhập từ Luân Hồi Vạn Kiếp |

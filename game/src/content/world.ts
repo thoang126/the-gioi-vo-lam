@@ -1,11 +1,34 @@
-// Geography and factions of the Luân Hồi Vạn Kiếp world. Names come from the game's events;
-// "Thôn chân núi" is the one generic place added so Thanh Vân châu has a village to be born in.
+// Geography and factions of the Luân Hồi Vạn Kiếp world. Đại Hạ, Thanh Vân châu and Tiên giới take
+// their names from the game's events. Hải ngoại, Ma vực and Yêu vực exist in LHVK worlds.yaml with
+// odds and modifiers but no places; their places, and the sects Kiếm Các, Bách Thảo cốc, Hắc Sát giáo,
+// Vạn Ma tông and Vạn Yêu đình, are new to this game.
 
-export type WorldId = 'mortal' | 'cultivation';
+export type WorldId = 'mortal' | 'cultivation' | 'overseas' | 'demonic' | 'demon_beast' | 'immortal';
 
-export const WORLDS: Record<WorldId, { name: string; weight: number; baseCultivation: number }> = {
-  mortal: { name: 'Phàm giới – Đại Hạ vương triều', weight: 55, baseCultivation: 8 },
-  cultivation: { name: 'Tu chân giới – Thanh Vân châu', weight: 30, baseCultivation: 20 },
+export interface WorldDef {
+  name: string;
+  /** Birth weight (LHVK worlds.yaml). Tiên giới is reached only by ascending. */
+  weight: number;
+  baseCultivation: number;
+  fortuneWeightMult?: number;
+  calamityWeightMult?: number;
+  deviationChanceMult?: number;
+  lifespanMult?: number;
+  /** Region a character arrives in when an event moves them to this world. */
+  entry: string;
+  /** Sect that "joining a sect" in story events means here, if any. */
+  homeSect: string | null;
+  /** Market for buying pills and trading. */
+  market: string;
+}
+
+export const WORLDS: Record<WorldId, WorldDef> = {
+  mortal: { name: 'Phàm giới – Đại Hạ vương triều', weight: 55, baseCultivation: 8, entry: 'ben_cang', homeSect: 'lac_ha', market: 'kinh_thanh' },
+  cultivation: { name: 'Tu chân giới – Thanh Vân châu', weight: 30, baseCultivation: 20, entry: 'phuong_thi', homeSect: 'thanh_van', market: 'phuong_thi' },
+  demon_beast: { name: 'Yêu vực – Vạn Yêu cổ địa', weight: 8, baseCultivation: 12, lifespanMult: 1.5, entry: 'yeu_thi', homeSect: 'van_yeu', market: 'yeu_thi' },
+  demonic: { name: 'Ma vực – Huyết Uyên', weight: 6, baseCultivation: 24, deviationChanceMult: 1.5, entry: 'huyet_uyen', homeSect: 'van_ma', market: 'huyet_uyen' },
+  overseas: { name: 'Hải ngoại – Tán tu quần đảo', weight: 1, baseCultivation: 16, fortuneWeightMult: 1.5, calamityWeightMult: 1.5, entry: 'dao_tan_tu', homeSect: null, market: 'dao_tan_tu' },
+  immortal: { name: 'Tiên giới – Thiên Đình', weight: 0, baseCultivation: 60, entry: 'nam_thien_mon', homeSect: null, market: 'dao_tri' },
 };
 
 export type RegionKind =
@@ -49,6 +72,30 @@ export const REGIONS: Region[] = [
   { id: 'me_vu', name: 'Mê Vụ lâm', world: 'cultivation', kind: 'beast', x: 650, y: 400, population: 0, qi: 1, danger: 1, desc: 'Rừng sương mù, dễ lạc khó ra.' },
   { id: 'lac_hon', name: 'Lạc Hồn cốc', world: 'cultivation', kind: 'beast', x: 955, y: 360, population: 0, qi: 1, danger: 2, desc: 'Hồn bay phách lạc, yêu thú Trúc Cơ trở lên.' },
   { id: 'van_yeu', name: 'Vạn Yêu sơn mạch', world: 'cultivation', kind: 'beast', x: 955, y: 55, population: 0, qi: 1.1, danger: 3, desc: 'Sào huyệt yêu vương, nguồn gốc các đợt thú triều.' },
+  { id: 'bach_thao', name: 'Bách Thảo cốc', world: 'mortal', kind: 'sect', x: 205, y: 365, population: 6, qi: 1.1, sectId: 'bach_thao', desc: 'Thung lũng thuốc của các đan sư, ai ốm nặng cũng tìm tới.' },
+  { id: 'hac_sat', name: 'Hắc Sát giáo', world: 'mortal', kind: 'sect', x: 70, y: 420, population: 6, qi: 0.9, sectId: 'hac_sat', desc: 'Giáo phái ma đạo ẩn trong đồi cát phía tây, dân biên ải nhắc tới là rùng mình.' },
+  { id: 'kiem_cac', name: 'Kiếm Các', world: 'cultivation', kind: 'sect', x: 965, y: 265, population: 8, qi: 1.2, sectId: 'kiem_cac', desc: 'Lầu kiếm dựng cạnh Kiếm mộ, chỉ nhận người có kiếm tâm.' },
+
+  { id: 'dao_tan_tu', name: 'Tán Tu đảo', world: 'overseas', kind: 'market', x: 505, y: 440, population: 14, qi: 1, desc: 'Đảo chợ của tán tu, không tông môn nào quản, giao dịch bằng linh thạch và nắm đấm.' },
+  { id: 'ngu_thon', name: 'Ngư thôn', world: 'overseas', kind: 'village', x: 470, y: 530, population: 10, qi: 0.9, desc: 'Làng chài trên bãi đá, đàn ông ra khơi, đàn bà đan lưới nhìn trời.' },
+  { id: 'phu_du', name: 'Phù Du đảo', world: 'overseas', kind: 'cave', x: 560, y: 520, population: 0, qi: 1.5, desc: 'Hòn đảo trôi, linh khí dồn về như thủy triều.' },
+  { id: 'hai_nhan', name: 'Hải Nhãn', world: 'overseas', kind: 'beast', x: 520, y: 620, population: 0, qi: 1.1, danger: 2, desc: 'Xoáy nước khổng lồ, hải thú từ đáy sâu ngoi lên.' },
+
+  { id: 'huyet_uyen', name: 'Huyết Uyên thành', world: 'demonic', kind: 'city', x: 170, y: 650, population: 16, qi: 1, desc: 'Thành của ma tu, cổng treo đầu kẻ phản bội, chợ bán cả hồn phách.' },
+  { id: 'am_phong', name: 'Âm Phong trấn', world: 'demonic', kind: 'village', x: 320, y: 700, population: 12, qi: 0.9, desc: 'Trấn nhỏ quanh năm gió lạnh, người phàm sống nhờ ma tu che chở.' },
+  { id: 'van_ma', name: 'Vạn Ma tông', world: 'demonic', kind: 'sect', x: 80, y: 735, population: 14, qi: 1.2, sectId: 'van_ma', desc: 'Đại tông ma đạo, mạnh được yếu thua là môn quy duy nhất.' },
+  { id: 'bach_cot', name: 'Bạch Cốt lâm', world: 'demonic', kind: 'beast', x: 390, y: 620, population: 0, qi: 1.1, danger: 2, desc: 'Rừng xương trắng, thi thú lang thang.' },
+
+  { id: 'yeu_thi', name: 'Yêu thị', world: 'demon_beast', kind: 'market', x: 760, y: 610, population: 10, qi: 1, desc: 'Chợ của yêu tộc hóa hình, bán da rắn lột và trăng rơi trong giếng.' },
+  { id: 'hoa_hinh', name: 'Hóa Hình thôn', world: 'demon_beast', kind: 'village', x: 680, y: 690, population: 16, qi: 1, desc: 'Nơi yêu tộc mới hóa hình học làm người: đi hai chân, nói tiếng người.' },
+  { id: 'van_yeu_dinh', name: 'Vạn Yêu đình', world: 'demon_beast', kind: 'sect', x: 880, y: 720, population: 14, qi: 1.2, sectId: 'van_yeu', desc: 'Triều đình của yêu tộc dưới gốc cổ thụ nghìn năm.' },
+  { id: 'thai_co', name: 'Thái Cổ lâm', world: 'demon_beast', kind: 'beast', x: 950, y: 620, population: 0, qi: 1.2, danger: 3, desc: 'Rừng nguyên sơ, yêu thú chưa khai linh trí còn hoang dã.' },
+
+  { id: 'nam_thien_mon', name: 'Nam Thiên Môn', world: 'immortal', kind: 'port', x: 500, y: 960, population: 0, qi: 1, desc: 'Cửa vào Tiên giới. Người phi thăng tới đây trước tiên.' },
+  { id: 'lang_tieu', name: 'Lăng Tiêu điện', world: 'immortal', kind: 'city', x: 500, y: 860, population: 6, qi: 1.2, desc: 'Triều đình Thiên Đình, nơi tiên quan nhận chức.' },
+  { id: 'dao_tri', name: 'Dao Trì', world: 'immortal', kind: 'market', x: 700, y: 900, population: 0, qi: 1.3, desc: 'Nơi mở Bàn đào hội ba nghìn năm một lần.' },
+  { id: 'luan_hoi_tri', name: 'Luân Hồi trì', world: 'immortal', kind: 'cave', x: 290, y: 900, population: 0, qi: 1.5, desc: 'Mặt nước soi lại mọi kiếp đã sống.' },
+  { id: 'hon_don_hai', name: 'Hỗn Độn Hải', world: 'immortal', kind: 'beast', x: 880, y: 960, population: 0, qi: 1.2, danger: 4, desc: 'Biển hỗn độn, Hồng Mông Ma Thần ngủ dưới đáy.' },
 ];
 
 /** [a, b, months]. The sea crossing is the only link between the two worlds. */
@@ -62,10 +109,19 @@ export const ROUTES: [string, string, number][] = [
   ['linh_mach', 'kiem_mo', 1], ['kiem_mo', 'bi_canh', 1], ['phuong_thi', 'bi_canh', 1],
   ['bi_canh', 'lac_hon', 1], ['phuong_thi', 'me_vu', 1], ['me_vu', 'huyet_sat', 1],
   ['huyet_sat', 'lac_hon', 1], ['chan_nui', 'hac_phong', 1], ['kiem_mo', 'lac_hon', 1],
+  ['kinh_thanh', 'bach_thao', 1], ['lang_que', 'bach_thao', 1], ['bien_ai', 'hac_sat', 1], ['sa_mac', 'hac_sat', 1],
+  ['kiem_mo', 'kiem_cac', 1], ['bi_canh', 'kiem_cac', 1],
+  ['ben_cang', 'dao_tan_tu', 2], ['phuong_thi', 'dao_tan_tu', 2],
+  ['dao_tan_tu', 'ngu_thon', 1], ['dao_tan_tu', 'phu_du', 1], ['ngu_thon', 'hai_nhan', 1], ['phu_du', 'hai_nhan', 1],
+  ['sa_mac', 'huyet_uyen', 3], ['huyet_uyen', 'am_phong', 1], ['huyet_uyen', 'van_ma', 1], ['am_phong', 'bach_cot', 1], ['van_ma', 'bach_cot', 2],
+  ['lac_hon', 'yeu_thi', 2], ['huyet_sat', 'yeu_thi', 2], ['yeu_thi', 'hoa_hinh', 1], ['yeu_thi', 'van_yeu_dinh', 1], ['hoa_hinh', 'thai_co', 1], ['van_yeu_dinh', 'thai_co', 1],
+  ['nam_thien_mon', 'lang_tieu', 1], ['nam_thien_mon', 'dao_tri', 1], ['nam_thien_mon', 'luan_hoi_tri', 1], ['dao_tri', 'hon_don_hai', 1], ['lang_tieu', 'luan_hoi_tri', 1],
 ];
-export const SEA_ROUTE: [string, string] = ['ben_cang', 'phuong_thi'];
+/** Sea crossings: risky for anyone below Trúc Cơ. The first is the classic biển Đông crossing. */
+export const SEA_ROUTES: [string, string][] = [['ben_cang', 'phuong_thi'], ['ben_cang', 'dao_tan_tu'], ['phuong_thi', 'dao_tan_tu']];
+export const SEA_ROUTE: [string, string] = SEA_ROUTES[0]!;
 
-export type Alignment = 'righteous' | 'evil';
+export type Alignment = 'righteous' | 'evil' | 'yeu';
 
 export interface SectDef {
   id: string;
@@ -85,13 +141,35 @@ export const SECTS: SectDef[] = [
   { id: 'thanh_van', name: 'Thanh Vân tông', regionId: 'thanh_van', alignment: 'righteous', minRootTier: 2, servants: true, recruitEveryYears: 5, techniqueGrade: 2, roster: { 4: 1, 3: 3, 2: 8, 1: 22 } },
   { id: 'lac_ha', name: 'Lạc Hà phái', regionId: 'lac_ha', alignment: 'righteous', minRootTier: 1, servants: false, recruitEveryYears: 6, techniqueGrade: 1, roster: { 3: 1, 2: 2, 1: 8 } },
   { id: 'huyet_sat', name: 'Huyết Sát môn', regionId: 'huyet_sat', alignment: 'evil', minRootTier: 1, servants: false, recruitEveryYears: 4, techniqueGrade: 2, roster: { 4: 1, 3: 2, 2: 6, 1: 14 } },
+  { id: 'kiem_cac', name: 'Kiếm Các', regionId: 'kiem_cac', alignment: 'righteous', minRootTier: 2, servants: false, recruitEveryYears: 7, techniqueGrade: 2, roster: { 3: 1, 2: 2, 1: 6 } },
+  { id: 'bach_thao', name: 'Bách Thảo cốc', regionId: 'bach_thao', alignment: 'righteous', minRootTier: 1, servants: true, recruitEveryYears: 6, techniqueGrade: 1, roster: { 2: 1, 1: 5 } },
+  { id: 'hac_sat', name: 'Hắc Sát giáo', regionId: 'hac_sat', alignment: 'evil', minRootTier: 1, servants: false, recruitEveryYears: 5, techniqueGrade: 1, roster: { 2: 1, 1: 5 } },
+  { id: 'van_ma', name: 'Vạn Ma tông', regionId: 'van_ma', alignment: 'evil', minRootTier: 1, servants: false, recruitEveryYears: 4, techniqueGrade: 2, roster: { 4: 1, 3: 2, 2: 4, 1: 10 } },
+  { id: 'van_yeu', name: 'Vạn Yêu đình', regionId: 'van_yeu_dinh', alignment: 'yeu', minRootTier: 1, servants: false, recruitEveryYears: 5, techniqueGrade: 2, roster: { 4: 1, 3: 2, 2: 4, 1: 10 } },
 ];
+
+/** What a sect is known for: actions its members favour, and a discount on pills. */
+export const SECT_PERKS: Record<string, { actionBoost?: Record<string, number>; pillDiscount?: number }> = {
+  kiem_cac: { actionBoost: { ngo_kiem: 3, khieu_chien: 1.5 } },
+  bach_thao: { actionBoost: { hanh_y: 3, doi_dan: 1.5 }, pillDiscount: 0.5 },
+  hac_sat: { actionBoost: { cuop_doat: 1.8 } },
+  van_ma: { actionBoost: { cuop_doat: 1.5, be_quan: 1.2 } },
+};
 
 /** Starting stance between sects, −100 (blood feud) … 100 (allies). */
 export const SECT_RELATIONS: [string, string, number][] = [
   ['thanh_van', 'huyet_sat', -55],
   ['lac_ha', 'huyet_sat', -25],
   ['thanh_van', 'lac_ha', 20],
+  ['thanh_van', 'kiem_cac', 40],
+  ['kiem_cac', 'huyet_sat', -45],
+  ['lac_ha', 'bach_thao', 50],
+  ['lac_ha', 'hac_sat', -50],
+  ['bach_thao', 'hac_sat', -30],
+  ['huyet_sat', 'van_ma', 30],
+  ['huyet_sat', 'van_yeu', -40],
+  ['thanh_van', 'van_yeu', -50],
+  ['van_ma', 'van_yeu', -30],
 ];
 
 export const SECT_RANKS = [

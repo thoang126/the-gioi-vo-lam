@@ -3,7 +3,8 @@
 
 import { ORIGINS, PHYSIQUES, REALMS, SPIRIT_ROOTS } from './cultivation';
 import { LHVK } from './lhvk';
-import { REGIONS } from './world';
+import { REGIONS, WORLDS, type WorldId } from './world';
+import { CLANS, TRAITS } from './peoples';
 import type { DeathCause, Soul } from '../types';
 
 export const DEATH_NAMES: Record<DeathCause, string> = {
@@ -22,6 +23,8 @@ export const CODEX: CodexCategory[] = [
   { id: 'paths', name: 'Đạo đồ', entries: LHVK.paths.map((p) => ({ id: p.id, name: p.name })) },
   { id: 'realms', name: 'Cảnh giới', entries: REALMS.map((r) => ({ id: r.id, name: r.name })) },
   { id: 'titles', name: 'Danh hiệu', entries: LHVK.titles.map((t) => ({ id: t.id, name: t.name })) },
+  { id: 'traits', name: 'Thiên phú, khuyết tật', entries: TRAITS.map((t) => ({ id: t.id, name: t.name })) },
+  { id: 'clans', name: 'Thế gia', entries: CLANS.map((c) => ({ id: c.id, name: c.name })) },
   { id: 'deaths', name: 'Cách chết', entries: (Object.keys(DEATH_NAMES) as DeathCause[]).map((d) => ({ id: d, name: DEATH_NAMES[d] })) },
 ];
 
@@ -71,5 +74,10 @@ export const SOUL_TITLES: SoulTitle[] = [
   { id: 'dao_qua', name: 'Nghìn điểm Đạo Quả', desc: 'Một kiếp đạt 1.000 Đạo Quả', points: 80, progress: (s) => [Math.min(1000, Math.max(0, ...s.lives.map((l) => l.daoQua))), 1000] },
   { id: 'codex_half', name: 'Kiếp Sách nửa cuốn', desc: 'Mở một nửa Kiếp Sách', points: 100,
     progress: (s) => { const p = codexProgress(s); return [p.have, Math.ceil(p.total / 2)]; } },
+  { id: 'clan_head', name: 'Gia chủ', desc: 'Đứng đầu một gia tộc', points: 80, progress: (s) => [s.counters.clanHead ?? 0, 1] },
+  { id: 'clan_founder', name: 'Khai tông lập tộc', desc: 'Lập ra một gia tộc mới', points: 150, progress: (s) => [s.counters.clanFounded ?? 0, 1] },
+  { id: 'yeu_life', name: 'Yêu thân', desc: 'Sống một kiếp làm yêu tộc', points: 30, progress: (s) => [s.counters.yeuLives ?? 0, 1] },
+  { id: 'five_worlds', name: 'Ngũ giới luân hồi', desc: 'Sinh ra ở cả năm cõi hạ giới', points: 120,
+    progress: (s) => [(Object.keys(WORLDS) as WorldId[]).filter((w) => w !== 'immortal' && s.lives.some((l) => REGIONS.find((r) => r.id === l.bornRegion)?.world === w)).length, 5] },
   { id: 'ascend', name: 'Phi thăng', desc: 'Vượt thiên kiếp cuối của Đại Thừa', points: 1000, progress: (s) => [count(s, (l) => l.cause === 'ascension'), 1] },
 ];

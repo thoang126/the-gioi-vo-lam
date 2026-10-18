@@ -89,13 +89,32 @@ Giai đoạn 3 xử lý phần này bằng ngã rẽ đột phá đúng nghĩa v
 - Đo sau giai đoạn (40 thế giới × 400 năm, chọn ngẫu nhiên): Luyện Khí 33%, Trúc Cơ 12%, Kim Đan 2,0%. Chưa có kiếp
   Nguyên Anh; cần mẫu lớn hơn để biết tỉ lệ thật.
 
-### 4. Mở rộng thế giới (3 tuần)
+### 4. Mở rộng thế giới (phần lớn đã xong)
 
-- **Hải ngoại tán tu đảo:** 1% số kiếp, nối với arc vượt biển Đông.
-- **Yêu vực và Ma vực:** sinh làm yêu tộc hoặc ma tu, theo hệ số đã có trong dữ liệu.
-- **Tiên giới:** 9 cảnh giới và 36 event còn lại của Luân Hồi Vạn Kiếp.
-- Tin tức người quen (`people.yaml`) và thiên phú (`traits.yaml`).
-- Thêm tông môn để mỗi đạo đồ có chỗ dựa (kiếm tu, đan sư, ma tu ở Phàm giới).
+Đã làm:
+- **Sáu cõi trên bản đồ:** Đại Hạ, Thanh Vân châu, Hải ngoại (3 đảo, đường biển), Ma vực (Huyết Uyên thành, Vạn Ma tông,
+  Bạch Cốt lâm), Yêu vực (Yêu thị, Hóa Hình thôn, Vạn Yêu đình, Thái Cổ lâm), Tiên giới (bản đồ riêng). Hệ số của
+  `worlds.yaml` được dùng thật: Hải ngoại kỳ ngộ và tai họa ×1,5, Ma vực tẩu hỏa ×1,5.
+- **Yêu tộc:** 90% người sinh ở Yêu vực là yêu tộc, họ riêng (Bạch Hồ, Thanh Xà, Kim Bằng…), thọ nguyên ×1,5.
+  Nhân tộc và yêu tộc có tu vi gặp nhau dễ động thủ; Vạn Yêu đình chỉ nhận yêu tộc, tông môn nhân tộc không nhận yêu
+  (trừ ma môn).
+- **Thiên phú, khuyết tật:** 24 mục của `traits.yaml` (0/1/2 mục theo 40/40/20%), có chỉ số, modifier, cờ khởi đầu;
+  "Thiên cơ thuật" cho thấy tỉ lệ như Lục đạo thị giác.
+- **Gia tộc, thế gia** (`src/clans.ts`): 11 thế gia khởi đầu (Hạ thị hoàng tộc, Mộ Dung, Thượng Quan, Đông Phương,
+  Lâm, Diệp, Tiêu, Hàn, Mạc, Thanh Khâu Hồ tộc, Kim Bằng tộc). Con theo họ và gia tộc của cha (hoặc mẹ), gia truyền công
+  pháp, kế vị gia chủ (người chơi có thể tranh chức, tranh ngôi), huyết thù đánh nhau, thông gia, gia tộc cưới vợ gả
+  chồng cho con cháu, nhận con nuôi khi thưa người, tuyệt tự. Tu sĩ Kim Đan có con cháu có thể khai tông lập tộc
+  (tối đa 16 gia tộc cùng lúc). Tab "Thế gia", 4 danh hiệu linh hồn mới, Kiếp Sách thêm "Thiên phú" và "Thế gia".
+- **Tông môn mới:** Kiếm Các, Bách Thảo cốc, Hắc Sát giáo, Vạn Ma tông, Vạn Yêu đình, có ưu đãi hành động riêng.
+- **Event:** 18 event mới cho Hải ngoại, Ma vực, Yêu vực và đời sống thế gia; 8 event của Luân Hồi Vạn Kiếp vốn chỉ
+  hợp Đại Hạ/Thanh Vân bị giới hạn lại.
+- **Tiên giới (bước đầu):** người phi thăng không biến mất mà sống tiếp ở Tiên giới; thế giới có sẵn vài tiên nhân.
+
+Còn lại:
+- Chơi tiếp ở Tiên giới: 9 cảnh giới tiên và 36 event Tiên giới của Luân Hồi Vạn Kiếp.
+- Tin tức người quen (`people.yaml`).
+- Đo sau giai đoạn (20 thế giới × 400 năm, chọn ngẫu nhiên): Luyện Khí 38,5%, Trúc Cơ 12,5%, Kim Đan 1,0%; dân số
+  ổn định quanh 380 người, thế gia giữ 110–130 người.
 
 ### 5. Trình bày (2 tuần)
 

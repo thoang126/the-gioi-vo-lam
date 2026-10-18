@@ -1,8 +1,9 @@
 // Monthly phase pipeline. Like CWS's SIMULATION_PHASES, each phase is a plain function over
 // the shared Sim and runs in a fixed order; the step function only orchestrates.
 
-import { MORTALITY, NAMES } from './content/cultivation';
-import { REGIONS, SECTS, SECT_RANKS, SEA_ROUTE as SEA, type SectRankId } from './content/world';
+import { MORTALITY } from './content/cultivation';
+import { givenName, surnameOf } from './content/peoples';
+import { REGIONS, SECTS, SECT_RANKS, SEA_ROUTES, WORLDS, type SectRankId } from './content/world';
 import { ACTION_BY_ID, rankActions, startAction } from './actions';
 import { duel, fightBeast } from './battle';
 import { offerToPlayer } from './player';
@@ -16,8 +17,10 @@ const isYearStart = (sim: Sim) => sim.month % 12 === 0;
 export function phaseDecide(sim: Sim): void {
   for (const a of sim.living()) {
     if (a.action || sim.age(a) < 12 || sim.isPlayer(a)) continue;
-    const best = rankActions(sim, a)[0];
-    if (best) startAction(sim, a, best.def);
+    for (const r of rankActions(sim, a).slice(0, 3)) {
+      startAction(sim, a, r.def);
+      if (a.action) break;
+    }
   }
 }
 
@@ -53,7 +56,7 @@ export function phaseExecute(sim: Sim): void {
 
 /** The sea crossing is the only risky leg; Trúc Cơ and above fly over it. */
 function crossLeg(sim: Sim, a: Avatar, from: string, to: string): boolean {
-  const sea = (from === SEA[0] && to === SEA[1]) || (from === SEA[1] && to === SEA[0]);
+  const sea = SEA_ROUTES.some(([x, y]) => (from === x && to === y) || (from === y && to === x));
   if (!sea || a.realm >= 2) return true;
   if (a.linhThach >= 20) a.linhThach -= 20;
   const roll = sim.rng.next();
@@ -80,9 +83,12 @@ function atWar(sim: Sim, x: string | null, y: string | null): boolean {
 
 function hostile(sim: Sim, a: Avatar, b: Avatar): boolean {
   if (atWar(sim, a.sectId, b.sectId)) return true;
-  const ea = a.sectId === 'huyet_sat';
-  const eb = b.sectId === 'huyet_sat';
-  return ea !== eb && (a.sectId !== null || b.sectId !== null) && a.realm >= 1 && b.realm >= 1 && (ea ? a : b).persona.virtue < 0;
+  if (a.realm < 1 || b.realm < 1) return false;
+  // Nhân tộc and yêu tộc: old blood between them, unless both are kindly.
+  if ((a.race ?? 'human') !== (b.race ?? 'human') && a.persona.virtue + b.persona.virtue < 0.4) return true;
+  const ea = a.sectId !== null && SECT_BY_ID[a.sectId]!.alignment === 'evil';
+  const eb = b.sectId !== null && SECT_BY_ID[b.sectId]!.alignment === 'evil';
+  return ea !== eb && (ea ? a : b).persona.virtue < 0;
 }
 
 export function phaseEncounters(sim: Sim): void {
@@ -104,7 +110,8 @@ function meet(sim: Sim, a: Avatar, b: Avatar): void {
   if (hostile(sim, a, b) && (!rel || rel.kind === 'enemy' || rel.kind === 'rival')) {
     if (sim.rng.chance(0.5)) {
       const res = duel(sim, a, b, 0.2);
-      const why = atWar(sim, a.sectId, b.sectId) ? 'Hai phái đang giao chiến' : 'Chính tà bất lưỡng lập';
+      const why = atWar(sim, a.sectId, b.sectId) ? 'Hai phái đang giao chiến'
+        : (a.race ?? 'human') !== (b.race ?? 'human') ? 'Nhân yêu thù truyền kiếp' : 'Chính tà bất lưỡng lập';
       if (res.killed) sim.kill(res.loser, 'battle', `${why}, bị ${res.winner.name} hạ sát`, res.winner);
       else sim.log('battle', `${why}: ${a.name} và ${b.name} chạm trán. ${res.winner.name} thắng, ${res.loser.name} trọng thương bỏ chạy.`, [a.id, b.id], { regionId: a.regionId });
     }
@@ -186,7 +193,9 @@ export function phaseSects(sim: Sim): void {
       const abduct = evil && members.length < target * 0.6;
       const cands = living.filter((a) => !a.sectId && REGION_BY_ID[a.regionId]!.world === world && sim.rootTier(a) > 0
         && (evil ? sim.age(a) >= 8 && sim.age(a) <= 50 && (a.persona.virtue < 0.35 || (abduct && sim.age(a) <= 16)) : sim.age(a) >= 8 && sim.age(a) <= 18)
-        && (sim.rootTier(a) >= def.minRootTier || def.servants));
+        && (sim.rootTier(a) >= def.minRootTier || def.servants)
+        // Vạn Yêu đình takes only yêu tộc; human sects only humans, though ma môn ask no questions.
+        && (def.alignment === 'yeu' ? a.race === 'yeu' : a.race !== 'yeu' || evil));
       let taken = 0;
       for (const c of cands) {
         if (taken >= Math.min(10, room)) break;
@@ -214,9 +223,9 @@ export function phaseSects(sim: Sim): void {
       }
       if (taken > 0) {
         sim.log('sect', abduct
-          ? `${taken} đứa trẻ có linh căn ở Thanh Vân châu mất tích trong một đêm. Người ta tìm thấy dấu chân dẫn về phía Huyết Sát môn.`
+          ? `${taken} đứa trẻ có linh căn ở ${WORLDS[world].name} mất tích trong một đêm. Người ta tìm thấy dấu chân dẫn về phía ${def.name}.`
           : evil
-          ? `${def.name} lén thu nạp ${taken} kẻ mới. Có người nói thấy họ đi về phía Mê Vụ lâm lúc nửa đêm.`
+          ? `${def.name} lén thu nạp ${taken} kẻ mới. Có người nói thấy họ đi về phía ${REGION_BY_ID[def.regionId]!.name} lúc nửa đêm.`
           : `${def.name} mở sơn môn tuyển đệ tử. Trước cổng xếp hàng dài, cuối cùng ${taken} người được nhận.`,
         [], { regionId: def.regionId, major: true });
       }
@@ -397,10 +406,6 @@ export function phaseLifecycle(sim: Sim): void {
   births(sim);
 }
 
-function surnameOf(name: string): string {
-  return NAMES.surnames.filter((s) => name.startsWith(s + ' ')).sort((x, y) => y.length - x.length)[0] ?? name.split(' ')[0]!;
-}
-
 function births(sim: Sim): void {
   sim.reindex();
   // Couples.
@@ -408,13 +413,19 @@ function births(sim: Sim): void {
     if (a.gender !== 'female') continue;
     const p = sim.relationOf(a, 'partner');
     if (!p || p.regionId !== a.regionId) continue;
+    // Crowded places have fewer children (settlements only; wilds and sects are not capped).
+    const home = REGION_BY_ID[a.regionId]!;
+    if (home.population > 0 && (sim.byRegion[home.id] ?? []).length > home.population * 1.5) continue;
     const age = sim.age(a);
     const fertile = a.realm === 0 ? age >= 18 && age <= 42 : age / sim.lifespan(a) < 0.5;
     if (!fertile || !sim.rng.chance(a.realm === 0 ? 0.12 : 0.03)) continue;
     const rooted = sim.rootTier(a) > 0 || sim.rootTier(p) > 0;
-    const child = sim.createAvatar({ regionId: a.regionId, originId: a.originId === 'royal' || p.originId === 'royal' ? 'royal' : undefined });
+    // The child carries the father's clan (or the mother's, if only she has one) and his surname.
+    const clanId = p.clanId ?? a.clanId ?? undefined;
+    const race = a.race === 'yeu' || p.race === 'yeu' ? 'yeu' : 'human';
+    const child = sim.createAvatar({ regionId: a.regionId, clanId, noClan: !clanId, race, originId: !clanId && (a.originId === 'royal' || p.originId === 'royal') ? 'royal' : undefined });
     if (rooted && child.rootId === 'none' && sim.rng.chance(0.25)) Object.assign(child, sim.rollRoot(3));
-    child.name = `${surnameOf(p.name)} ${child.name.split(' ').slice(surnameOf(child.name).split(' ').length).join(' ')}`;
+    if (!clanId) child.name = `${surnameOf(p.name)} ${givenName(child.name)}`;
     sim.relate(child, a, 'parent', 'child', 70);
     child.relations[p.id] = { kind: 'parent', bond: 70, sinceMonth: sim.month };
     p.relations[child.id] = { kind: 'child', bond: 70, sinceMonth: sim.month };
@@ -424,7 +435,7 @@ function births(sim: Sim): void {
   }
   // Newcomers keep each settlement near its population.
   for (const r of REGIONS) {
-    if (r.population <= 0 || r.kind === 'sect') continue;
+    if (r.population <= 0 || r.kind === 'sect' || r.world === 'immortal') continue;
     const here = (sim.byRegion[r.id] ?? []).length;
     const deficit = r.population - here;
     if (deficit <= 0) continue;

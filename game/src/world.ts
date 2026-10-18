@@ -1,5 +1,6 @@
 import { REALMS, SPIRIT_ROOTS, BASIC_ELEMENTS, type Element } from './content/cultivation';
 import { REGIONS, SECTS, SECT_RELATIONS, type SectRankId } from './content/world';
+import { phaseClans, seedClans } from './clans';
 import { phaseDecide, phaseEncounters, phaseExecute, phaseHousekeeping, phaseLifecycle, phaseSects, phaseWorld } from './phases';
 import { checkPlayerDeath, playerPhase, resolvePending } from './player';
 import { Sim } from './sim';
@@ -45,7 +46,9 @@ export function createWorld(seed: number, opts: CreateOptions = {}): WorldState 
     s.sects[b]!.relations[a] = v;
   }
   seedSects(sim);
+  seedClans(sim);
   seedSettlements(sim);
+  seedImmortals(sim);
   s.rng = sim.rng.state;
   s.stats.births = 0;
   s.soul.rebirthAt = (opts.warmupYears ?? 40) * 12;
@@ -110,18 +113,35 @@ function seedSects(sim: Sim): void {
 
 function seedSettlements(sim: Sim): void {
   for (const r of REGIONS) {
-    if (r.kind === 'sect' || r.population <= 0) continue;
+    if (r.kind === 'sect' || r.population <= 0 || r.world === 'immortal') continue;
     const n = Math.round(r.population * 0.9);
     for (let i = 0; i < n; i++) {
       const age = sim.rng.int(0, 65);
       const a = sim.createAvatar({ regionId: r.id, birthMonth: -age * 12 - sim.rng.int(0, 11) });
-      if (r.world === 'cultivation' && sim.rootTier(a) > 0 && age >= 16 && sim.rng.chance(0.6)) {
+      // Outside Đại Hạ, many with a spirit root already walk the way as tán tu.
+      if (r.world !== 'mortal' && sim.rootTier(a) > 0 && age >= 16 && sim.rng.chance(0.6)) {
         a.technique = sim.pickTechnique(sim.rng.chance(0.2) ? 2 : 1, a.elements);
         a.realm = sim.rng.chance(0.12) ? 2 : 1;
         a.stage = sim.rng.int(0, REALMS[a.realm]!.stages.length - 1);
         a.linhThach = sim.rng.int(10, 120) * a.realm;
       }
     }
+  }
+}
+
+/** A handful of those who ascended long ago, so Tiên giới is not empty. */
+function seedImmortals(sim: Sim): void {
+  const r = REALMS[REALMS.length - 1]!;
+  for (let i = 0; i < 5; i++) {
+    const age = sim.rng.int(1000, 8000);
+    const root = rootAtLeast(sim, 3);
+    const a = sim.createAvatar({ regionId: sim.rng.pick(['lang_tieu', 'dao_tri', 'luan_hoi_tri']), birthMonth: -age * 12, originId: 'commoner', race: 'human', ...root });
+    a.realm = r.rank;
+    a.stage = sim.rng.int(0, r.stages.length - 1);
+    a.technique = sim.pickTechnique(4, a.elements);
+    a.titles.push('Tiên nhân');
+    a.renown = 1000;
+    a.clanId = null;
   }
 }
 
@@ -133,6 +153,11 @@ export function migrateWorld(s: WorldState): WorldState {
   soul.counters ??= { reunions: 0, ownGraves: 0, sectLeader: 0, crossedSea: 0 };
   soul.memories.sight ??= 0;
   for (const l of soul.lives) l.paths ??= [];
+  if (!s.clans) {
+    const sim = new Sim(s);
+    seedClans(sim);
+    s.rng = sim.rng.state;
+  }
   // Saves from before Kiếp Sách: rebuild what the life records still tell.
   if (!Object.keys(soul.codex).length && soul.lives.length) {
     const add = (cat: string, id: string) => { const l = (soul.codex[cat] ??= []); if (!l.includes(id)) l.push(id); };
@@ -163,6 +188,7 @@ export function step(s: WorldState): StepResult {
   phaseExecute(sim);
   phaseEncounters(sim);
   phaseSects(sim);
+  phaseClans(sim);
   phaseWorld(sim);
   phaseLifecycle(sim);
   checkPlayerDeath(sim);

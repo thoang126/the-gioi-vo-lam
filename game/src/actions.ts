@@ -3,7 +3,7 @@
 // score built from persona, needs and world state chooses, so the world stays deterministic.
 
 import { BEASTS, BEAST_PREFIXES, BREAKTHROUGH, REALMS, TECHNIQUES } from './content/cultivation';
-import { REGIONS } from './content/world';
+import { REGIONS, SECT_PERKS, WORLDS } from './content/world';
 import { duel, fightBeast } from './battle';
 import { REGION_BY_ID, SECT_BY_ID, Sim, findPath, relationWord } from './sim';
 import type { Avatar } from './types';
@@ -26,7 +26,7 @@ export interface ActionDef {
 
 const isCultivator = (sim: Sim, a: Avatar) => sim.canCultivate(a);
 const inWorld = (a: Avatar) => REGION_BY_ID[a.regionId]!.world;
-const pillCost = (realm: number) => Math.round(50 * 6 ** Math.max(0, realm - 1));
+const pillCost = (realm: number, a?: Avatar) => Math.round(50 * 6 ** Math.max(0, realm - 1) * (a?.sectId ? SECT_PERKS[a.sectId]?.pillDiscount ?? 1 : 1));
 const contributionCost = (a: Avatar) => 150 * (a.realm + 1);
 
 function lifePressure(sim: Sim, a: Avatar): number {
@@ -81,6 +81,29 @@ export function canPrepare(sim: Sim, a: Avatar): boolean {
     && breakthroughChance(sim, a, true) < 0.7;
 }
 
+/**
+ * Đại Thừa vượt 27 đạo thiên kiếp: the avatar leaves the lower worlds for good and lives on in
+ * Tiên giới. For the player the life still ends there (a soul cannot follow it up).
+ */
+export function ascend(sim: Sim, a: Avatar): void {
+  const from = REGION_BY_ID[a.regionId]!;
+  sim.storyFlag(a, 'ascended');
+  sim.s.stats.ascensions += 1;
+  a.action = null;
+  a.regionId = WORLDS.immortal.entry;
+  a.sectRank = a.sectId ? null : a.sectRank;
+  a.sectId = null;
+  if (!a.titles.includes('Tiên nhân')) a.titles.push('Tiên nhân');
+  a.renown += 500;
+  if (sim.isPlayer(a)) {
+    // checkPlayerDeath closes the life while the avatar itself stays alive in Tiên giới.
+    a.deathCause = 'ascension';
+    a.deathText = 'Vượt 27 đạo thiên kiếp, phi thăng Tiên giới';
+    a.deathMonth = sim.month;
+  }
+  sim.log('death', `${a.name} vượt 27 đạo thiên kiếp, phi thăng Tiên giới. Cả ${WORLDS[from.world].name} thấy cột sáng suốt ba ngày.`, [a.id], { regionId: from.id, major: true });
+}
+
 export function attemptBreakthrough(sim: Sim, a: Avatar, usePill = true): void {
   const r = REALMS[a.realm]!;
   const bt = r.breakthrough!;
@@ -102,14 +125,7 @@ export function attemptBreakthrough(sim: Sim, a: Avatar, usePill = true): void {
       return;
     }
     if (!next) {
-      a.alive = false;
-      a.deathMonth = sim.month;
-      a.deathCause = 'ascension';
-      sim.storyFlag(a, 'ascended');
-      a.deathText = 'Vượt 27 đạo thiên kiếp, phi thăng Tiên giới';
-      a.action = null;
-      sim.s.stats.ascensions += 1;
-      sim.log('death', `${a.name} vượt 27 đạo thiên kiếp, phi thăng Tiên giới. Cả Thanh Vân châu thấy cột sáng suốt ba ngày.`, [a.id], { regionId: a.regionId, major: true });
+      ascend(sim, a);
       return;
     }
     a.realm += 1;
@@ -126,7 +142,8 @@ export function attemptBreakthrough(sim: Sim, a: Avatar, usePill = true): void {
   if (sim.isPlayer(a)) sim.s.soul.story.flags.failed_breakthrough = true;
   a.tuVi *= 1 - sim.rng.range(BREAKTHROUGH.tuViLoss[0], BREAKTHROUGH.tuViLoss[1]);
   const dev = BREAKTHROUGH.deviationAtWill1 + (BREAKTHROUGH.deviationAtWill100 - BREAKTHROUGH.deviationAtWill1) * (a.stats.tamTinh - 1) / 99;
-  const devChance = (a.physiqueId === 'linh_lung_tam' ? dev * 0.3 : dev) * (mods.deviationChanceMult ?? 1);
+  const devChance = (a.physiqueId === 'linh_lung_tam' ? dev * 0.3 : dev) * (mods.deviationChanceMult ?? 1)
+    * (WORLDS[inWorld(a)].deviationChanceMult ?? 1);
   if (sim.rng.chance(devChance)) {
     if (a.stats.tamTinh < BREAKTHROUGH.deviationDeathBelowWill) {
       sim.kill(a, 'qi_deviation', `Đột phá ${next?.name ?? ''} thất bại, tẩu hỏa nhập ma`);
@@ -180,7 +197,7 @@ export const ACTIONS: ActionDef[] = [
     months: () => 6,
     available: (sim, a) => a.realm === 0 && sim.age(a) >= 18 && sim.age(a) <= 55,
     score: (_sim, a) => 0.3 + (a.originId === 'merchant' ? 0.9 : 0) + a.persona.ambition * 0.3 - a.persona.caution * 0.3,
-    region: (_sim, a) => (inWorld(a) === 'mortal' ? 'sa_mac' : 'phuong_thi'),
+    region: (_sim, a) => (inWorld(a) === 'mortal' ? 'sa_mac' : WORLDS[inWorld(a)].market),
     finish: (sim, a) => {
       if (sim.rng.chance(0.06)) {
         if (sim.rng.chance(0.1)) { sim.kill(a, 'battle', 'Bị sơn tặc chặn đường giết hại'); return; }
@@ -249,9 +266,9 @@ export const ACTIONS: ActionDef[] = [
     months: () => 6,
     available: (sim, a) => sim.rootTier(a) > 0 && !a.technique && sim.age(a) >= 10 && sim.age(a) <= 45,
     score: (_sim, a) => 1.2 + a.persona.ambition,
-    region: (sim, a) => inWorld(a) === 'mortal'
-      ? sim.rng.pick(['thien_tru', 'lac_ha', 'kinh_thanh'])
-      : sim.rng.pick(['chan_nui', 'phuong_thi', 'thanh_van']),
+    region: (sim, a) => inWorld(a) === 'mortal' ? sim.rng.pick(['thien_tru', 'lac_ha', 'kinh_thanh'])
+      : inWorld(a) === 'cultivation' ? sim.rng.pick(['chan_nui', 'phuong_thi', 'thanh_van'])
+      : sim.rng.pick(REGIONS.filter((r) => r.world === inWorld(a) && r.kind !== 'beast')).id,
     finish: (sim, a) => {
       const p = 0.12 + (a.stats.khiVan - 50) / 400;
       if (!sim.rng.chance(p)) return;
@@ -335,22 +352,23 @@ export const ACTIONS: ActionDef[] = [
     id: 'mua_dan', label: 'Tới phường thị mua đan đột phá', doing: 'đi mua đan',
     months: () => 1,
     available: (sim, a) => isCultivator(sim, a) && a.realm >= 1 && a.pills === 0
-      && a.stage >= REALMS[a.realm]!.stages.length - 2 && a.linhThach >= pillCost(a.realm),
+      && a.stage >= REALMS[a.realm]!.stages.length - 2 && a.linhThach >= pillCost(a.realm, a),
     score: (_sim, a) => 2.5 + a.persona.caution * 2,
-    region: (_sim, a) => (inWorld(a) === 'mortal' ? 'kinh_thanh' : 'phuong_thi'),
+    region: (_sim, a) => WORLDS[inWorld(a)].market,
     finish: (sim, a) => {
-      a.linhThach -= pillCost(a.realm);
+      a.linhThach -= pillCost(a.realm, a);
       a.pills += 1;
-      if (sim.isPlayer(a)) sim.log('fortune', `${a.name} bỏ ${pillCost(a.realm)} linh thạch mua một viên đan đột phá.`, [a.id], { regionId: a.regionId });
+      if (sim.isPlayer(a)) sim.log('fortune', `${a.name} bỏ ${pillCost(a.realm, a)} linh thạch mua một viên đan đột phá.`, [a.id], { regionId: a.regionId });
     },
   },
   {
     id: 'san_yeu', label: 'Săn yêu thú', doing: 'đi săn yêu thú',
     months: () => 3,
-    available: (sim, a) => isCultivator(sim, a) && a.realm >= 1 && inWorld(a) === 'cultivation' && a.injuredUntil <= sim.month,
+    available: (sim, a) => isCultivator(sim, a) && a.realm >= 1 && REGIONS.some((r) => r.kind === 'beast' && r.world === inWorld(a)) && a.injuredUntil <= sim.month,
     score: (_sim, a) => 0.7 + a.persona.ambition * 0.6 - a.persona.caution * 0.5 + (a.linhThach < pillCost(a.realm) ? 0.8 : 0),
     region: (_sim, a) => {
-      const beasts = REGIONS.filter((r) => r.kind === 'beast' && (r.danger ?? 1) <= Math.max(1, a.realm));
+      const inMine = REGIONS.filter((r) => r.kind === 'beast' && r.world === inWorld(a));
+      const beasts = inMine.filter((r) => (r.danger ?? 1) <= Math.max(1, a.realm)).length ? inMine.filter((r) => (r.danger ?? 1) <= Math.max(1, a.realm)) : inMine;
       return beasts.sort((x, y) => (y.danger ?? 0) - (x.danger ?? 0))[0]!.id;
     },
     finish: (sim, a) => {
@@ -538,7 +556,8 @@ export function rankActions(sim: Sim, a: Avatar): { def: ActionDef; score: numbe
   const out: { def: ActionDef; score: number }[] = [];
   for (const def of ACTIONS) {
     if (!def.available(sim, a)) continue;
-    out.push({ def, score: def.score(sim, a) * pathActionBoost(sim, a, def.id) * sim.rng.range(0.8, 1.2) });
+    const perk = a.sectId ? SECT_PERKS[a.sectId]?.actionBoost?.[def.id] ?? 1 : 1;
+    out.push({ def, score: def.score(sim, a) * pathActionBoost(sim, a, def.id) * perk * sim.rng.range(0.8, 1.2) });
   }
   return out.sort((x, y) => y.score - x.score);
 }
@@ -547,6 +566,8 @@ export function startAction(sim: Sim, a: Avatar, def: ActionDef): void {
   const target = def.target?.(sim, a);
   const dest = target ? target.regionId : def.region?.(sim, a) ?? null;
   const route = dest && dest !== a.regionId ? findPath(a.regionId, dest) : null;
+  // No road between the worlds (Tiên giới): someone out of reach cannot be sought out.
+  if (dest && dest !== a.regionId && !route && target) return;
   a.action = {
     id: def.id,
     startMonth: sim.month,

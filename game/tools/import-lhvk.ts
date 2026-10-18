@@ -63,6 +63,8 @@ const out = {
     beastSpecies: narration.beasts.species,
     beastLands: narration.beastLands,
   },
+  traits: read('birth/traits.yaml'),
+  traitCount: read('birth/birth.yaml').traitCount,
   birthMods: {
     origins: byId(read('birth/origins.yaml'), (o: { modifiers?: unknown }) => o.modifiers ?? {}),
     roots: byId(read('birth/spirit-roots.yaml'), (o: { modifiers?: unknown }) => o.modifiers ?? {}),

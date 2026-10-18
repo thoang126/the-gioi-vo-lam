@@ -8,7 +8,7 @@ import {
   type Check, type Choice, type Conditions, type Effects, type NpcRole, type Outcome, type StatKey, type StoryEvent, type Text,
 } from './content/lhvk';
 import { BASIC_ELEMENTS, GRADES, MUTANT_ELEMENTS, REALMS, SPIRIT_ROOTS, TECHNIQUES, type Element } from './content/cultivation';
-import { REGIONS, SECTS } from './content/world';
+import { REGIONS, SECTS, WORLDS, type WorldId } from './content/world';
 import { duel } from './battle';
 import { botSealFor, fightBot, type TacticId } from './battle-engine';
 import { REGION_BY_ID, Sim, relationWord } from './sim';
@@ -68,6 +68,9 @@ function derivedFlag(sim: Sim, a: Avatar, f: string): boolean {
     case 'sword_bone': return a.physiqueId === 'thien_sinh_kiem_cot';
     case 'past_life_memory': return a.physiqueId === 'luan_hoi_chi_the';
     case 'crippled': return a.crippled;
+    case 'in_clan': return !!a.clanId;
+    case 'clan_head': return !!a.clanId && sim.s.clans?.[a.clanId]?.headId === a.id;
+    case 'yeu_race': return a.race === 'yeu';
     default: return false;
   }
 }
@@ -108,7 +111,8 @@ export function matches(x: Ctx, c: Conditions | undefined): boolean {
   if (c.has_flag && !c.has_flag.every((f) => hasFlag(x, f))) return false;
   if (c.has_flag_not && c.has_flag_not.some((f) => hasFlag(x, f))) return false;
   if (c.any_flag && !c.any_flag.some((f) => hasFlag(x, f))) return false;
-  if (c.trait) return false;
+  if (c.trait && !c.trait.some((t) => (a.traits ?? []).includes(t))) return false;
+  if (c.trait_not && c.trait_not.some((t) => (a.traits ?? []).includes(t))) return false;
   if (c.physique && !(a.physiqueId && c.physique.includes(a.physiqueId))) return false;
   if (c.stat_min && !Object.entries(c.stat_min).every(([k, v]) => a.stats[STAT[k as StatKey]] >= v!)) return false;
   if (c.stat_max && !Object.entries(c.stat_max).every(([k, v]) => a.stats[STAT[k as StatKey]] <= v!)) return false;
@@ -289,7 +293,7 @@ function applyEffects(x: Ctx, fx: Effects | undefined): void {
   if (!fx) return;
   const { sim, a, st } = x;
   const world = REGION_BY_ID[a.regionId]!.world;
-  const worldSect = (w: string) => (w === 'cultivation' ? 'thanh_van' : 'lac_ha');
+  const worldSect = (w: string) => WORLDS[w as WorldId]?.homeSect ?? null;
 
   if (fx.spirit_root && rootTierOf(fx.spirit_root) > sim.rootTier(a)) {
     const root = SPIRIT_ROOTS.find((r) => r.id === fx.spirit_root)!;
@@ -298,7 +302,7 @@ function applyEffects(x: Ctx, fx: Effects | undefined): void {
     a.elements = a.elements.length ? a.elements.slice(0, Math.max(1, root.count[1])) : pool.slice(0, root.count[1]);
   }
   if (fx.world && fx.world !== world && REGIONS.some((r) => r.world === fx.world)) {
-    a.regionId = fx.world === 'cultivation' ? 'phuong_thi' : 'ben_cang';
+    a.regionId = WORLDS[fx.world as WorldId].entry;
     a.action = null;
   }
   if (fx.stat) for (const [k, v] of Object.entries(fx.stat)) {
@@ -307,7 +311,8 @@ function applyEffects(x: Ctx, fx: Effects | undefined): void {
   }
   for (const f of asList(fx.add_flag)) {
     st.flags[f] = true;
-    if (f === 'in_sect' && !a.sectId && sim.rootTier(a) > 0) joinSect(sim, a, worldSect(REGION_BY_ID[a.regionId]!.world));
+    const home = worldSect(REGION_BY_ID[a.regionId]!.world);
+    if (f === 'in_sect' && !a.sectId && sim.rootTier(a) > 0 && home) joinSect(sim, a, home);
   }
   for (const f of asList(fx.remove_flag)) {
     delete st.flags[f];
@@ -316,7 +321,8 @@ function applyEffects(x: Ctx, fx: Effects | undefined): void {
   if (fx.set?.env) {
     const e = fx.set.env;
     if ((e === 'outer_sect' || e === 'inner_sect') && sim.rootTier(a) > 0) {
-      if (!a.sectId) joinSect(sim, a, worldSect(REGION_BY_ID[a.regionId]!.world));
+      const home = worldSect(REGION_BY_ID[a.regionId]!.world);
+      if (!a.sectId && home) joinSect(sim, a, home);
       if (e === 'inner_sect' && (a.sectRank === 'tap_dich' || a.sectRank === 'ngoai_mon')) a.sectRank = 'noi_mon';
     } else if (e === 'tan_tu' && a.sectId) {
       a.sectId = null;
@@ -413,7 +419,8 @@ function startPath(x: Ctx, id: string): void {
   x.st.pathHistory.push({ slot: p.slot, id, from: age, to: null });
   const { sim, a } = x;
   const world = REGION_BY_ID[a.regionId]!.world;
-  if (id === 'sect_path' && !a.sectId && sim.rootTier(a) > 0) joinSect(sim, a, world === 'cultivation' ? 'thanh_van' : 'lac_ha');
+  const home = WORLDS[world].homeSect;
+  if (id === 'sect_path' && !a.sectId && sim.rootTier(a) > 0 && home) joinSect(sim, a, home);
   if ((id === 'rogue_path' || id === 'demonic_path') && a.sectId && SECTS.find((s) => s.id === a.sectId)?.alignment === 'righteous') {
     sim.log('sect', `${a.name} rời ${SECTS.find((s) => s.id === a.sectId)!.name}.`, [a.id], { regionId: a.regionId });
     a.sectId = null;
@@ -485,9 +492,10 @@ function effectiveWeight(x: Ctx, e: StoryEvent): number {
   const luck = LHVK.eventConfig.luck;
   const kv = x.a.stats.khiVan - 50;
   const m = x.sim.mods(x.a);
+  const wd = WORLDS[REGION_BY_ID[x.a.regionId]!.world];
   let w = e.weight;
-  if (e.kind === 'fortune' || e.kind === 'mythic') w *= Math.min(luck.max, Math.max(luck.min, 1 + kv * luck.fortuneSlope)) * (m.fortuneWeightMult ?? 1);
-  else if (e.kind === 'calamity') w *= Math.min(luck.max, Math.max(luck.min, 1 - kv * luck.calamitySlope)) * (m.calamityWeightMult ?? 1);
+  if (e.kind === 'fortune' || e.kind === 'mythic') w *= Math.min(luck.max, Math.max(luck.min, 1 + kv * luck.fortuneSlope)) * (m.fortuneWeightMult ?? 1) * (wd.fortuneWeightMult ?? 1);
+  else if (e.kind === 'calamity') w *= Math.min(luck.max, Math.max(luck.min, 1 - kv * luck.calamitySlope)) * (m.calamityWeightMult ?? 1) * (wd.calamityWeightMult ?? 1);
   for (const t of e.tags ?? []) w *= m.eventTagWeightMult?.[t] ?? 1;
   return w;
 }
@@ -515,7 +523,8 @@ function offerEvent(x: Ctx, e: StoryEvent, options: { choice: Choice; index: num
   const prompt = render(x, e.text, vars);
   const data: Record<string, string | number> = { event: e.id, prompt };
   for (const [k, v] of Object.entries(x.cast)) if (v !== undefined) data[`cast_${k}`] = v;
-  const sight = (x.sim.s.soul.memories.sight ?? 0) > 0;
+  // Lục đạo thị giác, or the Thiên cơ thuật talent.
+  const sight = (x.sim.s.soul.memories.sight ?? 0) > 0 || (x.a.traits ?? []).includes('heaven_secret');
   const odds = (index: number) => {
     const p = sight ? choiceOdds(x.sim, x.a, e.id, `c${index}`) : null;
     return p === null ? undefined : `Lục đạo thị giác: ${Math.round(p * 100)}% thành công`;
