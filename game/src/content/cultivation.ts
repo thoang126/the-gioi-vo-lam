@@ -105,12 +105,12 @@ export interface SpiritRoot {
 
 export const SPIRIT_ROOTS: SpiritRoot[] = [
   { id: 'none', name: 'Không linh căn', tier: 0, weight: 70, mult: 0, pool: 'none', count: [0, 0] },
-  { id: 'tap', name: 'Ngũ hành tạp linh căn', tier: 1, weight: 18, mult: 0.5, pool: 'basic', count: [4, 5] },
-  { id: 'tam', name: 'Tam linh căn', tier: 2, weight: 8, mult: 1, pool: 'basic', count: [3, 3] },
-  { id: 'song', name: 'Song linh căn', tier: 3, weight: 3, mult: 1.6, pool: 'basic', count: [2, 2] },
-  { id: 'don', name: 'Đơn linh căn', tier: 4, weight: 0.9, mult: 2.5, pool: 'basic', count: [1, 1] },
-  { id: 'bien_di', name: 'Biến dị linh căn', tier: 5, weight: 0.09, mult: 3, pool: 'mutant', count: [1, 1] },
-  { id: 'thien', name: 'Thiên linh căn', tier: 6, weight: 0.01, mult: 4, pool: 'basic', count: [1, 1] },
+  { id: 'tap_linh_can', name: 'Ngũ hành tạp linh căn', tier: 1, weight: 18, mult: 0.5, pool: 'basic', count: [4, 5] },
+  { id: 'tam_linh_can', name: 'Tam linh căn', tier: 2, weight: 8, mult: 1, pool: 'basic', count: [3, 3] },
+  { id: 'song_linh_can', name: 'Song linh căn', tier: 3, weight: 3, mult: 1.6, pool: 'basic', count: [2, 2] },
+  { id: 'don_linh_can', name: 'Đơn linh căn', tier: 4, weight: 0.9, mult: 2.5, pool: 'basic', count: [1, 1] },
+  { id: 'bien_di_linh_can', name: 'Biến dị linh căn', tier: 5, weight: 0.09, mult: 3, pool: 'mutant', count: [1, 1] },
+  { id: 'thien_linh_can', name: 'Thiên linh căn', tier: 6, weight: 0.01, mult: 4, pool: 'basic', count: [1, 1] },
 ];
 /** GDD phụ lục A.2: P(có linh căn) = 30% × hệ số xuất thân. */
 export const ROOTED_CHANCE = 0.3;
@@ -142,11 +142,11 @@ export const ORIGINS: Origin[] = [
 export interface Physique { id: string; name: string; weight: number; desc: string }
 export const PHYSIQUE_CHANCE = 0.05;
 export const PHYSIQUES: Physique[] = [
-  { id: 'hoang_co', name: 'Hoang cổ thánh thể', weight: 15, desc: 'Căn cốt +25, tu luyện ×0,7, thọ +30' },
-  { id: 'kiem_cot', name: 'Thiên sinh kiếm cốt', weight: 20, desc: 'Kiếm đạo nhanh, hay gặp kiếm mộ' },
-  { id: 'luan_hoi', name: 'Luân hồi chi thể', weight: 15, desc: 'Ngộ tính +8, Tâm tính +8, nhớ rõ tiền kiếp hơn' },
-  { id: 'linh_lung', name: 'Thất khiếu linh lung tâm', weight: 15, desc: 'Tâm tính +20, khó tẩu hỏa' },
-  { id: 'cuu_am', name: 'Cửu Âm tuyệt mạch', weight: 15, desc: 'Ngộ tính +15, tu luyện ×1,5, chết trước 20 tuổi nếu chưa Trúc Cơ' },
+  { id: 'hoang_co_thanh_the', name: 'Hoang cổ thánh thể', weight: 15, desc: 'Căn cốt +25, tu luyện ×0,7, thọ +30' },
+  { id: 'thien_sinh_kiem_cot', name: 'Thiên sinh kiếm cốt', weight: 20, desc: 'Kiếm đạo nhanh, hay gặp kiếm mộ' },
+  { id: 'luan_hoi_chi_the', name: 'Luân hồi chi thể', weight: 15, desc: 'Ngộ tính +8, Tâm tính +8, nhớ rõ tiền kiếp hơn' },
+  { id: 'linh_lung_tam', name: 'Thất khiếu linh lung tâm', weight: 15, desc: 'Tâm tính +20, khó tẩu hỏa' },
+  { id: 'cuu_am_tuyet_mach', name: 'Cửu Âm tuyệt mạch', weight: 15, desc: 'Ngộ tính +15, tu luyện ×1,5, chết trước 20 tuổi nếu chưa Trúc Cơ' },
   { id: 'doc_the', name: 'Độc thể', weight: 20, desc: 'Vạn độc bất xâm' },
 ];
 

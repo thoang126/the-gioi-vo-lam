@@ -191,6 +191,8 @@ export function phaseSects(sim: Sim): void {
       for (const c of cands) {
         if (taken >= Math.min(10, room)) break;
         if (sim.isPlayer(c)) {
+          // Righteous sects reach the player through the story events (Thanh Vân tông mở sơn môn…).
+          if (!evil) continue;
           const servant = sim.rootTier(c) < def.minRootTier;
           offerToPlayer(sim, {
             kind: 'offer',
@@ -362,7 +364,7 @@ export function phaseLifecycle(sim: Sim): void {
   for (const a of sim.living()) {
     const age = sim.age(a);
     const ls = sim.lifespan(a);
-    if (a.physiqueId === 'cuu_am' && age >= 20 && a.realm < 2) {
+    if (a.physiqueId === 'cuu_am_tuyet_mach' && age >= 20 && a.realm < 2) {
       sim.kill(a, 'doom', 'Cửu Âm tuyệt mạch phát tác, hàn khí công tâm');
       continue;
     }
@@ -373,7 +375,7 @@ export function phaseLifecycle(sim: Sim): void {
     let annual = sim.childMortality(a);
     if (age > 12) {
       const nat = a.realm === 0 ? MORTALITY.natural.mortal : MORTALITY.natural.cultivator;
-      annual = nat.a * Math.exp(nat.b * age / ls);
+      annual = nat.a * Math.exp(nat.b * age / ls) * (sim.mods(a).naturalMortalityMult ?? 1);
     }
     if (sim.rng.chance(annual / 12)) {
       if (age <= 12) sim.kill(a, 'child', 'Chết yểu');

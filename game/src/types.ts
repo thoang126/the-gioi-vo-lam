@@ -40,7 +40,7 @@ export interface ActionState {
 
 export type DeathCause =
   | 'old_age' | 'illness' | 'child' | 'battle' | 'beast' | 'qi_deviation'
-  | 'tribulation' | 'sea' | 'war' | 'doom' | 'ascension';
+  | 'tribulation' | 'sea' | 'war' | 'doom' | 'ascension' | 'assassinated' | 'wound';
 
 export interface Avatar {
   id: number;
@@ -65,6 +65,11 @@ export interface Avatar {
   contribution: number;
   linhThach: number;
   pills: number;
+  /** Named items from the story content (Trúc Cơ đan, Hồi Xuân đan…). */
+  items: Record<string, number>;
+  artifacts: string[];
+  skills: string[];
+  lifespanBonus: number;
   renown: number;
   injuredUntil: number;
   breakthroughCooldownUntil: number;
@@ -85,7 +90,7 @@ export interface Avatar {
 
 export type EventKind =
   | 'birth' | 'death' | 'breakthrough' | 'realm' | 'sect' | 'battle' | 'relation'
-  | 'fortune' | 'war' | 'world' | 'travel' | 'past_life' | 'soul';
+  | 'fortune' | 'war' | 'world' | 'travel' | 'past_life' | 'soul' | 'story';
 
 export interface WorldEvent {
   id: number;
@@ -126,7 +131,7 @@ export interface ChoiceOption {
 }
 
 export interface PendingChoice {
-  kind: 'action' | 'offer' | 'rebirth';
+  kind: 'action' | 'offer' | 'rebirth' | 'event';
   prompt: string;
   options: ChoiceOption[];
   /** Opaque data the resolver needs (offer type, the other avatar…). */
@@ -150,6 +155,22 @@ export interface LifeRecord {
   daoQua: number;
   titles: string[];
   technique: string | null;
+  paths: string[];
+}
+
+/** Per-life story state, the Luân Hồi Vạn Kiếp event engine's bookkeeping for the player. */
+export interface StoryState {
+  flags: Record<string, true>;
+  seen: Record<string, number>;
+  /** Event id → age when it first happened. */
+  seenAt: Record<string, number>;
+  cooldowns: Record<string, number>;
+  crossroads: number;
+  lastCrossroadAge: number;
+  paths: Partial<Record<string, { id: string; since: number }>>;
+  pathHistory: { slot: string; id: string; from: number; to: number | null }[];
+  /** Age of the last yearly story roll. */
+  lastYear: number;
 }
 
 export interface Soul {
@@ -166,6 +187,7 @@ export interface Soul {
   autoplay: boolean;
   /** The player's chosen action keeps repeating this many more times before asking again. */
   habit: { id: string; left: number } | null;
+  story: StoryState;
   /** While the soul waits in the cycle of rebirth: the month it is born again. */
   rebirthAt: number | null;
 }

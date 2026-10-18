@@ -3,6 +3,7 @@ import { REGIONS, SECTS, SECT_RELATIONS, type SectRankId } from './content/world
 import { phaseDecide, phaseEncounters, phaseExecute, phaseHousekeeping, phaseLifecycle, phaseSects, phaseWorld } from './phases';
 import { checkPlayerDeath, playerPhase, resolvePending } from './player';
 import { Sim } from './sim';
+import { newStory } from './story';
 import type { Avatar, WorldState } from './types';
 
 export interface CreateOptions {
@@ -30,7 +31,7 @@ export function createWorld(seed: number, opts: CreateOptions = {}): WorldState 
     soul: {
       lives: [], currentAvatarId: null, points: 0,
       memories: { manhBa: 0, luck: 0, technique: 0 },
-      pastLinks: {}, metThisLife: [], pending: null, autoplay: opts.autoplay ?? false, rebirthAt: null, habit: null,
+      pastLinks: {}, metThisLife: [], pending: null, autoplay: opts.autoplay ?? false, rebirthAt: null, habit: null, story: newStory(),
     },
     stats: { births: 0, deaths: 0, ascensions: 0, maxRealmEver: 0 },
   };

@@ -1,7 +1,7 @@
 import {
   advance, choose, createWorld, setAutoplay, Sim, YEAR_OFFSET, ACTION_BY_ID, MEMORIES,
   REGIONS, ROUTES, SEA_ROUTE, SECTS, SECT_RANKS, REALMS, WORLDS, ELEMENT_NAMES,
-  REGION_BY_ID, SECT_BY_ID, ROOT_BY_ID, ORIGIN_BY_ID, PHYSIQUE_BY_ID, relationWord,
+  REGION_BY_ID, SECT_BY_ID, ROOT_BY_ID, ORIGIN_BY_ID, PHYSIQUE_BY_ID, relationWord, EVENT_BY_ID, LHVK, pathNames,
 } from '../src/index';
 import type { Avatar, WorldEvent, WorldState } from '../src/types';
 
@@ -24,7 +24,8 @@ function loadOrCreate(): WorldState {
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as WorldState;
-      if (parsed.version === 1) return parsed;
+      // Saves from before the story events lack the per-life story state; start a fresh world for those.
+      if (parsed.version === 1 && parsed.soul?.story) return parsed;
     }
   } catch { /* storage unavailable */ }
   return createWorld(Math.floor(Math.random() * 2 ** 31));
@@ -218,7 +219,10 @@ function avatarBlock(sim: Sim, a: Avatar): string {
       ${a.physiqueId ? `<dt>Thể chất</dt><dd>${esc(PHYSIQUE_BY_ID[a.physiqueId]!.name)}</dd>` : ''}
       <dt>Công pháp</dt><dd>${a.technique ? esc(a.technique.name) : 'Chưa có'}</dd>
       <dt>Tông môn</dt><dd>${a.sectId ? `${esc(SECT_BY_ID[a.sectId]!.name)}, ${SECT_RANKS.find((x) => x.id === a.sectRank)?.name ?? ''}` : 'Không'}</dd>
-      <dt>Tài sản</dt><dd>${a.linhThach} linh thạch · ${a.pills} viên đan</dd>
+      ${sim.isPlayer(a) && pathNames(sim).length ? `<dt>Đạo đồ</dt><dd>${esc(pathNames(sim).join(', '))}</dd>` : ''}
+      <dt>Tài sản</dt><dd>${a.linhThach} linh thạch · ${a.pills} viên đan${Object.entries(a.items).filter(([, n]) => n > 0).map(([id, n]) => ` · ${esc(LHVK.items[id]?.name ?? id)}${n > 1 ? ` ×${n}` : ''}`).join('')}</dd>
+      ${a.artifacts.length ? `<dt>Pháp bảo</dt><dd>${esc(a.artifacts.map((id) => LHVK.artifacts[id]?.name ?? id).join(', '))}</dd>` : ''}
+      ${a.skills.length ? `<dt>Võ kỹ</dt><dd>${esc(a.skills.join(', '))}</dd>` : ''}
       <dt>Danh vọng</dt><dd>${a.renown}${a.kills ? ` · đã hạ ${a.kills} người` : ''}</dd>
     </dl>
     ${a.titles.length ? `<div class="chips">${a.titles.map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</div>` : ''}
@@ -239,7 +243,8 @@ function choiceCard(sim: Sim): string {
   const p = s.soul.pending;
   if (!p) return '';
   void sim;
-  const title = p.kind === 'rebirth' ? 'Cầu Nại Hà' : p.kind === 'offer' ? 'Cơ duyên' : 'Ngã rẽ';
+  const ev = p.kind === 'event' ? EVENT_BY_ID[String(p.data?.event)] : undefined;
+  const title = p.kind === 'rebirth' ? 'Cầu Nại Hà' : p.kind === 'offer' ? 'Cơ duyên' : ev?.kind === 'milestone' ? 'Bước ngoặt' : ev?.kind === 'acquaintance' ? 'Người quen nhờ cậy' : 'Ngã rẽ';
   return `<div class="card choice"><div class="eyebrow">${title}</div><p class="prompt">${esc(p.prompt)}</p>
     <div class="options">${p.options.map((o) => `<button class="opt" data-choose="${o.id}"><span>${esc(o.label)}</span>${o.hint ? `<small>${esc(o.hint)}</small>` : ''}</button>`).join('')}</div>
     ${p.kind === 'action' ? '<p class="small muted" style="margin:0">Việc ngươi chọn sẽ được làm 3 lần liền rồi mới hỏi lại. Bật "Tự quyết" để nhân vật tự sống theo tâm tính.</p>' : ''}</div>`;
@@ -256,7 +261,7 @@ function livesView(): string {
   const soul = s.soul;
   const mem = (Object.keys(MEMORIES) as (keyof typeof MEMORIES)[]).map((k) => `<li>${esc(MEMORIES[k].name)}: cấp ${soul.memories[k]}/${MEMORIES[k].max} <span class="muted small">(${esc(MEMORIES[k].desc)})</span></li>`).join('');
   const lives = soul.lives.slice().reverse().map((l) => `<tr><td class="num">${l.index + 1}</td><td><button class="linkish" data-avatar="${l.avatarId}">${esc(l.name)}</button><br><span class="small muted">${yearOf(l.bornMonth)}–${yearOf(l.diedMonth)}, ${esc(REGION_BY_ID[l.bornRegion]!.name)}</span></td>
-    <td>${esc(REALMS[l.realm]!.name)}</td><td class="small">${esc(l.causeText)}</td><td class="num">${l.daoQua}</td></tr>`).join('');
+    <td>${esc(REALMS[l.realm]!.name)}${l.paths?.length ? `<br><span class="small muted">${esc(l.paths.join(', '))}</span>` : ''}</td><td class="small">${esc(l.causeText)}</td><td class="num">${l.daoQua}</td></tr>`).join('');
   return `<p class="small">${soul.points} Luân Hồi Điểm. Mở ký ức tiền kiếp ở cầu Nại Hà sau mỗi lần chết.</p><ul class="rels">${mem}</ul>
     ${lives ? `<div style="overflow-x:auto;margin-top:12px"><table><thead><tr><th>Kiếp</th><th>Tên</th><th>Cảnh giới</th><th>Kết cục</th><th>Đạo Quả</th></tr></thead><tbody>${lives}</tbody></table></div>` : '<p class="muted small" style="margin-top:12px">Đây là kiếp đầu tiên.</p>'}`;
 }

@@ -7,6 +7,8 @@ import { REGIONS } from './content/world';
 import { duel, fightBeast } from './battle';
 import { REGION_BY_ID, SECT_BY_ID, Sim, findPath, relationWord } from './sim';
 import type { Avatar } from './types';
+import { LHVK } from './content/lhvk';
+import { pathActionBoost } from './story';
 
 export interface ActionDef {
   id: string;
@@ -53,13 +55,19 @@ function countRelation(sim: Sim, a: Avatar, kind: string): number {
 export function attemptBreakthrough(sim: Sim, a: Avatar): void {
   const r = REALMS[a.realm]!;
   const bt = r.breakthrough!;
-  const usedPill = a.pills > 0;
-  if (usedPill) a.pills -= 1;
+  const next0 = REALMS[a.realm + 1]?.id;
+  const named = Object.keys(a.items).find((id) => (a.items[id] ?? 0) > 0 && LHVK.items[id]?.breakthroughFor === next0);
+  let pillBonus = 0;
+  if (named) { a.items[named]! -= 1; pillBonus = LHVK.items[named]!.breakthroughBonus; }
+  else if (a.pills > 0) { a.pills -= 1; pillBonus = BREAKTHROUGH.pillBonus; }
+  const usedPill = pillBonus > 0;
+  const mods = sim.mods(a);
+  if (usedPill && sim.isPlayer(a)) sim.s.soul.story.flags.used_pill = true;
   let p = bt.base + (a.stats.ngoTinh - 50) / BREAKTHROUGH.insightDivisor + (a.stats.tamTinh - 50) / BREAKTHROUGH.willDivisor
-    + (usedPill ? BREAKTHROUGH.pillBonus : 0);
+    + pillBonus + (mods.breakthroughBonus ?? 0);
   p = Math.min(BREAKTHROUGH.clamp[1], Math.max(BREAKTHROUGH.clamp[0], p));
   const next = REALMS[a.realm + 1];
-  const pillText = usedPill ? ' Uống một viên đan.' : '';
+  const pillText = named ? ` Uống ${LHVK.items[named]!.name}.` : usedPill ? ' Uống một viên đan.' : '';
   if (sim.rng.chance(p)) {
     const tb = BREAKTHROUGH.tribulation;
     const perBolt = Math.min(tb.clamp[1], Math.max(tb.clamp[0], bt.survive + (a.stats.canCot - 50) / tb.canCotDivisor + (a.stats.tamTinh - 50) / tb.willDivisor));
@@ -88,9 +96,10 @@ export function attemptBreakthrough(sim: Sim, a: Avatar): void {
     return;
   }
   a.breakthroughCooldownUntil = sim.month + bt.retryYears * 12;
+  if (sim.isPlayer(a)) sim.s.soul.story.flags.failed_breakthrough = true;
   a.tuVi *= 1 - sim.rng.range(BREAKTHROUGH.tuViLoss[0], BREAKTHROUGH.tuViLoss[1]);
   const dev = BREAKTHROUGH.deviationAtWill1 + (BREAKTHROUGH.deviationAtWill100 - BREAKTHROUGH.deviationAtWill1) * (a.stats.tamTinh - 1) / 99;
-  const devChance = a.physiqueId === 'linh_lung' ? dev * 0.3 : dev;
+  const devChance = (a.physiqueId === 'linh_lung_tam' ? dev * 0.3 : dev) * (mods.deviationChanceMult ?? 1);
   if (sim.rng.chance(devChance)) {
     if (a.stats.tamTinh < BREAKTHROUGH.deviationDeathBelowWill) {
       sim.kill(a, 'qi_deviation', `Đột phá ${next?.name ?? ''} thất bại, tẩu hỏa nhập ma`);
@@ -196,7 +205,7 @@ export const ACTIONS: ActionDef[] = [
     region: (sim, a) => sim.rng.pick(REGIONS.filter((r) => r.world === inWorld(a) && r.kind !== 'beast' && r.kind !== 'sect' && r.id !== a.regionId)).id,
     finish: (sim, a) => {
       if (sim.rootTier(a) === 0 && sim.rng.chance(0.004 + (a.stats.khiVan - 50) / 10000)) {
-        a.rootId = 'tap';
+        a.rootId = 'tap_linh_can';
         a.elements = ['kim', 'moc', 'thuy', 'hoa'];
         a.fortunes += 1;
         sim.log('fortune', `${a.name} uống nhầm nước một linh tuyền trong núi. Xương cốt kêu răng rắc suốt đêm, sáng ra đã cảm được linh khí.`, [a.id], { regionId: a.regionId, major: true });
@@ -360,12 +369,12 @@ export const ACTIONS: ActionDef[] = [
     id: 'ngo_kiem', label: 'Ngộ kiếm ở Kiếm mộ', doing: 'ngộ kiếm ở Kiếm mộ',
     months: () => 6,
     available: (sim, a) => isCultivator(sim, a) && a.realm >= 1 && inWorld(a) === 'cultivation'
-      && (a.physiqueId === 'kiem_cot' || a.technique?.element === 'kim'),
-    score: (_sim, a) => (a.physiqueId === 'kiem_cot' ? 2 : 0.5),
+      && (a.physiqueId === 'thien_sinh_kiem_cot' || a.technique?.element === 'kim'),
+    score: (_sim, a) => (a.physiqueId === 'thien_sinh_kiem_cot' ? 2 : 0.5),
     region: () => 'kiem_mo',
     tick: (sim, a) => sim.addTuVi(a, sim.cultivationPerMonth(a)),
     finish: (sim, a) => {
-      const p = a.physiqueId === 'kiem_cot' ? 0.3 : 0.08;
+      const p = a.physiqueId === 'thien_sinh_kiem_cot' ? 0.3 : 0.08;
       if ((a.technique?.grade ?? 0) < 3 && sim.rng.chance(p)) {
         a.technique = TECHNIQUES.find((t) => t.name === 'Thái Hư Kiếm Điển')!;
         a.fortunes += 1;
@@ -465,7 +474,7 @@ export function rankActions(sim: Sim, a: Avatar): { def: ActionDef; score: numbe
   const out: { def: ActionDef; score: number }[] = [];
   for (const def of ACTIONS) {
     if (!def.available(sim, a)) continue;
-    out.push({ def, score: def.score(sim, a) * sim.rng.range(0.8, 1.2) });
+    out.push({ def, score: def.score(sim, a) * pathActionBoost(sim, a, def.id) * sim.rng.range(0.8, 1.2) });
   }
   return out.sort((x, y) => y.score - x.score);
 }

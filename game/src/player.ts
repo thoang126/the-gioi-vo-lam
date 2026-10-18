@@ -2,12 +2,13 @@
 // boundaries the world pauses on a PendingChoice (CWS "roleplay mode", here the default).
 // On death the soul waits some years in the cycle of rebirth, then is born again elsewhere.
 
-import { ELEMENT_NAMES, REALMS, TECHNIQUES } from './content/cultivation';
+import { REALMS, TECHNIQUES } from './content/cultivation';
 import { REGIONS, WORLDS, type WorldId } from './content/world';
 import { rankActions, startAction, ACTION_BY_ID } from './actions';
-import { REGION_BY_ID, ROOT_BY_ID, SECT_BY_ID, Sim, relationWord } from './sim';
+import { REGION_BY_ID, SECT_BY_ID, Sim, relationWord } from './sim';
 import type { Avatar, PendingChoice } from './types';
 import { joinSect } from './phases';
+import { autoChoose, newStory, pathNames, resolveStoryChoice, storyYear } from './story';
 
 export const MEMORIES = {
   manhBa: { name: 'Mạnh Bà quên uống', desc: '+1 mọi chỉ số gốc mỗi cấp', cost: (lvl: number) => 30 * (lvl + 1), max: 10 },
@@ -57,6 +58,9 @@ function resolveOffer(sim: Sim, choice: PendingChoice, optionId: string): void {
     if (!o || !o.alive) return;
     if (optionId === 'accept') {
       sim.relate(a, o, 'partner', 'partner', 70);
+      // Same flags the story's own "Thành gia" turning point sets, so family events follow.
+      sim.s.soul.story.flags.married = true;
+      if (a.realm >= 1 && o.realm >= 1) sim.s.soul.story.flags.dao_partner = true;
       sim.log('relation', `${a.name} và ${o.name} ${a.realm >= 1 ? 'kết làm đạo lữ' : 'thành thân'}.`, [a.id, o.id], { regionId: a.regionId });
     } else {
       sim.log('relation', `${a.name} từ chối ${o.name}. Người kia lặng lẽ rời đi.`, [a.id, o.id], { regionId: a.regionId });
@@ -78,11 +82,13 @@ export function playerPhase(sim: Sim): boolean {
   if (!a || !a.alive) return false;
 
   reunions(sim, a);
-  if (sim.month - a.birthMonth === 7 * 12) {
-    const root = ROOT_BY_ID[a.rootId]!;
-    sim.log('soul', root.tier === 0
-      ? `${a.name} bảy tuổi, đặt tay lên đá thử linh căn. Đá tối om: không linh căn.`
-      : `${a.name} bảy tuổi, đặt tay lên đá thử linh căn. Đá sáng lên: ${root.name} (${a.elements.map((e) => ELEMENT_NAMES[e]).join(', ')}).`, [a.id], { regionId: a.regionId });
+  if ((sim.month - a.birthMonth) % 12 === 0) {
+    const p = storyYear(sim, a);
+    if (p) {
+      if (soul.autoplay) resolveStoryChoice(sim, a, p, autoChoose(sim, a, p));
+      else { soul.pending = p; return true; }
+    }
+    if (!a.alive) return false;
   }
 
   if (a.action || sim.age(a) < 12) return false;
@@ -133,6 +139,7 @@ export function resolvePending(sim: Sim, optionId: string): void {
   if (p.kind === 'rebirth') { resolveRebirth(sim, optionId); return; }
   const a = playerAvatar(sim);
   if (!a || !a.alive) return;
+  if (p.kind === 'event') { resolveStoryChoice(sim, a, p, optionId); return; }
   if (optionId === 'auto') {
     const best = rankActions(sim, a)[0];
     if (best) startAction(sim, a, best.def);
@@ -179,7 +186,7 @@ function reunions(sim: Sim, a: Avatar): void {
     const key = -(g.avatarId + 1);
     if (soul.metThisLife.includes(key)) continue;
     soul.metThisLife.push(key);
-    sim.log('past_life', `${a.name} đi ngang một ngôi mộ cũ: "${g.name}, ${REALMS[g.realm]!.name}". Lòng ngực bỗng nhói lên. Đó là mộ của chính ngươi ở kiếp thứ ${g.soulLife + 1}.`, [a.id], { regionId: a.regionId });
+    sim.log('past_life', `${a.name} đi ngang một ngôi mộ cũ: "${g.name}, ${REALMS[g.realm]!.name}". Lồng ngực bỗng nhói lên. Đó là mộ của chính ngươi ở kiếp thứ ${g.soulLife + 1}.`, [a.id], { regionId: a.regionId });
     if (sim.canCultivate(a)) sim.addTuVi(a, sim.cultivationPerMonth(a) * 24);
   }
 }
@@ -196,6 +203,7 @@ export function checkPlayerDeath(sim: Sim): void {
     bornRegion: a.bornRegion, diedRegion: a.regionId, realm: a.realm, stage: a.stage, rootId: a.rootId,
     sectId: a.sectId, cause: a.deathCause ?? 'illness', causeText: a.deathText ?? '', daoQua: dq, titles: [...a.titles],
     technique: a.technique?.name ?? null,
+    paths: pathNames(sim),
   });
   for (const [id, r] of Object.entries(a.relations)) {
     const o = sim.s.avatars[Number(id)];
@@ -258,6 +266,7 @@ export function reborn(sim: Sim): Avatar {
   soul.currentAvatarId = a.id;
   soul.rebirthAt = null;
   soul.metThisLife = [];
+  soul.story = newStory();
   const last = soul.lives[soul.lives.length - 1];
   if (last?.technique && sim.rootTier(a) > 0 && sim.rng.chance(0.05 * soul.memories.technique)) {
     a.technique = TECHNIQUES.find((t) => t.name === last.technique) ?? a.technique;

@@ -3,6 +3,7 @@ import {
   SPIRIT_ROOTS, TECHNIQUES, BASIC_ELEMENTS, MUTANT_ELEMENTS, type Element, type Technique,
 } from './content/cultivation';
 import { REGIONS, ROUTES, SECTS, SECT_RANKS, WORLDS, type Region, type SectDef } from './content/world';
+import { LHVK, PATH_BY_ID, type Modifiers } from './content/lhvk';
 import { Rng } from './rng';
 import type {
   Avatar, DeathCause, EventKind, Gender, Grave, RelationKind, WorldEvent, WorldState,
@@ -48,6 +49,7 @@ export function legMonths(a: string, b: string): number {
 }
 
 export const MONTHS_PER_YEAR = 12;
+const NO_MODS: Modifiers = Object.freeze({});
 
 export class Sim {
   rng: Rng;
@@ -86,7 +88,31 @@ export class Sim {
   }
 
   lifespan(a: Avatar): number {
-    return REALMS[a.realm]!.lifespan + (a.physiqueId === 'hoang_co' ? 30 : 0);
+    return REALMS[a.realm]!.lifespan + (a.physiqueId === 'hoang_co_thanh_the' ? 30 : 0) + a.lifespanBonus
+      + (this.mods(a).lifespanBonus ?? 0);
+  }
+
+  /**
+   * Passive modifiers of the player: life paths (đạo đồ) plus the event-weight parts of origin,
+   * spirit root and physique. NPCs walk no paths and draw no story events, so they get none.
+   */
+  mods(a: Avatar): Modifiers {
+    if (!this.isPlayer(a)) return NO_MODS;
+    const parts: Modifiers[] = [];
+    for (const p of Object.values(this.s.soul.story.paths)) if (p) parts.push(PATH_BY_ID[p.id]?.modifiers ?? {});
+    for (const m of [LHVK.birthMods.origins[a.originId], LHVK.birthMods.roots[a.rootId], a.physiqueId ? LHVK.birthMods.physiques[a.physiqueId] : undefined]) {
+      if (m) parts.push({ eventTagWeightMult: m.eventTagWeightMult, fortuneWeightMult: m.fortuneWeightMult, calamityWeightMult: m.calamityWeightMult });
+    }
+    const out: Modifiers = { eventTagWeightMult: {}, choiceTagMult: {} };
+    for (const m of parts) {
+      for (const k of ['cultivationMult', 'fortuneWeightMult', 'calamityWeightMult', 'naturalMortalityMult', 'deviationChanceMult'] as const) {
+        if (m[k] !== undefined) out[k] = (out[k] ?? 1) * m[k]!;
+      }
+      for (const k of ['breakthroughBonus', 'lifespanBonus'] as const) if (m[k] !== undefined) out[k] = (out[k] ?? 0) + m[k]!;
+      for (const [t, v] of Object.entries(m.eventTagWeightMult ?? {})) out.eventTagWeightMult![t] = (out.eventTagWeightMult![t] ?? 1) * v;
+      for (const [t, v] of Object.entries(m.choiceTagMult ?? {})) out.choiceTagMult![t] = (out.choiceTagMult![t] ?? 1) * v;
+    }
+    return out;
   }
 
   rootTier(a: Avatar): number {
@@ -123,9 +149,10 @@ export class Sim {
       * mult * this.envMult(a) * REALMS[a.realm]!.cultivationMult * bonus;
     if (a.injuredUntil > this.s.month) v *= 0.7;
     if (a.crippled) v *= 0.5;
-    if (a.physiqueId === 'hoang_co') v *= 0.7;
-    if (a.physiqueId === 'cuu_am') v *= 1.5;
+    if (a.physiqueId === 'hoang_co_thanh_the') v *= 0.7;
+    if (a.physiqueId === 'cuu_am_tuyet_mach') v *= 1.5;
     if (a.sectId === 'huyet_sat') v *= 1.15;
+    v *= this.mods(a).cultivationMult ?? 1;
     return Math.max(0, v) / MONTHS_PER_YEAR;
   }
 
@@ -141,7 +168,9 @@ export class Sim {
     let p = r.battleMult * (1 + 0.08 * a.stage) * (20 + a.stats.canCot * 0.5 + a.stats.ngoTinh * 0.5) * tech;
     if (a.injuredUntil > this.s.month) p *= 0.7;
     if (a.crippled) p *= 0.5;
-    return p;
+    let gear = 0;
+    for (const id of a.artifacts) gear += (LHVK.artifacts[id]?.atk ?? 0) + (LHVK.artifacts[id]?.def ?? 0);
+    return p * (1 + gear / 150);
   }
 
   daoQua(a: Avatar): number {
@@ -285,10 +314,10 @@ export class Sim {
     };
     let physiqueId: string | null = null;
     if (this.rng.chance(PHYSIQUE_CHANCE)) physiqueId = this.rng.weighted(PHYSIQUES, (p) => p.weight).id;
-    if (physiqueId === 'hoang_co') stats.canCot = Math.min(100, stats.canCot + 25);
-    if (physiqueId === 'luan_hoi') { stats.ngoTinh = Math.min(100, stats.ngoTinh + 8); stats.tamTinh = Math.min(100, stats.tamTinh + 8); }
-    if (physiqueId === 'linh_lung') stats.tamTinh = Math.min(100, stats.tamTinh + 20);
-    if (physiqueId === 'cuu_am') stats.ngoTinh = Math.min(100, stats.ngoTinh + 15);
+    if (physiqueId === 'hoang_co_thanh_the') stats.canCot = Math.min(100, stats.canCot + 25);
+    if (physiqueId === 'luan_hoi_chi_the') { stats.ngoTinh = Math.min(100, stats.ngoTinh + 8); stats.tamTinh = Math.min(100, stats.tamTinh + 8); }
+    if (physiqueId === 'linh_lung_tam') stats.tamTinh = Math.min(100, stats.tamTinh + 20);
+    if (physiqueId === 'cuu_am_tuyet_mach') stats.ngoTinh = Math.min(100, stats.ngoTinh + 15);
 
     const virtueBase = (stats.tamTinh - 50) / 60 + this.rng.range(-0.6, 0.6);
     const a: Avatar = {
@@ -318,6 +347,10 @@ export class Sim {
       contribution: 0,
       linhThach: origin.linhThach ?? this.rng.int(0, 20),
       pills: 0,
+      items: {},
+      artifacts: [],
+      skills: [],
+      lifespanBonus: 0,
       renown: origin.id === 'royal' ? 30 : 0,
       injuredUntil: 0,
       breakthroughCooldownUntil: 0,

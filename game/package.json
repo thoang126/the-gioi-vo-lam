@@ -8,13 +8,15 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "sim": "tsx tools/sim.ts",
-    "build": "tsx tools/build-web.ts"
+    "build": "tsx tools/build-web.ts",
+    "import:lhvk": "tsx tools/import-lhvk.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
     "esbuild": "^0.24.0",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "yaml": "^2.6.1"
   }
 }
