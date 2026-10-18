@@ -219,7 +219,7 @@ export const SECTS: SectDef[] = [
 /** What a sect is known for: actions its members favour, and a discount on pills. */
 export const SECT_PERKS: Record<string, { actionBoost?: Record<string, number>; pillDiscount?: number }> = {
   kiem_cac: { actionBoost: { ngo_kiem: 3, khieu_chien: 1.5 } },
-  bach_thao: { actionBoost: { hanh_y: 3, doi_dan: 1.5 }, pillDiscount: 0.5 },
+  bach_thao: { actionBoost: { hanh_y: 3, doi_dan: 1.5, hoc_dan: 10, luyen_dan: 1.5, hai_duoc: 1.5 }, pillDiscount: 0.5 },
   hac_sat: { actionBoost: { cuop_doat: 1.8 } },
   van_ma: { actionBoost: { cuop_doat: 1.5, be_quan: 1.2 } },
   kim_dao: { actionBoost: { khieu_chien: 2, tong_quan: 1.5 } },

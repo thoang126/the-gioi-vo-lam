@@ -2,7 +2,7 @@ import {
   advance, choose, createWorld, setAutoplay, Sim, YEAR_OFFSET, ACTION_BY_ID, MEMORIES,
   REGIONS, ROUTES, SEA_ROUTES, SECTS, SECT_RANKS, REALMS, WORLDS, ELEMENT_NAMES,
   REGION_BY_ID, SECT_BY_ID, ROOT_BY_ID, ORIGIN_BY_ID, PHYSIQUE_BY_ID, relationWord, EVENT_BY_ID, LHVK, pathNames, rebirthRootChance,
-  CODEX, SOUL_TITLES, codexProgress, migrateWorld, PROVINCES, WORLD_LAYOUT, CLAN, CLAN_KIND_NAMES, TRAIT_BY_ID, DYNASTY_END_NAMES, runBattle, sealOf, tacticOf, TACTIC_NAMES, TACTIC_IDS,
+  CODEX, SOUL_TITLES, codexProgress, pillFor, itemName, parseKey, HERB_BY_ID, PILL_BY_ID, migrateWorld, PROVINCES, WORLD_LAYOUT, CLAN, CLAN_KIND_NAMES, TRAIT_BY_ID, DYNASTY_END_NAMES, runBattle, sealOf, tacticOf, TACTIC_NAMES, TACTIC_IDS,
 } from '../src/index';
 import type { Avatar, EventKind, LifeRecord, WorldEvent, WorldState } from '../src/types';
 import type { FightRecord, SoulSeal, TacticId } from '../src/index';
@@ -163,6 +163,7 @@ function titleFor(): string {
   if (!p) return '';
   const ev = p.kind === 'event' ? EVENT_BY_ID[String(p.data?.event)] : undefined;
   if (p.kind === 'breakthrough') return 'Đột phá';
+  if (p.kind === 'alchemy') return 'Lò đan';
   return p.kind === 'rebirth' ? 'Cầu Nại Hà' : p.kind === 'offer' ? 'Cơ duyên' : ev?.kind === 'milestone' ? 'Bước ngoặt' : ev?.kind === 'acquaintance' ? 'Người quen nhờ cậy' : 'Ngã rẽ';
 }
 
@@ -410,7 +411,7 @@ function goal(sim: Sim, a: Avatar): string | null {
     const next = REALMS[a.realm + 1];
     return a.breakthroughCooldownUntil > s.month
       ? `Đủ tu vi lên ${next?.name}, nhưng phải tĩnh dưỡng thêm ${Math.ceil((a.breakthroughCooldownUntil - s.month) / 12)} năm.`
-      : `Đủ tu vi để đột phá ${next?.name ?? 'phi thăng'}${a.pills ? ' (có đan hỗ trợ)' : '. Mua đan trước sẽ chắc hơn'}.`;
+      : `Đủ tu vi để đột phá ${next?.name ?? 'phi thăng'}${pillFor(a) ? ' (có đan hỗ trợ)' : '. Mua hoặc luyện đan trước sẽ chắc hơn'}.`;
   }
   if (age < 12) return 'Còn nhỏ: đời trôi theo gia đình, ngã rẽ đầu tiên tới khi 12 tuổi.';
   if (sim.rootTier(a) === 0) return 'Không linh căn: sống trọn đời phàm nhân, hoặc chờ một kỳ ngộ hiếm.';
@@ -454,13 +455,22 @@ function avatarBlock(sim: Sim, a: Avatar, isPlayer: boolean): string {
       <dt>Công pháp</dt><dd>${a.technique ? esc(a.technique.name) : 'Chưa có'}</dd>
       <dt>Tông môn</dt><dd>${a.sectId ? `${esc(SECT_BY_ID[a.sectId]!.name)}, ${SECT_RANKS.find((x) => x.id === a.sectRank)?.name ?? ''}` : 'Không'}</dd>
       ${isPlayer && pathNames(sim).length ? `<dt>Đạo đồ</dt><dd>${esc(pathNames(sim).join(', '))}</dd>` : ''}
-      <dt>Tài sản</dt><dd>${a.linhThach.toLocaleString('vi-VN')} linh thạch · ${a.pills} viên đan${Object.entries(a.items).filter(([, n]) => n > 0).map(([id, n]) => ` · ${esc(LHVK.items[id]?.name ?? id)}${n > 1 ? ` ×${n}` : ''}`).join('')}</dd>
+      <dt>Tài sản</dt><dd>${a.linhThach.toLocaleString('vi-VN')} linh thạch${a.pills ? ` · ${a.pills} viên đan đột phá` : ''}${bagList(a, (id) => !HERB_BY_ID[id])}</dd>
+      ${bagList(a, (id) => !!HERB_BY_ID[id]) ? `<dt>Linh dược</dt><dd>${bagList(a, (id) => !!HERB_BY_ID[id]).slice(3)}</dd>` : ''}
+      ${a.alchemy ? `<dt>Đan đạo</dt><dd>Đan sư ${a.alchemy.level} phẩm · đan phương: ${esc(a.alchemy.recipes.map((p) => PILL_BY_ID[p]?.name ?? p).join(', '))}${a.toxicity && a.toxicity >= 1 ? ` · đan độc ${Math.round(a.toxicity)}` : ''}</dd>` : a.toxicity && a.toxicity >= 1 ? `<dt>Đan độc</dt><dd>${Math.round(a.toxicity)}</dd>` : ''}
       ${a.artifacts.length ? `<dt>Pháp bảo</dt><dd>${esc(a.artifacts.map((id) => LHVK.artifacts[id]?.name ?? id).join(', '))}</dd>` : ''}
       ${a.skills.length ? `<dt>Võ kỹ</dt><dd>${esc(a.skills.join(', '))}</dd>` : ''}
       <dt>Danh vọng</dt><dd>${a.renown}${a.kills ? ` · đã hạ ${a.kills} người` : ''}</dd>
     </dl>
     ${a.titles.length ? `<div class="chips">${a.titles.map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</div>` : ''}
     ${rels.length ? `<details class="rels-box"${isPlayer ? ' open' : ''}><summary class="eyebrow">Quan hệ (${rels.length})</summary><ul class="rels">${rels.map(({ o, rel }) => `<li class="${o!.alive ? '' : 'dead'}">${relationWord(rel.kind)}: ${personLink(o, sim)}</li>`).join('')}</ul></details>` : ''}`;
+}
+
+/** Items in the bag, " · name ×n" each; pills show their quality. */
+function bagList(a: Avatar, keep: (id: string) => boolean): string {
+  return Object.entries(a.items).filter(([k, n]) => n > 0 && keep(parseKey(k).id))
+    .sort(([x], [y]) => itemName(x).localeCompare(itemName(y), 'vi'))
+    .map(([k, n]) => ` · <span title="${esc(PILL_BY_ID[parseKey(k).id]?.desc ?? '')}">${esc(itemName(k))}</span>${n > 1 ? ` ×${n}` : ''}`).join('');
 }
 
 function playerCard(sim: Sim): string {

@@ -9,7 +9,7 @@ bia mộ của chính mình.
 
 ```bash
 npm install
-npm test            # 23 test: tái lập theo seed và lựa chọn, lưu/tải, dân số, tông môn, luân hồi, event
+npm test            # 45 test: tái lập theo seed và lựa chọn, lưu/tải, dân số, tông môn, luân hồi, event, đan đạo
 npm run import:lhvk # nhập lại event từ repo luan-hoi-van-kiep (mặc định ../../luan-hoi-van-kiep)
 npm run sim -- --years 300 --seed 7 --news   # mô phỏng không giao diện để cân bằng
 npm run analyze -- --worlds 30 --years 400   # chỉ số trải nghiệm người chơi (nhịp, lựa chọn, cái chết, tiến trình)
@@ -68,6 +68,22 @@ diễn dịch `src/story.ts`, giữ đúng luật của game gốc:
 - **Battle (GDD 8):** engine của Luân Hồi Vạn Kiếp nằm trong `src/battle-engine/` (chép nguyên, chỉ đổi import). Mọi trận
   có tên tuổi đánh bằng engine này; tab Luận Kiếm cho chọn chiến thuật, xem lại trận và cho Hồn ấn các kiếp đấu với nhau.
 
+## Đan đạo
+
+- **Linh dược:** 17 loại theo ngũ hành và phẩm (1–4), mọc ở những vùng nhất định (`src/content/alchemy.ts`). Tu sĩ chỉ hái
+  được linh dược tối đa cao hơn cảnh giới mình một bậc; hái ở vùng yêu thú có thể bị yêu thú giữ dược đánh.
+- **Học nghề:** Bách Thảo cốc truyền đan đạo miễn phí cho đệ tử; người khác bỏ 60 linh thạch theo đan sư ở Bách Thảo cốc,
+  Vạn Tiên thành hoặc phường thị của cõi mình. Ai học cũng biết Tụ Khí đan và Tục Cốt đan; đan sư lên phẩm (1–9) thì ngộ
+  thêm đan phương, ngoài ra còn nhặt được ngọc giản ghi đan phương khi du ngoạn.
+- **Luyện đan:** 11 đan phương. Lò cháy giữa chừng thì người chơi chọn thúc hỏa, giữ lửa hay rút củi (NPC chọn theo tâm tính).
+  Kết quả là nổ lò, phế đan, hoặc đan hạ, trung, thượng, cực phẩm; phẩm tùy cấp đan sư, ngộ tính, Hỏa linh căn, đan phòng
+  hay địa hỏa nơi luyện, và ngũ hành trong đan phương (tương sinh giúp, tương khắc hại).
+- **Dùng đan:** đan đột phá cộng theo phẩm (×0,6 tới ×1,6, tối đa +30%); Tụ Khí, Bồi Nguyên, Ngưng Nguyên đan đổ thẳng vào
+  tu vi; Tục Cốt đan chữa thương; Diên Thọ, Trường Xuân đan thêm thọ nguyên, mỗi loại một lần mỗi kiếp; Thanh Tâm đan giải
+  độc. Mỗi viên để lại **đan độc** làm viên sau yếu đi; đan độc tan dần theo tháng.
+- **Phường thị:** đan dư đem bán thì nằm lại chợ, ai cần (đột phá, tu luyện, thọ nguyên sắp cạn, thương nặng) tới mua.
+  Đan Trúc Cơ, Kim Đan, Nguyên Anh dùng chung id với vật phẩm của Luân Hồi Vạn Kiếp, nên event cần đan nào cũng nhận đan tự luyện.
+
 ## Sáu cõi, yêu tộc, thế gia
 
 - **Cõi:** Đại Hạ, Thanh Vân châu, Hải ngoại, Ma vực, Yêu vực, Tiên giới (chỉ tới được bằng phi thăng).
@@ -115,6 +131,8 @@ Xem `docs/roadmap.md`: định nghĩa bản 1.0, bảng chỉ số đo được,
 | `src/clans.ts` | Gia tộc, thế gia: kế vị, huyết thù, thông gia, nhận con nuôi, lập tộc |
 | `src/content/peoples.ts` | Thiên phú, yêu tộc, danh sách thế gia |
 | `src/content/events-extra.ts` | Event riêng cho Hải ngoại, Ma vực, Yêu vực, thế gia |
+| `src/content/alchemy.ts` | Linh dược, đan dược, đan phương, hằng số đan đạo |
+| `src/alchemy.ts` | Túi đồ có phẩm chất, luyện đan, dùng đan, đan độc, phường thị |
 | `src/player.ts` | Linh hồn: ngã rẽ, lời mời, gặp lại tiền kiếp, luân hồi, ký ức tiền kiếp |
 | `src/story.ts` | Bộ diễn dịch event Luân Hồi Vạn Kiếp: điều kiện, hiệu ứng, phép thử, NPC thật, đạo đồ |
 | `src/content/lhvk.json` | Event, đạo đồ, vật phẩm, pháp bảo, võ kỹ, câu mở đầu nhập từ Luân Hồi Vạn Kiếp |

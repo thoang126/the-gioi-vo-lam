@@ -14,6 +14,7 @@ import { botSealFor, fightBot, type TacticId } from './battle-engine';
 import { REGION_BY_ID, Sim, relationWord } from './sim';
 import type { Avatar, DeathCause, PendingChoice, Stats, StoryState } from './types';
 import { joinSect } from './phases';
+import { addItem, countItem, takeItem } from './alchemy';
 
 export function newStory(): StoryState {
   return { flags: {}, seen: {}, seenAt: {}, cooldowns: {}, crossroads: 0, lastCrossroadAge: -99, paths: {}, pathHistory: [], lastYear: -1 };
@@ -121,8 +122,8 @@ export function matches(x: Ctx, c: Conditions | undefined): boolean {
   if (c.has_technique !== undefined && (a.technique !== null) !== c.has_technique) return false;
   if (c.technique_grade_max && a.technique && a.technique.grade > (GRADE_ORDER[c.technique_grade_max] ?? 0)) return false;
   if (c.linh_thach_min !== undefined && a.linhThach < c.linh_thach_min) return false;
-  if (c.has_item && !c.has_item.every((i) => (a.items[i] ?? 0) > 0)) return false;
-  if (c.has_item_not && c.has_item_not.some((i) => (a.items[i] ?? 0) > 0)) return false;
+  if (c.has_item && !c.has_item.every((i) => countItem(a, i) > 0)) return false;
+  if (c.has_item_not && c.has_item_not.some((i) => countItem(a, i) > 0)) return false;
   if (c.seen && !c.seen.every((id) => (st.seen[id] ?? 0) > 0)) return false;
   if (c.seen_not && c.seen_not.some((id) => (st.seen[id] ?? 0) > 0)) return false;
   if (c.seen_ago && !Object.entries(c.seen_ago).every(([id, y]) => st.seenAt[id] !== undefined && age - st.seenAt[id]! >= y)) return false;
@@ -330,8 +331,8 @@ function applyEffects(x: Ctx, fx: Effects | undefined): void {
     }
   }
   if (fx.linh_thach) a.linhThach = Math.max(0, a.linhThach + fx.linh_thach);
-  for (const i of asList(fx.item)) a.items[i] = (a.items[i] ?? 0) + 1;
-  for (const i of asList(fx.consume_item)) if ((a.items[i] ?? 0) > 0) a.items[i]! -= 1;
+  for (const i of asList(fx.item)) addItem(a, i);
+  for (const i of asList(fx.consume_item)) takeItem(a, i, 'worst');
   if (fx.technique) learnTechnique(sim, a, LHVK.techniques[fx.technique]);
   if (fx.technique_from && sim.rootTier(a) > 0) {
     const lo = GRADE_ORDER[fx.technique_from.grade_min ?? 'hoang'] ?? 1;

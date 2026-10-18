@@ -24,8 +24,18 @@ for (const [a, b, m] of ROUTES) {
   (ADJ[b] ??= []).push({ to: a, months: m });
 }
 
-/** Cheapest path (Dijkstra on months), excluding the start. */
+const PATHS = new Map<string, { path: string[]; months: number } | null>();
+
+/** Cheapest path (Dijkstra on months), excluding the start. Roads never change, so answers are kept. */
 export function findPath(from: string, to: string): { path: string[]; months: number } | null {
+  const key = `${from}>${to}`;
+  if (!PATHS.has(key)) PATHS.set(key, dijkstra(from, to));
+  const p = PATHS.get(key)!;
+  // Callers walk the path by shifting it; hand out a copy.
+  return p && { path: [...p.path], months: p.months };
+}
+
+function dijkstra(from: string, to: string): { path: string[]; months: number } | null {
   if (from === to) return { path: [], months: 0 };
   const dist: Record<string, number> = { [from]: 0 };
   const prev: Record<string, string> = {};
@@ -426,6 +436,10 @@ export class Sim {
       race,
       traits,
       clanId: clan?.id ?? null,
+      // Set (not left undefined) so every avatar has one V8 shape and the same key order after a save and load.
+      alchemy: null,
+      toxicity: 0,
+      oncePills: null,
     };
     if (root.rootId !== 'none' && clan?.technique) a.technique = { ...clan.technique };
     else if (root.rootId !== 'none' && origin.clanTechnique) a.technique = this.pickTechnique(1, a.elements);

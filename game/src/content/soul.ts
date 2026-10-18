@@ -5,6 +5,7 @@ import { ORIGINS, PHYSIQUES, REALMS, SPIRIT_ROOTS } from './cultivation';
 import { LHVK } from './lhvk';
 import { REGIONS, WORLDS, type WorldId } from './world';
 import { CLANS, TRAITS } from './peoples';
+import { PILLS } from './alchemy';
 import type { DeathCause, Soul } from '../types';
 
 export const DEATH_NAMES: Record<DeathCause, string> = {
@@ -25,6 +26,7 @@ export const CODEX: CodexCategory[] = [
   { id: 'titles', name: 'Danh hiệu', entries: LHVK.titles.map((t) => ({ id: t.id, name: t.name })) },
   { id: 'traits', name: 'Thiên phú, khuyết tật', entries: TRAITS.map((t) => ({ id: t.id, name: t.name })) },
   { id: 'clans', name: 'Thế gia', entries: CLANS.map((c) => ({ id: c.id, name: c.name })) },
+  { id: 'pills', name: 'Đan dược tự luyện', entries: PILLS.map((p) => ({ id: p.id, name: p.name })) },
   { id: 'deaths', name: 'Cách chết', entries: (Object.keys(DEATH_NAMES) as DeathCause[]).map((d) => ({ id: d, name: DEATH_NAMES[d] })) },
 ];
 

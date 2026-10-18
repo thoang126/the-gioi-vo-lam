@@ -129,6 +129,32 @@ Còn lại:
 - Đo sau giai đoạn (20 thế giới × 400 năm, chọn ngẫu nhiên): Luyện Khí 38,5%, Trúc Cơ 12,5%, Kim Đan 1,0%; dân số
   ổn định quanh 380 người, thế gia giữ 110–130 người.
 
+### 4b. Đan đạo (bản một người chơi đã xong)
+
+Đã làm (`src/content/alchemy.ts`, `src/alchemy.ts`):
+- **Túi đồ có phẩm chất:** `items` giữ khóa `id:phẩm` (hạ, trung, thượng, cực); khóa không phẩm là trung phẩm, nên vật phẩm
+  của event Luân Hồi Vạn Kiếp và đan tự luyện dùng chung một chỗ.
+- **17 linh dược** gắn với vùng và ngũ hành, **11 đan phương**, cấp đan sư 1–9. Học ở Bách Thảo cốc (miễn phí cho đệ tử),
+  Vạn Tiên thành hoặc phường thị; ngộ đan phương mới khi lên phẩm hoặc nhặt ngọc giản khi du ngoạn; bí cảnh cho linh dược hiếm.
+- **Luyện đan có ngã rẽ:** thúc hỏa, giữ lửa hay rút củi; nổ lò, phế đan hoặc 4 bậc phẩm. Mỗi loại đan chỉ hỏi lần đầu (rồi
+  nhớ lựa chọn), đan từ phẩm 3 trở lên lần nào cũng hỏi. Lục đạo thị giác hiện tỉ lệ nổ lò.
+- **Dùng đan tự động:** đột phá (theo phẩm, trần +30%), tu luyện, chữa thương, thọ nguyên (mỗi loại một lần mỗi kiếp), giải độc;
+  **đan độc** làm đan sau yếu đi và tan dần.
+- **Phường thị:** đan dư bán ra thì nằm lại chợ; NPC cần đan đột phá, tu luyện, thọ nguyên, chữa thương tới mua.
+- Kiếp Sách thêm nhóm "Đan dược tự luyện"; `npm run analyze -- --alchemist` đo người chơi đi đường đan đạo.
+
+Chưa làm:
+- Tuổi dược liệu (trăm năm, nghìn năm) và dược điền; đan hao dược tính theo năm.
+- Luyện khí (pháp bảo), phù lục, cường hóa.
+- Phần giữa người chơi: sổ lệnh mua bán, đặt luyện, đấu giá, đan mang tên người luyện. Cần thế giới chung.
+
+Đo (60 thế giới × 400 năm, chọn ngẫu nhiên, trước → sau): Luyện Khí 34,9% → 31,4%, Trúc Cơ 9,1% → 10,7%, Kim Đan 0% → 1,5%;
+lựa chọn mỗi kiếp p50 21 → 20, ngã rẽ lò đan chiếm 0,7% số lựa chọn. Chết trước 12 tuổi 12,8% → 8,4%, chưa rõ vì sao (đan
+đạo không chạm tới trẻ con; có thể là nhiễu). Người chơi theo đan đạo (`--alchemist`, 30 thế giới): Luyện Khí 41%, Trúc Cơ
+16%, Kim Đan 0,8%, ngang người chơi chỉ chủ động tu luyện (43 / 16 / 0,8%) nhưng sống lâu hơn (tuổi thọ p50 60 so với 59
+năm). Một thế giới có khoảng 7–10 đan sư NPC, 280–350 mẻ đan thành trong 300 năm, khoảng 10% số mẻ nổ lò, 80–110 viên qua
+phường thị. Mô phỏng chậm hơn 11–19% (một phần vì thế giới đông người hơn); bản lưu 300 năm nặng hơn khoảng 7%.
+
 ### 5. Trình bày (2 tuần)
 
 - **Bia mộ:** xuất ảnh để chia sẻ (canvas sang PNG), kèm "hiếm hơn X% kiếp khác".

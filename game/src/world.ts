@@ -155,6 +155,11 @@ export function migrateWorld(s: WorldState): WorldState {
   soul.counters ??= { reunions: 0, ownGraves: 0, sectLeader: 0, crossedSea: 0 };
   soul.memories.sight ??= 0;
   for (const l of soul.lives) l.paths ??= [];
+  for (const a of Object.values(s.avatars)) {
+    a.alchemy ??= null;
+    a.toxicity ??= 0;
+    a.oncePills ??= null;
+  }
   if (!s.clans) {
     const sim = new Sim(s);
     seedClans(sim);

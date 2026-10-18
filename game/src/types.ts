@@ -38,6 +38,9 @@ export interface ActionState {
   path?: string[];
   /** Month the current travel leg ends. */
   legUntil?: number;
+  /** Luyện đan: the pill in the furnace and the heat chosen when the flame wavered. */
+  recipe?: string;
+  heat?: number;
 }
 
 export type DeathCause =
@@ -94,6 +97,12 @@ export interface Avatar {
   race?: Race;
   traits?: string[];
   clanId?: string | null;
+  /** Đan đạo, once learned: alchemist level 1–9 and known recipes (pill ids). */
+  alchemy?: { level: number; xp: number; recipes: string[] } | null;
+  /** Đan độc, 0–150: weakens every pill taken after. */
+  toxicity?: number;
+  /** Pills that work once per life (Diên Thọ đan…) already taken. */
+  oncePills?: string[] | null;
 }
 
 export type EventKind =
@@ -168,7 +177,7 @@ export interface ChoiceOption {
 }
 
 export interface PendingChoice {
-  kind: 'action' | 'offer' | 'rebirth' | 'event' | 'breakthrough';
+  kind: 'action' | 'offer' | 'rebirth' | 'event' | 'breakthrough' | 'alchemy';
   prompt: string;
   options: ChoiceOption[];
   /** Opaque data the resolver needs (offer type, the other avatar…). */
@@ -243,6 +252,8 @@ export interface Soul {
   fights?: FightRecord[];
   /** Hồn ấn kept from past lives (GDD 8.1), newest last. */
   seals?: { life: number; seal: SoulSeal }[];
+  /** Heat the player last chose for each pill (pill id → −1/0/1); the furnace only asks again for big pills. */
+  heat?: Record<string, number>;
   /** While the soul waits in the cycle of rebirth: the month it is born again. */
   rebirthAt: number | null;
 }
@@ -266,5 +277,11 @@ export interface WorldState {
   /** Region id → month the secret realm closes, when open. */
   secretRealmOpenUntil: number;
   soul: Soul;
-  stats: { births: number; deaths: number; ascensions: number; maxRealmEver: number };
+  /** Pills sold at the markets and not yet bought (item key → count). Missing in older saves. */
+  market?: Record<string, number>;
+  stats: {
+    births: number; deaths: number; ascensions: number; maxRealmEver: number;
+    /** Đan đạo, missing in older saves: brews that gave pills, furnaces that burst, pills sold and bought at markets. */
+    brewed?: number; bursts?: number; pillsSold?: number; pillsBought?: number;
+  };
 }

@@ -6,9 +6,15 @@ import { BEASTS, BEAST_PREFIXES, BREAKTHROUGH, REALMS, TECHNIQUES } from './cont
 import { REGIONS, SECT_PERKS, WORLDS } from './content/world';
 import { duel, fightBeast } from './battle';
 import { REGION_BY_ID, SECT_BY_ID, Sim, findPath, relationWord } from './sim';
-import type { Avatar } from './types';
+import type { ActionState, Avatar, PendingChoice } from './types';
 import { LHVK } from './content/lhvk';
 import { pathActionBoost } from './story';
+import { ALCHEMY, HERB_BY_ID, PILL_BY_ID, QUALITY_NAMES, RECIPE_BY_PILL } from './content/alchemy';
+import {
+  addItem, alchemySchool, autoUsePills, brew, brewOdds, brewText, breakthroughPill, buyFromMarket, chooseBrew, findRecipe, gatherHerbs,
+  gatherRegion, herbsCost, itemKey, itemName, learnAlchemy, marketPill, missingHerbs, npcHeat, secretHerbs, sellSurplus,
+  surplusPills, useBreakthroughPill,
+} from './alchemy';
 
 export interface ActionDef {
   id: string;
@@ -20,8 +26,10 @@ export interface ActionDef {
   score: (sim: Sim, a: Avatar) => number;
   region?: (sim: Sim, a: Avatar) => string | null;
   target?: (sim: Sim, a: Avatar) => Avatar | undefined;
-  tick?: (sim: Sim, a: Avatar) => void;
-  finish: (sim: Sim, a: Avatar, target?: Avatar) => void;
+  /** Runs once the action is set, before any travel (luyện đan puts the herbs in the furnace here). */
+  begin?: (sim: Sim, a: Avatar, st: ActionState) => void;
+  tick?: (sim: Sim, a: Avatar, st: ActionState) => void;
+  finish: (sim: Sim, a: Avatar, target?: Avatar, st?: ActionState) => void;
 }
 
 const isCultivator = (sim: Sim, a: Avatar) => sim.canCultivate(a);
@@ -40,7 +48,7 @@ function beastName(sim: Sim, tier: number): string {
 function weakerTarget(sim: Sim, a: Avatar): Avatar | undefined {
   const mine = sim.power(a);
   return (sim.byRegion[a.regionId] ?? []).find((o) => o.id !== a.id && sim.age(o) >= 14
-    && (o.sectId === null || o.sectId !== a.sectId) && sim.power(o) < mine * 0.7 && (o.linhThach > 30 || o.pills > 0));
+    && (o.sectId === null || o.sectId !== a.sectId) && sim.power(o) < mine * 0.7 && (o.linhThach > 30 || o.pills > 0 || Object.keys(o.items).length > 0));
 }
 
 function discipleCandidate(sim: Sim, a: Avatar): Avatar | undefined {
@@ -53,12 +61,16 @@ function countRelation(sim: Sim, a: Avatar, kind: string): number {
   return Object.entries(a.relations).filter(([id, r]) => r.kind === kind && sim.s.avatars[Number(id)]?.alive).length;
 }
 
-/** The pill this avatar would take for its next realm: a named one (Trúc Cơ đan…) or a generic one. */
-export function pillFor(a: Avatar): { id: string | null; name: string; bonus: number } | null {
-  const next = REALMS[a.realm + 1]?.id;
-  const named = Object.keys(a.items).find((id) => (a.items[id] ?? 0) > 0 && LHVK.items[id]?.breakthroughFor === next);
-  if (named) return { id: named, name: LHVK.items[named]!.name, bonus: LHVK.items[named]!.breakthroughBonus };
-  if (a.pills > 0) return { id: null, name: 'đan đột phá', bonus: BREAKTHROUGH.pillBonus };
+/**
+ * The pill this avatar would take for its next realm: a named one (Trúc Cơ đan…, best quality after
+ * đan độc) or a generic one, whichever helps more.
+ */
+export function pillFor(a: Avatar): { id: string | null; quality: number; name: string; bonus: number } | null {
+  const named = breakthroughPill(a, REALMS[a.realm + 1]?.id);
+  if (named && (a.pills === 0 || named.bonus >= BREAKTHROUGH.pillBonus)) {
+    return { id: named.id, quality: named.quality, name: itemName(itemKey(named.id, named.quality)), bonus: named.bonus };
+  }
+  if (a.pills > 0) return { id: null, quality: 1, name: 'đan đột phá', bonus: BREAKTHROUGH.pillBonus };
   return null;
 }
 
@@ -109,14 +121,13 @@ export function attemptBreakthrough(sim: Sim, a: Avatar, usePill = true): void {
   const bt = r.breakthrough!;
   const pill = usePill ? pillFor(a) : null;
   let p = breakthroughChance(sim, a, usePill);
-  const named = pill?.id ?? null;
-  if (pill) { if (pill.id) a.items[pill.id]! -= 1; else a.pills -= 1; }
+  if (pill) { if (pill.id) useBreakthroughPill(a, pill.id, pill.quality); else a.pills -= 1; }
   const usedPill = pill !== null;
   a.prepare = 0;
   const mods = sim.mods(a);
   if (usedPill && sim.isPlayer(a)) sim.s.soul.story.flags.used_pill = true;
   const next = REALMS[a.realm + 1];
-  const pillText = named ? ` Uống ${LHVK.items[named]!.name}.` : usedPill ? ' Uống một viên đan.' : '';
+  const pillText = pill?.id ? ` Uống ${pill.name}.` : usedPill ? ' Uống một viên đan.' : '';
   if (sim.rng.chance(p)) {
     const tb = BREAKTHROUGH.tribulation;
     const perBolt = Math.min(tb.clamp[1], Math.max(tb.clamp[0], bt.survive + (a.stats.canCot - 50) / tb.canCotDivisor + (a.stats.tamTinh - 50) / tb.willDivisor));
@@ -159,6 +170,9 @@ export function attemptBreakthrough(sim: Sim, a: Avatar, usePill = true): void {
     sim.log('breakthrough', `${a.name} đột phá ${next?.name} thất bại, phải tĩnh dưỡng ${bt.retryYears} năm.${pillText}`, [a.id], { regionId: a.regionId });
   }
 }
+
+/** Pills sold to whoever needs them at the market (breakthrough pills go through "mua đan"). */
+const SHOP_KINDS = ['cultivate', 'lifespan', 'heal', 'detox'];
 
 export const ACTIONS: ActionDef[] = [
   {
@@ -317,7 +331,7 @@ export const ACTIONS: ActionDef[] = [
     id: 'dot_pha', label: 'Đột phá', doing: 'đột phá',
     months: () => 1,
     available: (sim, a) => sim.readyToBreak(a) && a.breakthroughCooldownUntil <= sim.month,
-    score: (sim, a) => (a.pills > 0 ? 6 : 3.5 - a.persona.caution) + 4 * lifePressure(sim, a),
+    score: (sim, a) => (pillFor(a) ? 6 : 3.5 - a.persona.caution) + 4 * lifePressure(sim, a),
     finish: (sim, a) => attemptBreakthrough(sim, a),
   },
   {
@@ -351,11 +365,19 @@ export const ACTIONS: ActionDef[] = [
   {
     id: 'mua_dan', label: 'Tới phường thị mua đan đột phá', doing: 'đi mua đan',
     months: () => 1,
-    available: (sim, a) => isCultivator(sim, a) && a.realm >= 1 && a.pills === 0
-      && a.stage >= REALMS[a.realm]!.stages.length - 2 && a.linhThach >= pillCost(a.realm, a),
+    available: (sim, a) => isCultivator(sim, a) && a.realm >= 1 && !pillFor(a)
+      && a.stage >= REALMS[a.realm]!.stages.length - 2 && (a.linhThach >= pillCost(a.realm, a) || marketPill(sim, a) !== null),
     score: (_sim, a) => 2.5 + a.persona.caution * 2,
     region: (_sim, a) => WORLDS[inWorld(a)].market,
     finish: (sim, a) => {
+      // Pills other alchemists brought to market come first; the best one the purse allows.
+      const m = marketPill(sim, a);
+      if (m) {
+        buyFromMarket(sim, a, m.key, m.price);
+        if (sim.isPlayer(a)) sim.log('fortune', `${a.name} bỏ ${m.price} linh thạch mua một viên ${itemName(m.key)} ở phường thị.`, [a.id], { regionId: a.regionId });
+        return;
+      }
+      if (a.linhThach < pillCost(a.realm, a)) return;
       a.linhThach -= pillCost(a.realm, a);
       a.pills += 1;
       if (sim.isPlayer(a)) sim.log('fortune', `${a.name} bỏ ${pillCost(a.realm, a)} linh thạch mua một viên đan đột phá.`, [a.id], { regionId: a.regionId });
@@ -414,8 +436,13 @@ export const ACTIONS: ActionDef[] = [
         sim.addTuVi(a, gain);
         sim.log('fortune', `${a.name} ngộ ra một tầng đạo lý dưới gốc cổ thụ ven đường, tu vi tăng vọt.`, [a.id], { regionId: a.regionId });
       } else if (roll < 0.7) {
-        a.pills += 1;
-        sim.log('fortune', `${a.name} nhặt được một bình đan cổ trong hang đá.`, [a.id], { regionId: a.regionId });
+        const recipe = a.alchemy && sim.rng.chance(0.5) ? findRecipe(sim, a) : null;
+        if (recipe) {
+          sim.log('fortune', `${a.name} tìm thấy một tấm ngọc giản trong hang đá, ghi đan phương ${PILL_BY_ID[recipe]!.name}.`, [a.id], { regionId: a.regionId });
+        } else {
+          a.pills += 1;
+          sim.log('fortune', `${a.name} nhặt được một bình đan cổ trong hang đá.`, [a.id], { regionId: a.regionId });
+        }
       } else {
         const better = TECHNIQUES.filter((t) => t.grade === Math.min(4, (a.technique?.grade ?? 1) + 1) && (t.element === null || a.elements.includes(t.element)));
         if (better.length) {
@@ -441,7 +468,8 @@ export const ACTIONS: ActionDef[] = [
         a.pills += 1;
         sim.addTuVi(a, sim.cultivationPerMonth(a) * 12 * sim.rng.int(4, 10));
         a.linhThach += sim.rng.int(50, 300) * a.realm;
-        sim.log('fortune', `${a.name} đoạt được linh dược nghìn năm trong bí cảnh.`, [a.id], { regionId: a.regionId, major: a.realm >= 3 });
+        const herbs = a.alchemy ? secretHerbs(sim, a) : [];
+        sim.log('fortune', `${a.name} đoạt được linh dược nghìn năm trong bí cảnh${herbs.length ? ` (${herbs.map((h) => HERB_BY_ID[h]!.name).join(', ')})` : ''}.`, [a.id], { regionId: a.regionId, major: a.realm >= 3 });
       }
     },
   },
@@ -526,7 +554,8 @@ export const ACTIONS: ActionDef[] = [
       const res = duel(sim, a, t, 0.35);
       if (res.winner === a) {
         a.linhThach += t.linhThach; a.pills += t.pills;
-        t.linhThach = 0; t.pills = 0;
+        for (const [k, n] of Object.entries(t.items)) a.items[k] = (a.items[k] ?? 0) + n;
+        t.linhThach = 0; t.pills = 0; t.items = {};
         if (res.killed) sim.kill(t, 'battle', `Bị ${a.name} giết người đoạt bảo`, a);
         else {
           sim.relate(t, a, 'enemy', 'enemy', -80);
@@ -538,6 +567,131 @@ export const ACTIONS: ActionDef[] = [
         sim.relate(t, a, 'enemy', 'enemy', -60);
         sim.log('battle', `${a.name} ra tay cướp đoạt ${t.name} nhưng thất thủ, ôm thương bỏ chạy.`, [a.id, t.id], { regionId: a.regionId });
       }
+    },
+  },
+  {
+    id: 'hoc_dan', label: 'Học luyện đan', doing: 'học luyện đan',
+    months: () => 6,
+    available: (sim, a) => !a.alchemy && sim.canCultivate(a) && a.realm >= 1 && sim.age(a) >= 14 && sim.age(a) / sim.lifespan(a) < 0.7
+      && (a.sectId === 'bach_thao' || a.linhThach >= ALCHEMY.learnCost),
+    score: (_sim, a) => 0.3 + Math.max(0, a.stats.ngoTinh - 40) / 80 + (a.elements.includes('hoa') ? 0.4 : 0) + a.persona.caution * 0.2,
+    region: (_sim, a) => (a.sectId === 'bach_thao' ? 'bach_thao' : alchemySchool(a)),
+    finish: (sim, a) => {
+      if (a.alchemy) return;
+      const free = a.sectId === 'bach_thao';
+      if (!free) {
+        if (a.linhThach < ALCHEMY.learnCost) return;
+        a.linhThach -= ALCHEMY.learnCost;
+      }
+      learnAlchemy(sim, a);
+      if (sim.isPlayer(a)) {
+        sim.log('fortune', free
+          ? `${a.name} được trưởng lão Bách Thảo cốc truyền đan đạo: biết nhận dược tính, giữ lửa, luyện Tụ Khí đan và Tục Cốt đan.`
+          : `${a.name} bỏ ${ALCHEMY.learnCost} linh thạch theo một lão đan sư học nghề nửa năm: biết nhận dược tính, giữ lửa, luyện Tụ Khí đan và Tục Cốt đan.`, [a.id], { regionId: a.regionId });
+      }
+    },
+  },
+  {
+    id: 'hai_duoc', label: 'Đi hái linh dược', doing: 'đi hái linh dược',
+    months: () => 3,
+    available: (sim, a) => !!a.alchemy && a.realm >= 1 && a.injuredUntil <= sim.month && gatherRegion(sim, a) !== null,
+    score: (sim, a) => 1.2 + a.persona.ambition * 0.3 + (sim.readyToBreak(a) || a.stage >= REALMS[a.realm]!.stages.length - 2 ? 0.8 : 0),
+    region: (sim, a) => gatherRegion(sim, a),
+    finish: (sim, a) => {
+      const r = REGION_BY_ID[a.regionId]!;
+      if (r.kind === 'beast' && sim.rng.chance(0.3)) {
+        const tier = r.danger ?? 1;
+        if (!fightBeast(sim, a, tier)) {
+          if (sim.rng.chance(0.05)) { sim.kill(a, 'beast', `Đi hái thuốc ở ${r.name}, bị yêu thú giữ dược ăn thịt`); return; }
+          a.injuredUntil = Math.max(a.injuredUntil, sim.month + sim.rng.int(3, 12));
+          if (sim.isPlayer(a)) sim.log('battle', `${a.name} vừa chạm tới gốc linh dược thì yêu thú giữ dược lao ra. Bỏ chạy, mang thương về tay không.`, [a.id], { regionId: a.regionId });
+          return;
+        }
+      }
+      const got = gatherHerbs(sim, a);
+      if (sim.isPlayer(a)) {
+        sim.log('fortune', got.length
+          ? `${a.name} hái được ${got.map(([h, n]) => `${n} ${HERB_BY_ID[h]!.name}`).join(', ')} ở ${r.name}.`
+          : `${a.name} lùng sục ${r.name} ba tháng, linh dược đã bị người khác hái trước.`, [a.id], { regionId: a.regionId });
+      }
+    },
+  },
+  {
+    id: 'mua_duoc', label: 'Mua dược liệu', doing: 'đi mua dược liệu',
+    months: () => 1,
+    available: (sim, a) => {
+      if (!a.alchemy) return false;
+      const missing = missingHerbs(sim, a);
+      return missing.length > 0 && herbsCost(missing) <= a.linhThach * 0.6;
+    },
+    score: (_sim, a) => 1 + a.persona.caution * 0.6 + (a.originId === 'merchant' ? 0.4 : 0),
+    region: (_sim, a) => WORLDS[inWorld(a)].market,
+    finish: (sim, a) => {
+      const missing = missingHerbs(sim, a);
+      const cost = herbsCost(missing);
+      if (!missing.length || cost > a.linhThach) return;
+      a.linhThach -= cost;
+      for (const [h, n] of missing) addItem(a, h, 1, n);
+      if (sim.isPlayer(a)) sim.log('fortune', `${a.name} bỏ ${cost} linh thạch mua ${missing.map(([h, n]) => `${n} ${HERB_BY_ID[h]!.name}`).join(', ')}.`, [a.id], { regionId: a.regionId });
+    },
+  },
+  {
+    id: 'luyen_dan', label: 'Khai lò luyện đan', doing: 'khai lò luyện đan',
+    months: (sim, a) => chooseBrew(sim, a)?.months ?? 2,
+    available: (sim, a) => !!a.alchemy && a.injuredUntil <= sim.month && chooseBrew(sim, a) !== null,
+    score: (_sim, a) => 2.2 + (a.alchemy?.level ?? 0) * 0.15,
+    region: (_sim, a) => (a.sectId === 'bach_thao' && inWorld(a) === 'mortal' ? 'bach_thao' : null),
+    begin: (sim, a, st) => {
+      const r = chooseBrew(sim, a);
+      if (!r) { a.action = null; return; }
+      for (const [h, n] of r.ingredients) a.items[h]! -= n;
+      for (const [h] of r.ingredients) if (a.items[h] === 0) delete a.items[h];
+      st.recipe = r.pill;
+    },
+    tick: (sim, a, st) => {
+      if (st.heat !== undefined || st.path?.length) return;
+      st.heat = npcHeat(a);
+      const soul = sim.s.soul;
+      if (!sim.isPlayer(a) || soul.autoplay || !st.recipe) return;
+      // A pill brewed before keeps the heat chosen then; Kim Đan pills and above are asked every time.
+      const last = soul.heat?.[st.recipe];
+      if (last !== undefined && PILL_BY_ID[st.recipe]!.grade < 3) { st.heat = last; return; }
+      if (!soul.pending) soul.pending = alchemyChoice(sim, a, st);
+    },
+    finish: (sim, a, _t, st) => {
+      const r = st?.recipe ? RECIPE_BY_PILL[st.recipe] : undefined;
+      if (!r) return;
+      const res = brew(sim, a, r, st?.heat ?? 0);
+      if (sim.isPlayer(a)) {
+        if (res.quality !== null) { const l = (sim.s.soul.codex.pills ??= []); if (!l.includes(r.pill)) l.push(r.pill); }
+        sim.log(res.burst ? 'battle' : 'fortune', brewText(a, res), [a.id], { regionId: a.regionId });
+      } else if (res.quality === 3 && PILL_BY_ID[r.pill]!.grade >= 3) {
+        sim.log('fortune', brewText(a, res), [a.id], { regionId: a.regionId, major: true });
+      }
+    },
+  },
+  {
+    id: 'ban_dan', label: 'Mang đan ra phường thị bán', doing: 'mang đan ra phường thị bán',
+    months: () => 1,
+    available: (sim, a) => surplusPills(sim, a).reduce((s, x) => s + x.value, 0) >= 60,
+    score: (sim, a) => 0.8 + Math.min(2.5, surplusPills(sim, a).reduce((s, x) => s + x.value, 0) / 80) + a.persona.ambition * 0.3 + (a.originId === 'merchant' ? 0.5 : 0),
+    region: (_sim, a) => WORLDS[inWorld(a)].market,
+    finish: (sim, a) => {
+      const gain = sellSurplus(sim, a);
+      if (sim.isPlayer(a) && gain > 0) sim.log('fortune', `${a.name} bán đan dư ở ${REGION_BY_ID[a.regionId]!.name}, thu ${gain} linh thạch.`, [a.id], { regionId: a.regionId });
+    },
+  },
+  {
+    id: 'mua_linh_dan', label: 'Tới phường thị mua linh đan', doing: 'đi mua linh đan',
+    months: () => 1,
+    available: (sim, a) => sim.canCultivate(a) && a.realm >= 1 && marketPill(sim, a, SHOP_KINDS, 0.7) !== null,
+    score: (sim, a) => 1.4 + a.persona.caution * 0.5 + 3 * lifePressure(sim, a),
+    region: (_sim, a) => WORLDS[inWorld(a)].market,
+    finish: (sim, a) => {
+      const m = marketPill(sim, a, SHOP_KINDS, 0.7);
+      if (!m) return;
+      buyFromMarket(sim, a, m.key, m.price);
+      if (sim.isPlayer(a)) sim.log('fortune', `${a.name} bỏ ${m.price} linh thạch mua một viên ${itemName(m.key)}.`, [a.id], { regionId: a.regionId });
     },
   },
   {
@@ -563,6 +717,7 @@ export function rankActions(sim: Sim, a: Avatar): { def: ActionDef; score: numbe
 }
 
 export function startAction(sim: Sim, a: Avatar, def: ActionDef): void {
+  autoUsePills(sim, a, def.id);
   const target = def.target?.(sim, a);
   const dest = target ? target.regionId : def.region?.(sim, a) ?? null;
   const route = dest && dest !== a.regionId ? findPath(a.regionId, dest) : null;
@@ -579,6 +734,8 @@ export function startAction(sim: Sim, a: Avatar, def: ActionDef): void {
   if (route && route.path.length) {
     a.action.legUntil = sim.month + legMonthsFor(a.regionId, route.path[0]!);
   }
+  def.begin?.(sim, a, a.action);
+  if (!a.action) return;
   const repeated = a.lastActionId === def.id;
   a.lastActionId = def.id;
   if (sim.isPlayer(a) && !repeated) {
@@ -590,4 +747,20 @@ export function startAction(sim: Sim, a: Avatar, def: ActionDef): void {
 
 function legMonthsFor(from: string, to: string): number {
   return findPath(from, to)?.months ?? 1;
+}
+
+/** The flame wavers halfway through a brew: the player decides the heat. */
+export function alchemyChoice(sim: Sim, a: Avatar, st: ActionState): PendingChoice {
+  const r = RECIPE_BY_PILL[st.recipe!]!;
+  const sight = (sim.s.soul.memories.sight ?? 0) > 0;
+  const odds = (heat: number) => (sight ? ` · Lục đạo thị giác: nổ lò ${Math.round(brewOdds(sim, a, r, heat).burst * 100)}%` : '');
+  return {
+    kind: 'alchemy',
+    prompt: `Lò ${PILL_BY_ID[r.pill]!.name} đang tới lúc ngưng đan. Đan khí trong lò cuộn trào, ngọn lửa bắt đầu chập chờn. ${a.name} là đan sư ${a.alchemy!.level} phẩm; đan thành có thể là ${QUALITY_NAMES.join(', ')}.`,
+    options: [
+      { id: 'heat_up', label: 'Thúc thêm hỏa', hint: `Đan phẩm cao hơn, dễ nổ lò hơn${odds(1)}` },
+      { id: 'heat_keep', label: 'Giữ lửa như cũ', hint: `Theo đúng đan phương${odds(0)}` },
+      { id: 'heat_down', label: 'Rút bớt củi', hint: `Chắc thành đan nhưng phẩm thấp${odds(-1)}` },
+    ],
+  };
 }

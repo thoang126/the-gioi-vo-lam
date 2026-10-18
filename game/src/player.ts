@@ -15,6 +15,8 @@ import { LHVK } from './content/lhvk';
 import { SOUL_TITLES } from './content/soul';
 import { CLAN_KIND_NAMES, CLANS, TRAIT_BY_ID } from './content/peoples';
 import { clanOf, foundClan, setHead } from './clans';
+import { chooseBrew, missingHerbs } from './alchemy';
+import { HERB_BY_ID, PILL_BY_ID } from './content/alchemy';
 
 export const MEMORIES = {
   manhBa: { name: 'Mạnh Bà quên uống', desc: '+1 mọi chỉ số gốc mỗi cấp', cost: (lvl: number) => 30 * (lvl + 1), max: 10 },
@@ -256,7 +258,9 @@ function hintFor(sim: Sim, a: Avatar, id: string): string | undefined {
   const parts: string[] = [];
   if (target) parts.push(`${relationWord(a.relations[target.id]?.kind)} ${target.name}`);
   if (dest && dest !== a.regionId) parts.push(`tới ${REGION_BY_ID[dest]!.name}`);
-  if (id === 'dot_pha') parts.push(a.pills > 0 ? 'có đan hỗ trợ' : 'không có đan');
+  if (id === 'dot_pha') parts.push(pillFor(a) ? 'có đan hỗ trợ' : 'không có đan');
+  if (id === 'luyen_dan') { const r = chooseBrew(sim, a); if (r) parts.push(`luyện ${PILL_BY_ID[r.pill]!.name}`); }
+  if (id === 'hai_duoc' || id === 'mua_duoc') { const m = missingHerbs(sim, a); if (m.length) parts.push(`cần ${m.map(([h, n]) => `${n} ${HERB_BY_ID[h]!.name}`).join(', ')}`); }
   return parts.join(', ') || undefined;
 }
 
@@ -271,6 +275,13 @@ export function resolvePending(sim: Sim, optionId: string): void {
   if (!a || !a.alive) return;
   if (p.kind === 'event') { resolveStoryChoice(sim, a, p, optionId); return; }
   if (p.kind === 'breakthrough') { resolveBreakthrough(sim, a, optionId); return; }
+  if (p.kind === 'alchemy') {
+    const st = a.action;
+    if (st?.id !== 'luyen_dan' || !st.recipe) return;
+    st.heat = optionId === 'heat_up' ? 1 : optionId === 'heat_down' ? -1 : 0;
+    (sim.s.soul.heat ??= {})[st.recipe] = st.heat;
+    return;
+  }
   const sig = situation(sim, a);
   if (optionId === 'auto') {
     const best = rankActions(sim, a)[0];

@@ -1,5 +1,5 @@
 // Headless run for balancing: `npm run sim -- --years 300 --seed 7 [--news]`.
-import { advance, createWorld, REALMS, SECTS, Sim, YEAR_OFFSET, REGION_BY_ID } from '../src/index';
+import { advance, createWorld, itemName, REALMS, SECTS, Sim, YEAR_OFFSET, REGION_BY_ID } from '../src/index';
 
 const args = process.argv.slice(2);
 const num = (flag: string, dflt: number) => {
@@ -43,6 +43,13 @@ const causes = new Map<string, number>();
 for (const a of Object.values(s.avatars)) if (!a.alive && a.deathCause) causes.set(a.deathCause, (causes.get(a.deathCause) ?? 0) + 1);
 console.log('\nNguyên nhân chết (người còn lưu hồ sơ):');
 for (const [c, n] of [...causes].sort((x, y) => y[1] - x[1])) console.log(`  ${c.padEnd(14)} ${n}`);
+
+const alchemists = living.filter((a) => a.alchemy);
+const byLevel = new Map<number, number>();
+for (const a of alchemists) byLevel.set(a.alchemy!.level, (byLevel.get(a.alchemy!.level) ?? 0) + 1);
+const market = Object.entries(s.market ?? {}).filter(([, n]) => n > 0).map(([k, n]) => `${itemName(k)} ×${n}`).join(', ');
+console.log(`\nĐan sư: ${alchemists.length} (theo phẩm: ${[...byLevel].sort((x, y) => x[0] - y[0]).map(([l, n]) => `${l}:${n}`).join(' ') || '—'}). Đan đang bán ở phường thị: ${market || 'không'}.`);
+console.log(`Lò đan: ${s.stats.brewed ?? 0} mẻ thành, ${s.stats.bursts ?? 0} lần nổ lò. Phường thị: ${s.stats.pillsSold ?? 0} viên bán ra, ${s.stats.pillsBought ?? 0} viên có người mua.`);
 
 console.log(`\nLinh hồn: ${s.soul.lives.length} kiếp đã qua, ${s.soul.points} Luân Hồi Điểm.`);
 for (const l of s.soul.lives) {

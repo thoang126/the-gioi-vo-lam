@@ -4,7 +4,9 @@ export { MEMORIES, playerAvatar, rebirthRootChance, checkSoulTitles } from './pl
 export { CODEX, SOUL_TITLES, DEATH_NAMES, codexProgress } from './content/soul';
 export { runBattle, sealOf, tacticOf, TACTIC_NAMES, TACTIC_IDS } from './battle-engine';
 export type { FightRecord, SoulSeal, TacticId } from './battle-engine';
-export { ACTION_BY_ID } from './actions';
+export { ACTION_BY_ID, pillFor } from './actions';
+export { itemName, parseKey } from './alchemy';
+export { HERBS, PILLS, RECIPES, HERB_BY_ID, PILL_BY_ID, QUALITY_NAMES } from './content/alchemy';
 export { EVENT_BY_ID, LHVK } from './content/lhvk';
 export { pathNames } from './story';
 export * from './content/cultivation';

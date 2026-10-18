@@ -2,6 +2,7 @@
 // the shared Sim and runs in a fixed order; the step function only orchestrates.
 
 import { MORTALITY } from './content/cultivation';
+import { ALCHEMY } from './content/alchemy';
 import { givenName, surnameOf } from './content/peoples';
 import { REGIONS, SECTS, SECT_RANKS, SEA_ROUTES, WORLDS, type SectRankId } from './content/world';
 import { ACTION_BY_ID, rankActions, startAction } from './actions';
@@ -45,11 +46,11 @@ export function phaseExecute(sim: Sim): void {
       st.startMonth = sim.month;
       st.endMonth = sim.month + dur;
     }
-    def.tick?.(sim, a);
+    def.tick?.(sim, a, st);
     if (!a.alive) continue;
     if (sim.month >= st.endMonth) {
       a.action = null;
-      def.finish(sim, a, sim.get(st.targetId));
+      def.finish(sim, a, sim.get(st.targetId), st);
     }
   }
 }
@@ -381,6 +382,7 @@ export function phaseWorld(sim: Sim): void {
 
 export function phaseLifecycle(sim: Sim): void {
   for (const a of sim.living()) {
+    if (a.toxicity) a.toxicity = Math.max(0, a.toxicity - ALCHEMY.toxicityDecay);
     const age = sim.age(a);
     const ls = sim.lifespan(a);
     if (a.physiqueId === 'cuu_am_tuyet_mach' && age >= 20 && a.realm < 2) {
