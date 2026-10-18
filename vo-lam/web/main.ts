@@ -335,7 +335,9 @@ function sectsTable(sim: Sim): string {
     const st = s.sects[def.id]!;
     const members = sim.living().filter((a) => a.sectId === def.id);
     const top = REALMS[Math.max(0, ...members.map((m) => m.realm))]!.name;
-    const stance = Object.entries(st.relations).map(([o, v]) => `${SECT_BY_ID[o]!.name}: ${st.wars[o] ? '<b class="seal">đang chiến</b>' : stanceWord(v)}`).join('<br>');
+    // Thirteen sects: only the ties worth knowing (at war, or warm or cold enough to matter).
+    const stance = Object.entries(st.relations).filter(([o, v]) => st.wars[o] || Math.abs(v) >= 40)
+      .map(([o, v]) => `${SECT_BY_ID[o]!.name}: ${st.wars[o] ? '<b class="seal">đang chiến</b>' : stanceWord(v)}`).join('<br>') || '<span class="muted">không thân không thù</span>';
     const arts = SECT_ARTS[def.id];
     const artsLine = arts ? `<br><span class="small">${esc(arts.style)}: ${esc(arts.technique)}; ${esc(arts.skills.map((id) => skillById(id)?.name ?? id).join(', '))}</span>` : '';
     return `<tr><td><b>${esc(def.name)}</b><br><span class="small muted">${def.alignment === 'evil' ? 'Tà phái' : 'Chính phái'} · ${esc(REGION_BY_ID[def.regionId]!.name)}</span>${artsLine}</td>
