@@ -1,0 +1,597 @@
+<title>Thế Giới Luân Hồi Vạn Kiếp</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,500;0,700;0,800;1,500&family=Be+Vietnam+Pro:wght@400;500;600&display=swap">
+<style>
+/* Layout: cuộn giấy dọc. Bản đồ thủy mặc ở đầu, bảng tra cứu và phân tích bên dưới. Theo ADR-0008 của game: giấy dó, mực, một dấu triện son. */
+:root {
+  --paper: #efeadf;
+  --paper-2: #e4ddcd;
+  --ink: #1d1f22;
+  --ink-2: #555a5f;
+  --ink-3: #8b8f90;
+  --wash: #c9cbc4;
+  --sea: #d6dcd8;
+  --seal: #b23a2a;
+  --gold: #8a6a1f;
+  --line: rgba(29, 31, 34, 0.16);
+  --font-display: "Alegreya", "Noto Serif", Georgia, serif;
+  --font-body: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --step--1: 0.8125rem;
+  --step-0: 1rem;
+  --step-1: 1.25rem;
+  --step-2: 1.75rem;
+  --step-3: clamp(2.25rem, 6vw, 3.5rem);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #16181a; --paper-2: #1f2225; --ink: #e8e3d6; --ink-2: #a9a69c; --ink-3: #74736c;
+    --wash: #34383a; --sea: #1c2326; --seal: #e0644f; --gold: #d2ae5a; --line: rgba(232, 227, 214, 0.16);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #16181a; --paper-2: #1f2225; --ink: #e8e3d6; --ink-2: #a9a69c; --ink-3: #74736c;
+  --wash: #34383a; --sea: #1c2326; --seal: #e0644f; --gold: #d2ae5a; --line: rgba(232, 227, 214, 0.16);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink);
+  font-family: var(--font-body); font-size: var(--step-0); line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: var(--step-3); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: var(--step-2); font-weight: 700; }
+h3 { font-size: var(--step-1); font-weight: 700; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-size: var(--step--1); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); font-weight: 600; }
+.muted { color: var(--ink-2); }
+.small { font-size: var(--step--1); }
+code { font-size: 0.85em; background: var(--paper-2); padding: 1px 5px; border-radius: 3px; }
+section { display: grid; gap: 20px; }
+.section-head { display: grid; gap: 8px; }
+
+/* Hero */
+header.hero { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; border-bottom: 1px solid var(--line); padding-bottom: 28px; }
+.hero .lede { font-size: var(--step-1); color: var(--ink-2); font-family: var(--font-display); font-style: italic; max-width: 52ch; }
+.seal { width: 84px; height: 84px; border: 3px solid var(--seal); color: var(--seal); border-radius: 6px; display: grid; place-items: center; font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; line-height: 1.05; text-align: center; transform: rotate(-4deg); padding: 6px; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 16px; font-size: var(--step--1); color: var(--ink-2); }
+.facts b { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* Map */
+.map-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.map-scroll { overflow-x: auto; border: 1px solid var(--line); background: var(--paper); border-radius: 4px; }
+.map-scroll svg { display: block; width: 100%; min-width: 680px; height: auto; }
+.place { cursor: pointer; outline: none; }
+.place .dot { fill: var(--ink); stroke: var(--paper); stroke-width: 2; transition: r .15s; }
+.place text { font-family: var(--font-display); fill: var(--ink); font-size: 15px; font-weight: 700; paint-order: stroke; stroke: var(--paper); stroke-width: 4px; stroke-linejoin: round; }
+.place .sub { font-family: var(--font-body); font-size: 10.5px; font-weight: 500; fill: var(--ink-2); }
+.place.evil .dot { fill: var(--seal); }
+.place.heaven .dot { fill: var(--gold); }
+.place.locked .dot { fill: var(--paper); stroke: var(--ink-3); stroke-dasharray: 2 2; }
+.place.locked text { fill: var(--ink-3); }
+.place.beast .dot { fill: var(--ink-2); r: 3.5; }
+.place.beast text { font-size: 11.5px; font-weight: 500; fill: var(--ink-2); font-style: italic; }
+.place:hover .dot, .place:focus-visible .dot, .place.active .dot { r: 9; }
+.place:focus-visible text, .place.active text { fill: var(--seal); }
+.region-label { font-family: var(--font-display); font-weight: 800; fill: var(--ink); opacity: .14; letter-spacing: .08em; }
+.zone-label { font-family: var(--font-body); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; fill: var(--ink-2); font-weight: 600; }
+.land { fill: var(--paper-2); stroke: var(--ink); stroke-width: 1.4; stroke-opacity: .55; }
+.land.locked { fill: none; stroke: var(--ink-3); stroke-dasharray: 5 5; stroke-width: 1.2; }
+.sea { fill: var(--sea); }
+.heaven-band { fill: var(--paper-2); opacity: .6; }
+.route { fill: none; stroke: var(--seal); stroke-width: 1.6; stroke-dasharray: 6 5; }
+.mt { fill: none; stroke: var(--ink); stroke-width: 1.3; stroke-opacity: .5; stroke-linejoin: round; }
+.cloud { fill: none; stroke: var(--ink-3); stroke-width: 1.2; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: var(--step--1); color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; background: var(--ink); display: inline-block; }
+.legend i.e { background: var(--seal); } .legend i.h { background: var(--gold); }
+.legend i.l { background: transparent; border: 1.5px dashed var(--ink-3); }
+.legend i.r { width: 18px; height: 0; border-radius: 0; border-top: 2px dashed var(--seal); background: none; }
+
+aside.panel { border-left: 3px solid var(--seal); padding: 4px 0 4px 18px; display: grid; gap: 12px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
+.panel .where { font-size: var(--step--1); color: var(--ink-2); letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+.panel ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.panel .src { font-size: var(--step--1); color: var(--ink-3); }
+.panel .note { font-size: var(--step--1); color: var(--seal); }
+
+/* Realms */
+.realm-table { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font-size: var(--step--1); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); font-weight: 600; }
+td.num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+td.name { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; white-space: nowrap; }
+tr.tier-row td { background: var(--paper-2); font-size: var(--step--1); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); font-weight: 600; }
+.bar { height: 8px; background: var(--wash); border-radius: 1px; min-width: 120px; position: relative; }
+.bar > span { position: absolute; inset: 0 auto 0 0; background: var(--ink); border-radius: 1px; }
+tr.immortal .bar > span { background: var(--gold); }
+
+/* Odds */
+.odds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+.odds-col { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.odd { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; font-size: 0.9rem; }
+.odd .pct { font-variant-numeric: tabular-nums; color: var(--ink-2); text-align: right; }
+.odd .track { grid-column: 1 / -1; height: 5px; background: var(--wash); position: relative; }
+.odd .track span { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
+.odd.off { color: var(--ink-3); }
+.odd.off .track span { background: var(--ink-3); }
+
+/* Elements */
+.elements { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 32px; align-items: center; }
+.elements svg { width: 100%; max-width: 300px; height: auto; }
+.el-node circle { fill: var(--paper-2); stroke: var(--ink); stroke-width: 1.4; }
+.el-node text { font-family: var(--font-display); font-weight: 800; font-size: 20px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
+.khac { stroke: var(--seal); stroke-width: 1.5; fill: none; }
+.sinh { stroke: var(--ink-3); stroke-width: 1.2; fill: none; stroke-dasharray: 3 4; }
+.status-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; font-size: 0.9rem; }
+.status-list b { font-family: var(--font-display); font-size: 1.05rem; }
+
+/* Factions */
+.factions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px 32px; }
+.faction { display: grid; gap: 6px; align-content: start; border-top: 2px solid var(--ink); padding-top: 12px; min-width: 0; }
+.faction.evil { border-top-color: var(--seal); }
+.faction.heaven { border-top-color: var(--gold); }
+.faction .tag { font-size: var(--step--1); color: var(--ink-2); letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+
+/* Analysis */
+.analysis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+.analysis > div { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.analysis ul { margin: 0; padding-left: 20px; display: grid; gap: 10px; }
+.analysis li::marker { color: var(--seal); }
+.loop { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
+.loop span.arrow { color: var(--seal); font-family: var(--font-body); }
+footer { border-top: 1px solid var(--line); padding-top: 16px; font-size: var(--step--1); color: var(--ink-3); }
+
+@media (max-width: 900px) {
+  .map-layout, .elements { grid-template-columns: 1fr; }
+  aside.panel { position: static; }
+  .odds, .factions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  header.hero { grid-template-columns: 1fr; }
+  .seal { display: none; }
+  .odds, .factions, .analysis, .status-list { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div>
+      <div class="eyebrow">Phân tích thế giới · game Luân Hồi Vạn Kiếp</div>
+      <h1>Thế giới võ lâm Luân Hồi Vạn Kiếp</h1>
+      <p class="lede">Một kiếp tu tiên tự trôi trên Telegram. Bảy phần mười số kiếp sinh ra không có linh căn, và chỉ khoảng một trên một hai triệu kiếp tới được cửa Nam Thiên Môn.</p>
+      <div class="facts">
+        <span><b>2</b> thế giới đang mở / 6 thế giới có trong dữ liệu</span>
+        <span><b>19</b> cảnh giới</span>
+        <span><b>278</b> sự kiện</span>
+        <span><b>22</b> công pháp · <b>41</b> võ kỹ · <b>22</b> pháp bảo</span>
+        <span><b>43</b> danh hiệu</span>
+      </div>
+    </div>
+    <div class="seal" aria-hidden="true">Luân<br>Hồi<br>Ấn</div>
+  </header>
+
+  <!-- MAP -->
+  <section id="ban-do">
+    <div class="section-head">
+      <div class="eyebrow">Bản đồ</div>
+      <h2>Tam giới: Phàm giới, Tu chân giới, Tiên giới</h2>
+      <p class="muted">Chạm vào một địa danh để xem sự kiện xảy ra ở đó. Bố cục là phỏng dựng: game chỉ nói rõ Thanh Vân châu nằm bên kia biển Đông so với Đại Hạ, và Tiên giới chỉ tới được bằng phi thăng. Vị trí còn lại do mình sắp xếp theo nội dung event.</p>
+    </div>
+    <div class="legend">
+      <span><i></i>Chính đạo, trung lập</span>
+      <span><i class="e"></i>Tà đạo, hiểm địa</span>
+      <span><i class="h"></i>Tiên giới</span>
+      <span><i class="l"></i>Có trong dữ liệu nhưng chưa mở</span>
+      <span><i class="r"></i>Đường đi có trong event</span>
+    </div>
+    <div class="map-layout">
+      <div class="map-scroll">
+        <svg id="map" viewBox="0 0 1000 780" role="img" aria-label="Bản đồ thế giới Luân Hồi Vạn Kiếp">
+          <defs>
+            <symbol id="mtn" viewBox="0 0 40 22"><path class="mt" d="M1 21 L12 5 L18 13 L24 2 L39 21"/></symbol>
+            <symbol id="cld" viewBox="0 0 60 20"><path class="cloud" d="M2 16 Q8 6 16 12 Q22 2 32 10 Q40 3 46 12 Q54 8 58 16"/></symbol>
+          </defs>
+
+          <!-- Tiên giới -->
+          <rect class="heaven-band" x="0" y="0" width="1000" height="205"/>
+          <text class="zone-label" x="20" y="24">Tiên giới · Thiên Đình</text>
+          <text class="region-label" x="500" y="128" text-anchor="middle" font-size="64">THIÊN ĐÌNH</text>
+          <use href="#cld" x="60" y="40" width="90" height="30"/>
+          <use href="#cld" x="380" y="150" width="80" height="26"/>
+          <use href="#cld" x="620" y="30" width="100" height="32"/>
+          <use href="#cld" x="840" y="160" width="90" height="30"/>
+          <path d="M760 20 Q860 60 980 40" fill="none" stroke="var(--ink-3)" stroke-width="10" stroke-opacity=".18" stroke-linecap="round"/>
+          <line x1="0" y1="205" x2="1000" y2="205" stroke="var(--ink)" stroke-opacity=".35" stroke-dasharray="2 6"/>
+          <text class="zone-label" x="20" y="226">Hạ giới</text>
+
+          <!-- Sea -->
+          <rect class="sea" x="0" y="206" width="1000" height="574"/>
+
+          <!-- Đại Hạ -->
+          <path class="land" d="M20 250 C110 232 250 238 360 262 C420 276 452 330 446 400 C440 460 470 520 430 580 C392 640 330 690 250 720 C170 748 80 740 30 700 C10 640 14 560 22 480 C28 400 12 320 20 250 Z"/>
+          <text class="region-label" x="210" y="490" text-anchor="middle" font-size="40">ĐẠI HẠ</text>
+          <use href="#mtn" x="100" y="290" width="60" height="32"/>
+          <use href="#mtn" x="150" y="300" width="44" height="24"/>
+          <use href="#mtn" x="280" y="300" width="50" height="26"/>
+          <path d="M90 620 q20 -8 40 0 t40 0 t40 0" fill="none" stroke="var(--ink-3)" stroke-width="1.2"/>
+          <path d="M80 640 q20 -8 40 0 t40 0 t40 0" fill="none" stroke="var(--ink-3)" stroke-width="1.2"/>
+
+          <!-- Thanh Vân châu -->
+          <path class="land" d="M610 268 C700 240 840 236 960 258 C984 330 978 420 986 500 C990 580 970 660 930 720 C850 752 740 748 660 720 C610 680 596 610 604 540 C612 470 586 400 596 340 C600 310 600 290 610 268 Z"/>
+          <text class="region-label" x="790" y="545" text-anchor="middle" font-size="34">THANH VÂN CHÂU</text>
+          <use href="#mtn" x="730" y="330" width="56" height="30"/>
+          <use href="#mtn" x="780" y="345" width="40" height="22"/>
+          <use href="#mtn" x="880" y="300" width="50" height="26"/>
+          <use href="#mtn" x="640" y="600" width="44" height="24"/>
+          <!-- floating peaks above Thanh Vân tông -->
+          <path d="M740 318 l8 -14 l8 14 Z M762 312 l6 -10 l6 10 Z" fill="none" stroke="var(--ink)" stroke-opacity=".5" stroke-width="1.2"/>
+
+          <!-- locked worlds -->
+          <path class="land locked" d="M820 222 C880 214 950 218 990 230 L990 262 C930 250 870 248 820 256 Z"/>
+          <path class="land locked" d="M24 222 C80 214 150 216 200 226 L196 246 C140 238 80 238 24 246 Z"/>
+          <ellipse class="land locked" cx="520" cy="712" rx="22" ry="10"/>
+          <ellipse class="land locked" cx="560" cy="742" rx="14" ry="7"/>
+          <ellipse class="land locked" cx="486" cy="745" rx="10" ry="6"/>
+
+          <text class="zone-label" x="520" y="420" text-anchor="middle">Biển Đông</text>
+
+          <!-- routes -->
+          <path class="route" d="M440 470 C500 430 560 420 625 430"/>
+          <path class="route" d="M760 360 C760 300 640 250 520 190"/>
+          <text x="562" y="262" font-size="10.5" fill="var(--seal)" font-family="var(--font-body)" transform="rotate(-24 562 262)">phi thăng · thiên kiếp 27 đạo</text>
+          <text x="470" y="458" font-size="10.5" fill="var(--seal)" font-family="var(--font-body)" transform="rotate(-14 470 458)">vượt biển 3 tháng</text>
+
+          <g id="places"></g>
+        </svg>
+      </div>
+      <aside class="panel" id="panel" aria-live="polite"></aside>
+    </div>
+  </section>
+
+  <!-- REALMS -->
+  <section id="canh-gioi">
+    <div class="section-head">
+      <div class="eyebrow">Hệ cảnh giới</div>
+      <h2>Mười chín bậc, từ phàm nhân tới Thánh Nhân</h2>
+      <p class="muted">Áp lực của mỗi kiếp là cuộc đua giữa tu vi và thọ nguyên. Thanh dài biểu diễn thọ nguyên tối đa trên thang log, mỗi đại cảnh giới gấp đôi bậc trước. Tỉ lệ đạt tới lấy từ các lần chạy <code>pnpm sim</code> ghi trong GDD (phụ lục E và G).</p>
+    </div>
+    <div class="realm-table">
+      <table>
+        <thead><tr><th>Cảnh giới</th><th>Thọ nguyên</th><th></th><th class="num">Đột phá gốc</th><th class="num">Thiên kiếp</th><th class="num">Hệ số chiến</th><th class="num">Số kiếp đạt tới</th></tr></thead>
+        <tbody id="realms"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ODDS -->
+  <section id="giang-sinh">
+    <div class="section-head">
+      <div class="eyebrow">Giáng sinh</div>
+      <h2>Vòng quay số phận</h2>
+      <p class="muted">Thứ tự roll: thế giới, xuất thân, linh căn, thể chất, chỉ số, thiên phú. Xuất thân đổi trọng số các bước sau: tu tiên thế gia có tỉ lệ có linh căn gấp đôi (60% thay vì 30%).</p>
+    </div>
+    <div class="odds">
+      <div class="odds-col"><h3>Thế giới</h3><div id="odds-world"></div></div>
+      <div class="odds-col"><h3>Xuất thân</h3><div id="odds-origin"></div></div>
+      <div class="odds-col"><h3>Linh căn</h3><div id="odds-root"></div></div>
+    </div>
+    <p class="small muted">Thế giới xám là có trong <code>worlds.yaml</code> nhưng đang tắt (<code>enabled: false</code>). Khi chỉ bật hai thế giới, engine chuẩn hóa lại thành 64,7% Phàm giới và 35,3% Tu chân giới.</p>
+  </section>
+
+  <!-- ELEMENTS -->
+  <section id="ngu-hanh">
+    <div class="section-head">
+      <div class="eyebrow">Ngũ hành và võ học</div>
+      <h2>Khắc chế trong trận đấu Hồn ấn</h2>
+      <p class="muted">Bên khắc gây ×1,25 sát thương, bên bị khắc chỉ gây ×0,85. Ba linh căn biến dị có luật riêng: Lôi khắc Thủy và Kim, Băng khắc Hỏa và Mộc, Phong khắc Thổ. Mỗi hệ còn gây một trạng thái riêng khi trúng chiêu.</p>
+    </div>
+    <div class="elements">
+      <svg viewBox="0 0 300 300" role="img" aria-label="Vòng ngũ hành khắc chế">
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="var(--seal)"/></marker></defs>
+        <g id="el-lines"></g>
+        <g id="el-nodes"></g>
+      </svg>
+      <div class="status-list" id="statuses"></div>
+    </div>
+  </section>
+
+  <!-- FACTIONS -->
+  <section id="the-luc">
+    <div class="section-head">
+      <div class="eyebrow">Thế lực</div>
+      <h2>Ai đứng ở đâu trong võ lâm</h2>
+    </div>
+    <div class="factions" id="factions"></div>
+  </section>
+
+  <!-- ANALYSIS -->
+  <section id="phan-tich">
+    <div class="section-head">
+      <div class="eyebrow">Phân tích</div>
+      <h2>Game đang ở đâu, thế giới còn thiếu gì</h2>
+    </div>
+    <div class="loop" aria-label="Vòng lặp cốt lõi">
+      <span>Giáng sinh</span><span class="arrow">→</span><span>Đời trôi và ngã rẽ</span><span class="arrow">→</span><span>Tử vong</span><span class="arrow">→</span><span>Bia mộ</span><span class="arrow">→</span><span>Chia sẻ hoặc đấu Hồn ấn</span><span class="arrow">→</span><span>Đầu thai</span>
+    </div>
+    <div class="analysis">
+      <div>
+        <h3>Điểm mạnh</h3>
+        <ul>
+          <li><b>Luật chơi là dữ liệu.</b> Thế giới, xác suất, event, công pháp đều nằm trong YAML có zod validate. Muốn mở rộng thế giới thì chủ yếu viết nội dung, không phải sửa engine.</li>
+          <li><b>Engine deterministic.</b> Cùng seed, cùng phiên bản nội dung và cùng lựa chọn cho ra đúng một kiếp. Nhờ vậy bia mộ kiểm chứng được và battle chạy bất đồng bộ được.</li>
+          <li><b>Cân bằng bằng số đo.</b> Mỗi thay đổi đều có kết quả sim 50–100 nghìn kiếp ghi trong GDD: tỉ lệ đạt cảnh giới, độ lặp câu chữ, mức chênh Đạo Quả giữa các lựa chọn.</li>
+          <li><b>Nhân vật có số phận riêng.</b> Sư phụ, đạo lữ, kình địch, đồ đệ và người quen đều có tên, có cảnh giới riêng và có tin tức giang hồ, nên mỗi kiếp đọc như một truyện ngắn.</li>
+          <li><b>Cái chết có báo trước.</b> Từ phụ lục G.30, chết tự nhiên luôn có giai đoạn suy yếu trước đó, tránh cảm giác chết vô cớ.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Thế giới còn mỏng</h3>
+        <ul>
+          <li><b>Ít địa danh có tên.</b> Đại Hạ chỉ có Thiên Trụ sơn và Lạc Hà phái. Kinh thành, biên ải, sa mạc chưa có tên riêng.</li>
+          <li><b>Một phe tà duy nhất.</b> Huyết Sát môn gánh mọi xung đột chính tà, từ báo thù sư phụ tới tông môn đại chiến. Ma tu là một đạo đồ nhưng chưa có tông môn ma đạo nào khác.</li>
+          <li><b>Ba thế giới chưa có nội dung.</b> Yêu vực, Ma vực và Hải ngoại tán tu đảo đã có tỉ lệ và hệ số trong <code>worlds.yaml</code> nhưng không có event nào.</li>
+          <li><b>Vùng yêu thú chỉ là danh sách tên.</b> Mười vùng như Vạn Yêu sơn mạch hay Lạc Hồn cốc được bốc ngẫu nhiên vào câu "thú triều", chưa có vị trí hay đặc điểm.</li>
+          <li><b>Tiên giới gần như không ai thấy.</b> 25 event và 9 cảnh giới dành cho khoảng một kiếp trên một hai triệu. Hóa Thần cũng chỉ khoảng 0,006–0,013% số kiếp.</li>
+          <li><b>Hai giọng thần thoại.</b> Hạ giới là tiên hiệp kiểu Phàm Nhân Tu Tiên, còn Tiên giới mượn Tây Du và Phong Thần (Vương Mẫu, Tam Thanh, Bát Quái lô). Cần một câu chuyện nối hai tầng.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Trạng thái dự án</h3>
+        <ul>
+          <li>Đã có: engine đời người, battle Hồn ấn, nội dung, công cụ <code>pnpm sim</code>, <code>pnpm life</code>, <code>lint:story</code>.</li>
+          <li>Chưa có: <code>apps/miniapp</code> và <code>apps/server</code> mới chỉ là file 2 dòng. Chưa có bot, database, bia mộ dạng ảnh.</li>
+          <li>Nội dung: 278/300 event, 22/20 công pháp, 41/40 võ kỹ, 22/30 pháp bảo, 43/30 danh hiệu so với mục tiêu MVP.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Đề xuất mở rộng thế giới</h3>
+        <ul>
+          <li>Thêm <code>locations.yaml</code> với vị trí, thế giới và tag, rồi cho event gọi <code>{place}</code> như cách <code>{beast_land}</code> đang làm. Bản đồ này có thể đọc thẳng từ file đó.</li>
+          <li>Đặt tên cho kinh thành Đại Hạ, cửa biển và biên ải; thêm một tông môn tà đạo ở Phàm giới để ma tu phàm giới có chỗ dựa.</li>
+          <li>Cho mỗi đạo đồ một tông môn đại diện: kiếm tu có Kiếm mộ, đan sư có một đan các, tán tu có phường thị.</li>
+          <li>Mở Hải ngoại tán tu đảo trước tiên: chỉ 1% số kiếp, nội dung ít, và nối tự nhiên với arc "Vượt biển Đông".</li>
+          <li>Dùng Luân Hồi trì làm sợi chỉ nối hai tầng thần thoại: nơi người chơi ở Tiên giới thấy lại các kiếp trước, khớp với meta Luân Hồi Điểm.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>Dựng từ repo <code>thoang126/luan-hoi-van-kiep</code> (commit 067e127): <code>docs/GDD.md</code>, <code>packages/content/data/**/*.yaml</code>. Tên thế giới, cảnh giới, xác suất và event lấy nguyên từ dữ liệu game. Vị trí trên bản đồ là phỏng dựng.</footer>
+</div>
+
+<script>
+const PLACES = [
+  // Tiên giới
+  { id: "nam-thien-mon", x: 500, y: 176, cls: "heaven", name: "Nam Thiên Môn", sub: "cửa vào Tiên giới", where: "Tiên giới",
+    desc: "Bước ngoặt đầu tiên khi phi thăng. Người tới nơi chọn đạo đồ Tiên giới: làm tiên quan Thiên Đình, làm tán tiên tự tại, hoặc ẩn tu ở phúc địa.",
+    events: ["Nam Thiên Môn (bước ngoặt)", "Chứng kiến thiên kiếp"], src: "events/immortal/immortal.yaml, paths/paths.yaml" },
+  { id: "lang-tieu", x: 500, y: 70, cls: "heaven", name: "Lăng Tiêu điện", sub: "triều đình Thiên Đình", where: "Tiên giới",
+    desc: "Nơi tiên quan nhận chức. Đạo đồ Tiên quan Thiên Đình xoay quanh việc trực, thăng chức và bị thanh trừng.",
+    events: ["Trực Thiên Đình", "Thăng chức tiên quan", "Thanh trừng", "Tiên Đế triệu kiến"], src: "events/immortal/immortal.yaml" },
+  { id: "tu-tieu", x: 350, y: 52, cls: "heaven", name: "Tử Tiêu cung", sub: "nơi Thánh Nhân", where: "Tiên giới",
+    desc: "Cung của các Thánh Nhân. Một cái gật đầu ở đây được nhắc lại ba kỷ nguyên.",
+    events: ["Thánh Nhân chú ý", "Tam Thanh giảng đạo"], src: "events/immortal/immortal.yaml" },
+  { id: "luan-hoi-tri", x: 260, y: 140, cls: "heaven", name: "Luân Hồi trì", sub: "soi lại các kiếp", where: "Tiên giới",
+    desc: "Mặt nước phản chiếu mọi kiếp đã sống: phàm nhân, tu chân, phi thăng. Đây là nơi duy nhất trong nội dung game nói thẳng về chủ đề luân hồi.",
+    events: ["Luân Hồi trì", "Nhân quả đến hạn"], src: "events/immortal/immortal.yaml" },
+  { id: "ban-dao", x: 690, y: 110, cls: "heaven", name: "Bàn đào hội", sub: "ba nghìn năm một lần", where: "Tiên giới",
+    desc: "Vương Mẫu mở hội bàn đào. Thiệp mời do tiên đồng áo xanh trao tận tay.",
+    events: ["Bàn đào hội", "Dạo chơi", "Đạo lữ tiên"], src: "events/immortal/immortal.yaml" },
+  { id: "thien-co", x: 120, y: 90, cls: "heaven", name: "Thiên Cơ các", sub: "nguồn tin Tiên giới", where: "Tiên giới",
+    desc: "Nơi phát tin tức cõi tiên: tiên phủ thời Khai Thiên lộ ra, bạn cũ bị tiên ma tập kích giữa tinh vân.",
+    events: ["Thượng cổ tiên phủ", "Tiên phủ vô chủ", "Tin tức Tiên giới"], src: "events/immortal/immortal.yaml, events/common/news.yaml" },
+  { id: "thien-ha", x: 880, y: 70, cls: "evil", name: "Thiên Hà", sub: "Hắc Ám Cấm Chủ", where: "Tiên giới",
+    desc: "Bóng đen chặn giữa Thiên Hà, nơi nó đi qua tinh quang tắt từng ngôi. Mối đe dọa lớn nhất của Tiên giới cùng với Hồng Mông Ma Thần.",
+    events: ["Hắc Ám Cấm Chủ", "Thiên Ma đại chiến"], src: "events/immortal/immortal.yaml" },
+  { id: "hon-don-hai", x: 880, y: 178, cls: "evil", name: "Hỗn Độn Hải", sub: "Hồng Mông Ma Thần ngủ", where: "Tiên giới",
+    desc: "Dưới đáy biển hỗn độn có một đôi mắt khổng lồ. Khi nó mở ra, hung thú hỗn độn bò lên.",
+    events: ["Hồng Mông Ma Thần thức tỉnh", "Hung thú hỗn độn"], src: "events/immortal/immortal.yaml" },
+  // Đại Hạ
+  { id: "kinh-thanh", x: 230, y: 410, cls: "", name: "Kinh thành Đại Hạ", sub: "hoàng tộc, khoa cử", where: "Phàm giới · Đại Hạ vương triều",
+    desc: "Trung tâm vương triều. Hoàng tộc (1% số kiếp) có tài nguyên lớn nhưng tỉ lệ bị ám sát gấp ba. Người phàm đi khoa cử làm quan, thương nhân góp vốn vào đại thương hội.",
+    events: ["Tranh đoạt ngôi vị", "Khoa cử", "Lập nghiệp (quan lại, thương nhân)", "Thương hội góp vốn"], src: "events/mortal/mortal.yaml, events/common/path-events.yaml, birth/origins.yaml" },
+  { id: "thien-tru", x: 120, y: 330, cls: "", name: "Thiên Trụ sơn", sub: "võ lâm đại hội", where: "Phàm giới · Đại Hạ vương triều",
+    desc: "Nơi mở võ lâm đại hội, hào kiệt bốn phương tề tựu. Con nhà võ lâm thế gia (12%) có Căn cốt +8 và hợp với đường võ tướng.",
+    events: ["Võ lâm đại hội", "Lão tiều phu", "Bia đá ven đường"], src: "events/mortal/mortal.yaml, events/mortal/path.yaml" },
+  { id: "lac-ha", x: 320, y: 320, cls: "", name: "Lạc Hà phái", sub: "tông môn duy nhất của Đại Hạ", where: "Phàm giới · Đại Hạ vương triều",
+    desc: "Tông môn nhỏ duy nhất ở Phàm giới, thỉnh thoảng xuống núi tìm người có linh căn. Đây là cửa tu tiên chính của 55% số kiếp sinh ra ở Đại Hạ.",
+    events: ["Lạc Hà phái thu đồ", "Đạo nhân áo xám", "Lão tu sĩ già nua"], src: "events/mortal/mortal.yaml" },
+  { id: "bien-ai", x: 70, y: 520, cls: "evil", name: "Biên ải", sub: "chiến loạn", where: "Phàm giới · Đại Hạ vương triều",
+    desc: "Phàm giới linh khí loãng và chiến loạn liên miên. Trai tráng bị trưng binh ra biên ải; tử trận chiếm khoảng 8% nguyên nhân chết.",
+    events: ["Lệnh trưng binh", "Chiến trường biên ải", "Loạn quân qua làng", "Binh hỏa", "Giải ngũ"], src: "events/mortal/mortal.yaml" },
+  { id: "sa-mac", x: 150, y: 668, cls: "", name: "Sa mạc", sub: "thương đội", where: "Phàm giới · Đại Hạ vương triều",
+    desc: "Đường buôn xuyên sa mạc, nơi thương nhân và sơn tặc gặp nhau.",
+    events: ["Thương đội xuyên sa mạc", "Sơn tặc chặn đường"], src: "events/mortal/mortal.yaml" },
+  { id: "lang-que", x: 330, y: 560, cls: "", name: "Làng quê", sub: "nông hộ 48%", where: "Phàm giới · Đại Hạ vương triều",
+    desc: "Gần một nửa số kiếp sinh ra ở nhà nông. Đời phàm nhân xoay quanh mùa màng, thiên tai, quán trà và những lời đồn về tiên nhân.",
+    events: ["Được mùa", "Hạn hán", "Lũ lớn", "Dịch bệnh", "Thầy bói mù", "Chuyện tiên nhân ở quán trà", "Chiều trước hiên"], src: "events/mortal/mortal.yaml" },
+  { id: "ben-cang", x: 432, y: 486, cls: "", name: "Bến cảng", sub: "nơi khởi hành vượt biển", where: "Phàm giới · Đại Hạ vương triều",
+    desc: "Một thương nhân say rượu kể rằng bên kia biển Đông có Thanh Vân châu. Người tin thì bán hết đồ đạc ra bến; ba tháng sau hoặc thấy núi lơ lửng giữa trời, hoặc ôm ván dạt về bờ cũ.",
+    events: ["Truyền thuyết bên kia biển", "Vượt biển Đông (đổi sang Tu chân giới)"], src: "events/mortal/path.yaml" },
+  // Thanh Vân châu
+  { id: "thanh-van-tong", x: 752, y: 386, cls: "", name: "Thanh Vân tông", sub: "đại tông môn", where: "Tu chân giới · Thanh Vân châu",
+    desc: "Tông môn chính của Tu chân giới, định kỳ mở sơn môn tuyển đệ tử. Đi từ tạp dịch, ngoại môn, nội môn lên đệ tử chân truyền; môi trường nội môn cho tu vi ×1,3.",
+    events: ["Thanh Vân tông mở sơn môn", "Tạp dịch đệ tử", "Khảo hạch nội môn", "Trưởng lão thu đồ", "Nhiệm vụ tông môn", "Nghe giảng đạo", "Truyền ghế trưởng lão"], src: "events/cultivation/sect.yaml, events/cultivation/second-chance.yaml, events/common/arcs-bonds.yaml" },
+  { id: "phuong-thi", x: 680, y: 470, cls: "", name: "Phường thị", sub: "chợ tu sĩ", where: "Tu chân giới · Thanh Vân châu",
+    desc: "Chợ của tu sĩ: đổ thạch, sạp đan, đấu giá Kết Kim đan, tán tu say rượu kể chuyện.",
+    events: ["Phường thị", "Đổ thạch ở phường thị", "Sạp đan dược", "Đấu giá Kết Kim đan", "Tán tu say rượu"], src: "events/cultivation/sect.yaml, events/cultivation/stone-gamble.yaml" },
+  { id: "linh-mach", x: 900, y: 335, cls: "", name: "Thác linh mạch", sub: "động phủ ×1,6", anchor: "end", where: "Tu chân giới · Thanh Vân châu",
+    desc: "Linh mạch dưới thác nước. Động phủ có linh mạch là môi trường tu luyện tốt nhất của hạ giới (×1,6).",
+    events: ["Linh mạch dưới thác", "Bế quan đốn ngộ"], src: "events/cultivation/sect.yaml, events/cultivation/path.yaml" },
+  { id: "kiem-mo", x: 930, y: 430, cls: "", name: "Kiếm mộ", sub: "kiếm tu", anchor: "end", where: "Tu chân giới · Thanh Vân châu",
+    desc: "Nơi chôn kiếm của tiền bối. Người mang Thiên sinh kiếm cốt gặp event kiếm nhiều gấp ba.",
+    events: ["Kiếm mộ", "Chọn đạo: kiếm tu"], src: "events/cultivation/path.yaml, birth/physiques.yaml" },
+  { id: "bi-canh", x: 850, y: 470, cls: "", name: "Bí cảnh", sub: "di tích cổ", where: "Tu chân giới · Thanh Vân châu",
+    desc: "Bí cảnh mở cửa theo chu kỳ. Chuỗi bản đồ cổ dẫn tới cửa di tích và kẻ canh giữ đáy hồ.",
+    events: ["Bí cảnh mở cửa", "Mảnh bản đồ cổ", "Cửa di tích", "Kẻ canh giữ đáy hồ"], src: "events/cultivation/sect.yaml, events/common/arcs.yaml" },
+  { id: "huyet-sat", x: 840, y: 650, cls: "evil", name: "Huyết Sát môn", sub: "ma đạo", where: "Tu chân giới · Thanh Vân châu",
+    desc: "Kẻ thù chính của chính đạo. Chưởng môn Huyết Sát môn đánh chết sư phụ người chơi, mở chuỗi báo thù; mua bản đồ hộ sơn đại trận từ kẻ phản đồ; khai chiến với tông môn.",
+    events: ["Chuỗi báo thù sư phụ", "Huyết Sát môn", "Kẻ phản đồ bán bản đồ đại trận", "Tông môn đại chiến", "Ma tu xâm lấn", "Huyết tế bí pháp"], src: "events/common/chain-revenge.yaml, events/common/arcs-bonds.yaml, events/cultivation/path.yaml" },
+  // beast lands
+  { id: "beast", x: 690, y: 300, cls: "beast", name: "Hắc Phong lĩnh", where: "Vùng yêu thú", beast: true },
+  { id: "beast2", x: 940, y: 285, cls: "beast", name: "Vạn Yêu sơn mạch", where: "Vùng yêu thú", beast: true, anchor: "end" },
+  { id: "beast3", x: 950, y: 580, cls: "beast", name: "Lạc Hồn cốc", where: "Vùng yêu thú", beast: true, anchor: "end" },
+  { id: "beast4", x: 660, y: 640, cls: "beast", name: "Mê Vụ lâm", where: "Vùng yêu thú", beast: true },
+  { id: "beast5", x: 720, y: 700, cls: "beast", name: "Huyết Nha nguyên", where: "Vùng yêu thú", beast: true },
+  { id: "beast6", x: 630, y: 540, cls: "beast", name: "Ẩm Mã hồ", where: "Vùng yêu thú", beast: true },
+  // locked
+  { id: "yeu-vuc", x: 880, y: 240, cls: "locked", name: "Yêu vực", sub: "chưa mở · 8%", where: "Thế giới chưa mở",
+    desc: "Sinh làm yêu tộc: thọ nguyên ×1,5, tu chậm (cơ số 12), bị nhân tộc săn. Có trong worlds.yaml với trọng số 8% nhưng đang tắt và chưa có event.",
+    events: [], src: "birth/worlds.yaml", note: "Vị trí phỏng đoán. Game chưa định vị Yêu vực." },
+  { id: "ma-vuc", x: 70, y: 236, cls: "locked", name: "Ma vực", sub: "chưa mở · 6%", where: "Thế giới chưa mở",
+    desc: "Công pháp tà đạo mạnh (tu vi cơ số 24, cao nhất hạ giới), nhưng tỉ lệ tẩu hỏa nhập ma ×1,5. Đang tắt, chưa có event.",
+    events: [], src: "birth/worlds.yaml", note: "Vị trí phỏng đoán. Game chưa định vị Ma vực." },
+  { id: "hai-ngoai", x: 520, y: 690, cls: "locked", name: "Hải ngoại tán tu đảo", sub: "chưa mở · 1%", where: "Thế giới chưa mở",
+    desc: "Kỳ ngộ ×1,5 và tai họa ×1,5. Thế giới hiếm nhất (1%), đang tắt, chưa có event.",
+    events: [], src: "birth/worlds.yaml", note: "Vị trí phỏng đoán. Đặt giữa biển vì tên gọi là hải ngoại." },
+];
+const BEAST = {
+  name: "Vùng yêu thú", where: "Tu chân giới · danh sách beastLands",
+  desc: "Mười vùng được bốc ngẫu nhiên vào câu chuyện thú triều: Vạn Yêu sơn mạch, Hắc Phong lĩnh, Lạc Hồn cốc, Thiên Chướng sơn, Mê Vụ lâm, Huyết Nha nguyên, Cổ Thú hoang mạc, Thập Tuyệt phong, Ẩm Mã hồ, Bách Chướng sơn mạch. Yêu thú mạnh dần theo cảnh giới người chơi: Luyện Khí gặp Lang, Trư, Ưng; Kim Đan gặp Mãng, Giao; Hóa Thần gặp Giao Long, Đại Bằng; Đại Thừa gặp Tổ Long, Tổ Phượng.",
+  events: ["Thú triều (4 biến thể)", "Săn yêu thú"], src: "narration/narration.yaml, events/cultivation/sect.yaml",
+  note: "Game chưa gán vị trí cho các vùng này. Mình đặt sáu vùng quanh rìa Thanh Vân châu làm minh họa."
+};
+
+const svgNS = "http://www.w3.org/2000/svg";
+const g = document.getElementById("places");
+const panel = document.getElementById("panel");
+let activeEl = null;
+
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+function show(p, el) {
+  const d = p.beast ? BEAST : p;
+  if (activeEl) activeEl.classList.remove("active");
+  activeEl = el; if (el) el.classList.add("active");
+  panel.innerHTML = `
+    <div class="where">${esc(d.where)}</div>
+    <h3>${esc(d.name)}</h3>
+    <p>${esc(d.desc)}</p>
+    ${d.events && d.events.length ? `<div><div class="eyebrow">Sự kiện ở đây</div><ul>${d.events.map(e => `<li>${esc(e)}</li>`).join("")}</ul></div>` : `<p class="muted small">Chưa có sự kiện nào cho nơi này.</p>`}
+    ${d.note ? `<p class="note">${esc(d.note)}</p>` : ""}
+    <p class="src">Nguồn: ${esc(d.src)}</p>`;
+}
+
+PLACES.forEach(p => {
+  const el = document.createElementNS(svgNS, "g");
+  el.setAttribute("class", "place " + p.cls);
+  el.setAttribute("tabindex", "0");
+  el.setAttribute("role", "button");
+  el.setAttribute("aria-label", p.name);
+  const anchor = p.anchor || "start";
+  const dx = anchor === "end" ? -10 : 12;
+  el.innerHTML = `<circle class="dot" cx="${p.x}" cy="${p.y}" r="6"></circle>
+    <text x="${p.x + dx}" y="${p.y + 4}" text-anchor="${anchor}">${esc(p.name)}</text>
+    ${p.sub ? `<text class="sub" x="${p.x + dx}" y="${p.y + 18}" text-anchor="${anchor}">${esc(p.sub)}</text>` : ""}`;
+  el.addEventListener("click", () => show(p, el));
+  el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); show(p, el); } });
+  g.appendChild(el);
+});
+const firstIdx = PLACES.findIndex(p => p.id === "ben-cang");
+show(PLACES[firstIdx], g.children[firstIdx]);
+
+// Realms
+const REALMS = [
+  ["Phàm nhân", 70, null, null, 0.5, "100%", "Hạ giới"],
+  ["Luyện Khí", 120, 62, 1, 1, "≈ 23%"],
+  ["Trúc Cơ", 250, 33, 3, 3, "≈ 6,3%"],
+  ["Kim Đan", 500, 19, 6, 9, "≈ 0,9–1%"],
+  ["Nguyên Anh", 1000, 12, 9, 27, "≈ 0,08–0,12%"],
+  ["Hóa Thần", 2000, 8, 9, 81, "≈ 0,006–0,013%"],
+  ["Dung Hư", 4000, 8, 12, 243, "rất hiếm"],
+  ["Hợp Thể", 8000, 8, 15, 729, ""],
+  ["Độ Kiếp", 16000, 8, 18, 2187, ""],
+  ["Đại Thừa", 32000, 25, 27, 6561, ""],
+  ["Tán Tiên", 64000, 10, 36, 19683, "≈ 1 / 1–2 triệu", "Tiên giới · chỉ tới bằng phi thăng"],
+  ["Địa Tiên", 128000, 10, 45, 59049, ""],
+  ["Thiên Tiên", 256000, 10, 54, 177147, ""],
+  ["Chân Tiên", 512000, 10, 63, 531441, ""],
+  ["Huyền Tiên", 1024000, 10, 72, 1594323, ""],
+  ["Kim Tiên", 2048000, 10, 81, 4782969, ""],
+  ["Đại La Kim Tiên", 4096000, 10, 90, 14348907, ""],
+  ["Chuẩn Thánh", 8192000, 10, 99, 43046721, ""],
+  ["Thánh Nhân", 16384000, 20, 108, 129140163, "hợp đạo"],
+];
+const fmt = n => n.toLocaleString("vi-VN");
+const maxLog = Math.log10(16384000), minLog = Math.log10(50);
+let immortal = false;
+document.getElementById("realms").innerHTML = REALMS.map(([n, life, br, bolts, mult, reach, tier], i) => {
+  if (i >= 10) immortal = true;
+  const w = ((Math.log10(life) - minLog) / (maxLog - minLog) * 100).toFixed(1);
+  const head = tier ? `<tr class="tier-row"><td colspan="7">${tier}</td></tr>` : "";
+  return head + `<tr class="${immortal ? "immortal" : ""}">
+    <td class="name">${n}</td>
+    <td class="num">${fmt(life)} năm</td>
+    <td style="width:30%"><div class="bar"><span style="width:${w}%"></span></div></td>
+    <td class="num">${br == null ? "—" : br + "%"}</td>
+    <td class="num">${bolts == null ? "—" : bolts + " đạo"}</td>
+    <td class="num">×${fmt(mult)}</td>
+    <td class="num">${reach}</td></tr>`;
+}).join("");
+
+// Odds
+function odds(id, rows) {
+  const max = Math.max(...rows.map(r => r[1]));
+  document.getElementById(id).innerHTML = rows.map(([n, v, off]) => `
+    <div class="odd ${off ? "off" : ""}"><span>${n}</span><span class="pct">${String(v).replace(".", ",")}%</span>
+    <div class="track"><span style="width:${Math.max(v / max * 100, 0.6)}%"></span></div></div>`).join("");
+  document.getElementById(id).style.display = "grid";
+  document.getElementById(id).style.gap = "10px";
+}
+odds("odds-world", [["Phàm giới – Đại Hạ", 55], ["Tu chân giới – Thanh Vân châu", 30], ["Yêu vực", 8, 1], ["Ma vực", 6, 1], ["Hải ngoại tán tu đảo", 1, 1], ["Tiên giới (chỉ phi thăng)", 0, 1]]);
+odds("odds-origin", [["Nông hộ", 48], ["Thương gia", 15], ["Ăn mày / cô nhi", 12], ["Võ lâm thế gia", 12], ["Tu tiên thế gia", 8], ["Đệ tử tông môn", 4], ["Hoàng tộc", 1]]);
+odds("odds-root", [["Không linh căn", 70], ["Ngũ hành tạp linh căn ×0,5", 18], ["Tam linh căn ×1", 8], ["Song linh căn ×1,6", 3], ["Đơn linh căn ×2,5", 0.9], ["Biến dị (Lôi, Băng, Phong) ×3", 0.09], ["Thiên linh căn ×4", 0.01]]);
+
+// Five elements
+const EL = ["Kim", "Thủy", "Mộc", "Hỏa", "Thổ"]; // tương sinh order around the circle
+const cx = 150, cy = 152, R = 108;
+const pos = EL.map((_, i) => { const a = -Math.PI / 2 + i * 2 * Math.PI / 5; return [cx + R * Math.cos(a), cy + R * Math.sin(a)]; });
+const khac = [["Kim", "Mộc"], ["Mộc", "Thổ"], ["Thổ", "Thủy"], ["Thủy", "Hỏa"], ["Hỏa", "Kim"]];
+const r = 26;
+function seg(a, b, pad) {
+  const [x1, y1] = pos[EL.indexOf(a)], [x2, y2] = pos[EL.indexOf(b)];
+  const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
+  return [x1 + dx / L * pad, y1 + dy / L * pad, x2 - dx / L * (pad + 2), y2 - dy / L * (pad + 2)];
+}
+let lines = "";
+EL.forEach((a, i) => { const [x1, y1, x2, y2] = seg(a, EL[(i + 1) % 5], r); lines += `<line class="sinh" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`; });
+khac.forEach(([a, b]) => { const [x1, y1, x2, y2] = seg(a, b, r); lines += `<line class="khac" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-end="url(#ah)"/>`; });
+document.getElementById("el-lines").innerHTML = lines;
+document.getElementById("el-nodes").innerHTML = EL.map((e, i) => `<g class="el-node"><circle cx="${pos[i][0]}" cy="${pos[i][1]}" r="${r}"/><text x="${pos[i][0]}" y="${pos[i][1]}">${e}</text></g>`).join("");
+const STATUS = [
+  ["Kim", "Xuất huyết", "mất 0,15 Công mỗi lượt, cộng dồn 3 lần"],
+  ["Mộc", "Trói buộc", "Tốc −30%, 35% mất lượt"],
+  ["Thủy", "Hàn thấp", "Công −30% trong 3 lượt"],
+  ["Hỏa", "Thiêu đốt", "mất 0,3 Công mỗi lượt"],
+  ["Thổ", "Thạch giáp", "tự thân, Thủ +70%"],
+  ["Lôi", "Tê liệt", "30% mất lượt"],
+  ["Băng", "Đóng băng", "Tốc −50%, 30% mất lượt"],
+  ["Phong", "Tật phong", "tự thân, Tốc +40%, có thể đánh thêm"],
+];
+document.getElementById("statuses").innerHTML = STATUS.map(([e, s, d]) => `<div><b>${e} · ${s}</b><div class="muted small">${d}</div></div>`).join("") +
+  `<div style="grid-column:1/-1" class="small muted">Đường đỏ có mũi tên là khắc, đường chấm là tương sinh. Mỗi hệ có chiêu phẩm Hoàng, Huyền, Địa và một tuyệt kỹ phẩm Thiên chỉ dùng được khi khí huyết dưới 30%.</div>`;
+
+// Factions
+const FACTIONS = [
+  ["", "Chính đạo · Tu chân giới", "Thanh Vân tông", "Đại tông môn duy nhất có tên ở Thanh Vân châu. Thang bậc tạp dịch, ngoại môn, nội môn, chân truyền, trưởng lão."],
+  ["", "Chính đạo · Phàm giới", "Lạc Hà phái", "Tông môn nhỏ duy nhất của Đại Hạ, cửa tu tiên cho người sinh ở Phàm giới."],
+  ["evil", "Tà đạo", "Huyết Sát môn và ma tu", "Phe tà duy nhất có tên. Ma tu là một đạo đồ: tu nhanh nhưng bị truy sát, Đạo Quả trung bình thấp nhất (625)."],
+  ["", "Thế tục", "Vương triều Đại Hạ", "Hoàng tộc, quan lại, quân đội và võ lâm thế gia. Chiến loạn và tranh ngôi là nguồn chết chính của người phàm."],
+  ["", "Trung lập", "Phường thị và tán tu", "Chợ tu sĩ, thương hội, tán tu say rượu. Tán tu tu luyện ở môi trường ×0,8 nhưng tự do."],
+  ["evil", "Yêu tộc", "Thú triều", "Yêu thú từ mười vùng hoang dã tràn vào thành; mạnh dần theo cảnh giới, tới Tổ Long và Hồng Mông Ma Thần ở đỉnh."],
+  ["heaven", "Tiên giới", "Thiên Đình", "Tiên Đế, Vương Mẫu, Tam Thanh, thiên binh và tiên quan. Người phi thăng có thể nhận chức hoặc đứng ngoài."],
+  ["evil", "Tiên giới", "Hắc Ám Cấm Chủ, Hồng Mông Ma Thần", "Hai mối họa cấp vũ trụ, xuất hiện trong event Thiên Ma đại chiến và hung thú hỗn độn."],
+  ["", "Con người quanh ngươi", "Sư phụ, đạo lữ, kình địch, đồ đệ, người quen", "Mỗi kiếp có tối đa một người cho mỗi vai, có tên và cảnh giới riêng. Kình địch luôn đi trước một tầng."],
+];
+document.getElementById("factions").innerHTML = FACTIONS.map(([c, tag, n, d]) => `<div class="faction ${c}"><div class="tag">${tag}</div><h3>${n}</h3><p class="muted">${d}</p></div>`).join("");
+</script>
