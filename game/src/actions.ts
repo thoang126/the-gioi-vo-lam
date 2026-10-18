@@ -1,0 +1,499 @@
+// Action system in the spirit of CWS: an idle avatar picks one action, which may first walk
+// to a region and then runs for several months. CWS asks an LLM to choose; here a utility
+// score built from persona, needs and world state chooses, so the world stays deterministic.
+
+import { BEASTS, BEAST_PREFIXES, BREAKTHROUGH, REALMS, TECHNIQUES } from './content/cultivation';
+import { REGIONS } from './content/world';
+import { duel, fightBeast } from './battle';
+import { REGION_BY_ID, SECT_BY_ID, Sim, findPath, relationWord } from './sim';
+import type { Avatar } from './types';
+
+export interface ActionDef {
+  id: string;
+  label: string;
+  /** Verb phrase for chronicles: "{name} {doing}". */
+  doing: string;
+  months: (sim: Sim, a: Avatar) => number;
+  available: (sim: Sim, a: Avatar) => boolean;
+  score: (sim: Sim, a: Avatar) => number;
+  region?: (sim: Sim, a: Avatar) => string | null;
+  target?: (sim: Sim, a: Avatar) => Avatar | undefined;
+  tick?: (sim: Sim, a: Avatar) => void;
+  finish: (sim: Sim, a: Avatar, target?: Avatar) => void;
+}
+
+const isCultivator = (sim: Sim, a: Avatar) => sim.canCultivate(a);
+const inWorld = (a: Avatar) => REGION_BY_ID[a.regionId]!.world;
+const pillCost = (realm: number) => Math.round(50 * 6 ** Math.max(0, realm - 1));
+
+function lifePressure(sim: Sim, a: Avatar): number {
+  return Math.max(0, sim.age(a) / sim.lifespan(a) - 0.5) * 2;
+}
+
+function beastName(sim: Sim, tier: number): string {
+  return `${sim.rng.pick(BEAST_PREFIXES)} ${sim.rng.pick(BEASTS[tier] ?? BEASTS[1]!)}`;
+}
+
+function weakerTarget(sim: Sim, a: Avatar): Avatar | undefined {
+  const mine = sim.power(a);
+  return (sim.byRegion[a.regionId] ?? []).find((o) => o.id !== a.id && sim.age(o) >= 14
+    && (o.sectId === null || o.sectId !== a.sectId) && sim.power(o) < mine * 0.7 && (o.linhThach > 30 || o.pills > 0));
+}
+
+function discipleCandidate(sim: Sim, a: Avatar): Avatar | undefined {
+  return (sim.byRegion[a.regionId] ?? []).find((o) => o.id !== a.id && sim.rootTier(o) > 0
+    && sim.age(o) >= 8 && sim.age(o) <= 25 && o.realm < a.realm && !sim.relationOf(o, 'master')
+    && !o.relations[a.id]);
+}
+
+function countRelation(sim: Sim, a: Avatar, kind: string): number {
+  return Object.entries(a.relations).filter(([id, r]) => r.kind === kind && sim.s.avatars[Number(id)]?.alive).length;
+}
+
+export function attemptBreakthrough(sim: Sim, a: Avatar): void {
+  const r = REALMS[a.realm]!;
+  const bt = r.breakthrough!;
+  const usedPill = a.pills > 0;
+  if (usedPill) a.pills -= 1;
+  let p = bt.base + (a.stats.ngoTinh - 50) / BREAKTHROUGH.insightDivisor + (a.stats.tamTinh - 50) / BREAKTHROUGH.willDivisor
+    + (usedPill ? BREAKTHROUGH.pillBonus : 0);
+  p = Math.min(BREAKTHROUGH.clamp[1], Math.max(BREAKTHROUGH.clamp[0], p));
+  const next = REALMS[a.realm + 1];
+  const pillText = usedPill ? ' Uống một viên đan.' : '';
+  if (sim.rng.chance(p)) {
+    const tb = BREAKTHROUGH.tribulation;
+    const perBolt = Math.min(tb.clamp[1], Math.max(tb.clamp[0], bt.survive + (a.stats.canCot - 50) / tb.canCotDivisor + (a.stats.tamTinh - 50) / tb.willDivisor));
+    if (!sim.rng.chance(perBolt ** bt.bolts)) {
+      sim.kill(a, 'tribulation', `Độ ${bt.bolts} đạo thiên kiếp để lên ${next ? next.name : 'tiên giới'}, không qua khỏi`);
+      return;
+    }
+    if (!next) {
+      a.alive = false;
+      a.deathMonth = sim.month;
+      a.deathCause = 'ascension';
+      a.deathText = 'Vượt 27 đạo thiên kiếp, phi thăng Tiên giới';
+      a.action = null;
+      sim.s.stats.ascensions += 1;
+      sim.log('death', `${a.name} vượt 27 đạo thiên kiếp, phi thăng Tiên giới. Cả Thanh Vân châu thấy cột sáng suốt ba ngày.`, [a.id], { regionId: a.regionId, major: true });
+      return;
+    }
+    a.realm += 1;
+    a.stage = 0;
+    a.tuVi = 0;
+    a.renown += 10 * a.realm * a.realm;
+    sim.s.stats.maxRealmEver = Math.max(sim.s.stats.maxRealmEver, a.realm);
+    sim.log('breakthrough', `${a.name} vượt ${bt.bolts} đạo thiên kiếp, đột phá ${next.name}.${pillText}`, [a.id], {
+      regionId: a.regionId, major: a.realm >= 3,
+    });
+    return;
+  }
+  a.breakthroughCooldownUntil = sim.month + bt.retryYears * 12;
+  a.tuVi *= 1 - sim.rng.range(BREAKTHROUGH.tuViLoss[0], BREAKTHROUGH.tuViLoss[1]);
+  const dev = BREAKTHROUGH.deviationAtWill1 + (BREAKTHROUGH.deviationAtWill100 - BREAKTHROUGH.deviationAtWill1) * (a.stats.tamTinh - 1) / 99;
+  const devChance = a.physiqueId === 'linh_lung' ? dev * 0.3 : dev;
+  if (sim.rng.chance(devChance)) {
+    if (a.stats.tamTinh < BREAKTHROUGH.deviationDeathBelowWill) {
+      sim.kill(a, 'qi_deviation', `Đột phá ${next?.name ?? ''} thất bại, tẩu hỏa nhập ma`);
+      return;
+    }
+    a.crippled = true;
+    a.stats.canCot = Math.max(1, a.stats.canCot - 15);
+    sim.log('breakthrough', `${a.name} đột phá ${next?.name} thất bại, tẩu hỏa nhập ma, kinh mạch tổn hại.${pillText}`, [a.id], { regionId: a.regionId });
+    return;
+  }
+  if (sim.rng.chance(BREAKTHROUGH.injuryChance)) a.injuredUntil = Math.max(a.injuredUntil, sim.month + 60);
+  if (a.realm >= 2 || sim.isPlayer(a)) {
+    sim.log('breakthrough', `${a.name} đột phá ${next?.name} thất bại, phải tĩnh dưỡng ${bt.retryYears} năm.${pillText}`, [a.id], { regionId: a.regionId });
+  }
+}
+
+export const ACTIONS: ActionDef[] = [
+  {
+    id: 'muu_sinh', label: 'Mưu sinh', doing: 'lo cơm áo',
+    months: () => 12,
+    available: (sim, a) => sim.age(a) >= 14 && !sim.canCultivate(a),
+    score: () => 1,
+    finish: (sim, a) => { a.linhThach += a.originId === 'merchant' ? sim.rng.int(10, 40) : sim.rng.int(2, 12); },
+  },
+  {
+    id: 'luyen_vo', label: 'Luyện võ', doing: 'luyện quyền cước',
+    months: () => 12,
+    available: (sim, a) => sim.age(a) >= 12 && a.realm === 0,
+    score: (_sim, a) => 0.5 + (a.originId === 'martial_clan' ? 0.7 : 0) + a.persona.ambition * 0.4,
+    finish: (_sim, a) => { a.stats.canCot = Math.min(100, a.stats.canCot + 1); a.renown += 1; },
+  },
+  {
+    id: 'khoa_cu', label: 'Lên kinh ứng thí khoa cử', doing: 'lên kinh ứng thí',
+    months: () => 12,
+    available: (sim, a) => a.realm === 0 && sim.age(a) >= 16 && sim.age(a) <= 40 && inWorld(a) === 'mortal' && !a.titles.includes('Quan lại'),
+    score: (_sim, a) => 0.3 + a.stats.ngoTinh / 100 + (a.originId === 'merchant' || a.originId === 'royal' ? 0.3 : 0),
+    region: () => 'kinh_thanh',
+    finish: (sim, a) => {
+      const p = 0.1 + (a.stats.ngoTinh - 50) / 150 + (a.originId === 'royal' ? 0.15 : 0);
+      if (sim.rng.chance(p)) {
+        a.titles.push('Quan lại');
+        a.renown += 20;
+        a.linhThach += 50;
+        sim.log('fortune', `${a.name} đỗ khoa cử, được bổ làm quan.`, [a.id], { regionId: a.regionId });
+      } else if (sim.isPlayer(a)) sim.log('soul', `${a.name} trượt khoa cử, lủi thủi về quê.`, [a.id], { regionId: a.regionId });
+    },
+  },
+  {
+    id: 'buon_ban', label: 'Theo thương đội đi buôn', doing: 'theo thương đội đi buôn',
+    months: () => 6,
+    available: (sim, a) => a.realm === 0 && sim.age(a) >= 18 && sim.age(a) <= 55,
+    score: (_sim, a) => 0.3 + (a.originId === 'merchant' ? 0.9 : 0) + a.persona.ambition * 0.3 - a.persona.caution * 0.3,
+    region: (_sim, a) => (inWorld(a) === 'mortal' ? 'sa_mac' : 'phuong_thi'),
+    finish: (sim, a) => {
+      if (sim.rng.chance(0.12)) {
+        if (sim.rng.chance(0.25)) { sim.kill(a, 'battle', 'Bị sơn tặc chặn đường giết hại'); return; }
+        a.linhThach = Math.floor(a.linhThach / 2);
+        if (sim.isPlayer(a)) sim.log('battle', `Sơn tặc chặn đường. ${a.name} mất nửa gia sản mới giữ được mạng.`, [a.id], { regionId: a.regionId });
+        return;
+      }
+      const gain = sim.rng.int(20, 80) * (a.originId === 'merchant' ? 2 : 1);
+      a.linhThach += gain;
+      if (gain >= 100 && !a.titles.includes('Thương nhân')) a.titles.push('Thương nhân');
+    },
+  },
+  {
+    id: 'tong_quan', label: 'Tòng quân ra biên ải', doing: 'tòng quân ra biên ải',
+    months: () => 24,
+    available: (sim, a) => a.realm === 0 && sim.age(a) >= 16 && sim.age(a) <= 40 && inWorld(a) === 'mortal',
+    score: (_sim, a) => 0.2 + (a.originId === 'martial_clan' ? 0.6 : 0) + a.persona.ambition * 0.4 - a.persona.caution * 0.2,
+    region: () => 'bien_ai',
+    finish: (sim, a) => {
+      if (sim.rng.chance(0.1)) { sim.kill(a, 'war', 'Tử trận nơi biên ải'); return; }
+      a.renown += 15;
+      a.stats.canCot = Math.min(100, a.stats.canCot + 2);
+      a.linhThach += 30;
+      if (a.renown >= 80 && !a.titles.includes('Võ tướng')) {
+        a.titles.push('Võ tướng');
+        sim.log('fortune', `${a.name} lập công ở biên ải, được phong võ tướng.`, [a.id], { regionId: a.regionId });
+      }
+    },
+  },
+  {
+    id: 'hanh_y', label: 'Hành y cứu người', doing: 'hành y cứu người',
+    months: () => 12,
+    available: (sim, a) => a.realm === 0 && sim.age(a) >= 20 && a.stats.ngoTinh >= 50,
+    score: (_sim, a) => 0.3 + a.persona.virtue * 0.6,
+    finish: (sim, a) => {
+      a.renown += 5;
+      a.linhThach += 10;
+      a.persona.virtue = Math.min(1, a.persona.virtue + 0.02);
+      if (!a.titles.includes('Y sư') && sim.rng.chance(0.25)) {
+        a.titles.push('Y sư');
+        sim.log('fortune', `Tiếng lành đồn xa: ${a.name} được gọi là thần y.`, [a.id], { regionId: a.regionId });
+      }
+    },
+  },
+  {
+    id: 'phieu_bat', label: 'Phiêu bạt giang hồ', doing: 'phiêu bạt giang hồ',
+    months: () => 6,
+    available: (sim, a) => a.realm === 0 && sim.age(a) >= 16 && !a.technique,
+    score: (_sim, a) => 0.2 + (1 - a.persona.caution) * 0.4,
+    region: (sim, a) => sim.rng.pick(REGIONS.filter((r) => r.world === inWorld(a) && r.kind !== 'beast' && r.kind !== 'sect' && r.id !== a.regionId)).id,
+    finish: (sim, a) => {
+      if (sim.rootTier(a) === 0 && sim.rng.chance(0.004 + (a.stats.khiVan - 50) / 10000)) {
+        a.rootId = 'tap';
+        a.elements = ['kim', 'moc', 'thuy', 'hoa'];
+        a.fortunes += 1;
+        sim.log('fortune', `${a.name} uống nhầm nước một linh tuyền trong núi. Xương cốt kêu răng rắc suốt đêm, sáng ra đã cảm được linh khí.`, [a.id], { regionId: a.regionId, major: true });
+      }
+    },
+  },
+  {
+    id: 'tim_tien_duyen', label: 'Đi tìm tiên duyên', doing: 'đi tìm tiên duyên',
+    months: () => 6,
+    available: (sim, a) => sim.rootTier(a) > 0 && !a.technique && sim.age(a) >= 10 && sim.age(a) <= 45,
+    score: (_sim, a) => 1.2 + a.persona.ambition,
+    region: (sim, a) => inWorld(a) === 'mortal'
+      ? sim.rng.pick(['thien_tru', 'lac_ha', 'kinh_thanh'])
+      : sim.rng.pick(['chan_nui', 'phuong_thi', 'thanh_van']),
+    finish: (sim, a) => {
+      const p = 0.12 + (a.stats.khiVan - 50) / 400;
+      if (!sim.rng.chance(p)) return;
+      a.technique = sim.pickTechnique(1, a.elements);
+      const how = sim.rng.pick([
+        'trú mưa dưới một tấm bia đá rêu phong, nhìn tới sáng thì khẩu quyết đã khắc trong lòng',
+        'gặp một lão tiều phu chặt cây bằng một cái phẩy tay, được truyền cho khẩu quyết',
+        'nhặt được một cuốn sách mỏng một đạo nhân bỏ quên',
+      ]);
+      sim.log('fortune', `${a.name} ${how}: ${a.technique.name}.`, [a.id], { regionId: a.regionId });
+    },
+  },
+  {
+    id: 'vuot_bien', label: 'Vượt biển Đông tìm Thanh Vân châu', doing: 'vượt biển Đông',
+    months: () => 1,
+    available: (sim, a) => inWorld(a) === 'mortal' && sim.rootTier(a) > 0 && sim.age(a) >= 14 && sim.age(a) <= 50 && a.linhThach >= 20 && !a.sectId,
+    score: (sim, a) => 0.3 + a.persona.ambition * 0.9 + (sim.canCultivate(a) ? 0.4 : 0) - a.persona.caution * 0.3,
+    region: () => 'phuong_thi',
+    finish: (sim, a) => {
+      sim.log('travel', `${a.name} tới Thanh Vân châu. Núi non lơ lửng giữa trời, linh khí đậm gấp bội cố hương.`, [a.id], { regionId: a.regionId, major: false });
+    },
+  },
+  {
+    id: 'tu_luyen', label: 'Tu luyện', doing: 'tu luyện',
+    months: () => 6,
+    available: (sim, a) => isCultivator(sim, a) && !sim.readyToBreak(a),
+    score: (sim, a) => 2 + a.persona.ambition + lifePressure(sim, a),
+    region: (_sim, a) => (a.sectId ? SECT_BY_ID[a.sectId]!.regionId : null),
+    tick: (sim, a) => sim.addTuVi(a, sim.cultivationPerMonth(a)),
+    finish: () => {},
+  },
+  {
+    id: 'be_quan', label: 'Bế quan', doing: 'bế quan',
+    months: (sim, a) => (a.realm >= 3 ? 120 : a.realm >= 2 ? 60 : 24) + sim.rng.int(0, 12),
+    available: (sim, a) => isCultivator(sim, a) && a.realm >= 1 && !sim.readyToBreak(a),
+    score: (sim, a) => 0.8 + a.persona.caution * 1.4 + a.realm * 0.3 + lifePressure(sim, a),
+    region: (_sim, a) => (a.sectId ? SECT_BY_ID[a.sectId]!.regionId : null),
+    tick: (sim, a) => sim.addTuVi(a, sim.cultivationPerMonth(a, 1.2)),
+    finish: (sim, a) => {
+      if (a.realm >= 2 || sim.isPlayer(a)) sim.log('realm', `${a.name} xuất quan, tu vi ${sim.realmLabel(a)}.`, [a.id], { regionId: a.regionId });
+    },
+  },
+  {
+    id: 'dot_pha', label: 'Đột phá', doing: 'đột phá',
+    months: () => 1,
+    available: (sim, a) => sim.readyToBreak(a) && a.breakthroughCooldownUntil <= sim.month,
+    score: (sim, a) => (a.pills > 0 ? 6 : 3.5 - a.persona.caution) + 4 * lifePressure(sim, a),
+    finish: (sim, a) => attemptBreakthrough(sim, a),
+  },
+  {
+    id: 'mua_dan', label: 'Tới phường thị mua đan đột phá', doing: 'đi mua đan',
+    months: () => 1,
+    available: (sim, a) => isCultivator(sim, a) && a.realm >= 1 && a.pills === 0
+      && a.stage >= REALMS[a.realm]!.stages.length - 2 && a.linhThach >= pillCost(a.realm),
+    score: (_sim, a) => 2.5 + a.persona.caution * 2,
+    region: (_sim, a) => (inWorld(a) === 'mortal' ? 'kinh_thanh' : 'phuong_thi'),
+    finish: (sim, a) => {
+      a.linhThach -= pillCost(a.realm);
+      a.pills += 1;
+      if (sim.isPlayer(a)) sim.log('fortune', `${a.name} bỏ ${pillCost(a.realm)} linh thạch mua một viên đan đột phá.`, [a.id], { regionId: a.regionId });
+    },
+  },
+  {
+    id: 'san_yeu', label: 'Săn yêu thú', doing: 'đi săn yêu thú',
+    months: () => 3,
+    available: (sim, a) => isCultivator(sim, a) && a.realm >= 1 && inWorld(a) === 'cultivation' && a.injuredUntil <= sim.month,
+    score: (_sim, a) => 0.7 + a.persona.ambition * 0.6 - a.persona.caution * 0.5 + (a.linhThach < pillCost(a.realm) ? 0.8 : 0),
+    region: (_sim, a) => {
+      const beasts = REGIONS.filter((r) => r.kind === 'beast' && (r.danger ?? 1) <= Math.max(1, a.realm));
+      return beasts.sort((x, y) => (y.danger ?? 0) - (x.danger ?? 0))[0]!.id;
+    },
+    finish: (sim, a) => {
+      const tier = REGION_BY_ID[a.regionId]?.danger ?? 1;
+      const beast = beastName(sim, tier);
+      if (fightBeast(sim, a, tier)) {
+        const gain = Math.round(15 * 6 ** (tier - 1) * sim.rng.range(0.6, 1.6));
+        a.linhThach += gain;
+        a.renown += 2 * tier;
+        if (sim.isPlayer(a) || a.realm >= 3) sim.log('battle', `${a.name} hạ một con ${beast}, bán yêu đan được ${gain} linh thạch.`, [a.id], { regionId: a.regionId });
+      } else if (sim.rng.chance(0.15)) {
+        sim.kill(a, 'beast', `Bỏ mạng dưới móng vuốt một con ${beast}`);
+      } else {
+        a.injuredUntil = Math.max(a.injuredUntil, sim.month + sim.rng.int(6, 24));
+        if (sim.isPlayer(a)) sim.log('battle', `${a.name} bị một con ${beast} đánh trọng thương, lết về được.`, [a.id], { regionId: a.regionId });
+      }
+    },
+  },
+  {
+    id: 'nhiem_vu', label: 'Làm nhiệm vụ tông môn', doing: 'làm nhiệm vụ tông môn',
+    months: () => 4,
+    available: (sim, a) => a.sectId !== null && sim.age(a) >= 10,
+    score: (_sim, a) => 1.1 + (a.sectRank === 'tap_dich' ? 0.8 : 0),
+    region: (_sim, a) => SECT_BY_ID[a.sectId!]!.regionId,
+    finish: (sim, a) => {
+      a.contribution += sim.rng.int(5, 15) * (1 + a.realm);
+      a.linhThach += sim.rng.int(5, 20) * (1 + a.realm);
+    },
+  },
+  {
+    id: 'du_ngoan', label: 'Du ngoạn tìm cơ duyên', doing: 'du ngoạn',
+    months: () => 4,
+    available: (sim, a) => isCultivator(sim, a) && a.realm >= 1,
+    score: (_sim, a) => 0.5 + (1 - a.persona.caution) * 0.6,
+    region: (sim, a) => sim.rng.pick(REGIONS.filter((r) => r.world === inWorld(a) && r.kind !== 'beast' && r.id !== a.regionId)).id,
+    finish: (sim, a) => {
+      const p = 0.05 + (a.stats.khiVan - 50) / 500;
+      if (!sim.rng.chance(p)) return;
+      a.fortunes += 1;
+      const roll = sim.rng.next();
+      if (roll < 0.4) {
+        const gain = sim.cultivationPerMonth(a) * 12 * sim.rng.int(3, 8);
+        sim.addTuVi(a, gain);
+        sim.log('fortune', `${a.name} ngộ ra một tầng đạo lý dưới gốc cổ thụ ven đường, tu vi tăng vọt.`, [a.id], { regionId: a.regionId });
+      } else if (roll < 0.7) {
+        a.pills += 1;
+        sim.log('fortune', `${a.name} nhặt được một bình đan cổ trong hang đá.`, [a.id], { regionId: a.regionId });
+      } else {
+        const better = TECHNIQUES.filter((t) => t.grade === Math.min(4, (a.technique?.grade ?? 1) + 1) && (t.element === null || a.elements.includes(t.element)));
+        if (better.length) {
+          a.technique = sim.rng.pick(better);
+          sim.log('fortune', `${a.name} rơi xuống vực, gặp động phủ cổ, lĩnh ngộ ${a.technique.name}.`, [a.id], { regionId: a.regionId, major: a.technique.grade >= 3 });
+        }
+      }
+    },
+  },
+  {
+    id: 'bi_canh', label: 'Vào bí cảnh', doing: 'vào bí cảnh',
+    months: () => 2,
+    available: (sim, a) => isCultivator(sim, a) && a.realm >= 1 && inWorld(a) === 'cultivation' && sim.s.secretRealmOpenUntil > sim.month,
+    score: (_sim, a) => 1.8 + a.persona.ambition - a.persona.caution * 0.8,
+    region: () => 'bi_canh',
+    finish: (sim, a) => {
+      const roll = sim.rng.next();
+      const danger = a.realm <= 1 ? 0.18 : a.realm === 2 ? 0.1 : 0.05;
+      if (roll < danger) {
+        sim.kill(a, 'battle', 'Mất xác trong bí cảnh, chỉ còn ngọc bài bản mệnh vỡ nát');
+      } else if (roll < danger + 0.3) {
+        a.fortunes += 1;
+        a.pills += 1;
+        sim.addTuVi(a, sim.cultivationPerMonth(a) * 12 * sim.rng.int(4, 10));
+        a.linhThach += sim.rng.int(50, 300) * a.realm;
+        sim.log('fortune', `${a.name} đoạt được linh dược nghìn năm trong bí cảnh.`, [a.id], { regionId: a.regionId, major: a.realm >= 3 });
+      }
+    },
+  },
+  {
+    id: 'ngo_kiem', label: 'Ngộ kiếm ở Kiếm mộ', doing: 'ngộ kiếm ở Kiếm mộ',
+    months: () => 6,
+    available: (sim, a) => isCultivator(sim, a) && a.realm >= 1 && inWorld(a) === 'cultivation'
+      && (a.physiqueId === 'kiem_cot' || a.technique?.element === 'kim'),
+    score: (_sim, a) => (a.physiqueId === 'kiem_cot' ? 2 : 0.5),
+    region: () => 'kiem_mo',
+    tick: (sim, a) => sim.addTuVi(a, sim.cultivationPerMonth(a)),
+    finish: (sim, a) => {
+      const p = a.physiqueId === 'kiem_cot' ? 0.3 : 0.08;
+      if ((a.technique?.grade ?? 0) < 3 && sim.rng.chance(p)) {
+        a.technique = TECHNIQUES.find((t) => t.name === 'Thái Hư Kiếm Điển')!;
+        a.fortunes += 1;
+        sim.log('fortune', `Một thanh kiếm gãy trong Kiếm mộ rung lên khi ${a.name} đi qua. Kiếm ý tiền bối truyền lại Thái Hư Kiếm Điển.`, [a.id], { regionId: a.regionId, major: true });
+      }
+    },
+  },
+  {
+    id: 'linh_mach', label: 'Tu luyện ở thác linh mạch', doing: 'tu luyện ở thác linh mạch',
+    months: () => 12,
+    available: (sim, a) => isCultivator(sim, a) && a.realm >= 2 && inWorld(a) === 'cultivation' && !sim.readyToBreak(a)
+      && (a.sectRank === null || a.sectRank === 'tap_dich' || a.sectRank === 'ngoai_mon'),
+    score: (sim, a) => 1.2 + lifePressure(sim, a),
+    region: () => 'linh_mach',
+    tick: (sim, a) => sim.addTuVi(a, sim.cultivationPerMonth(a)),
+    finish: () => {},
+  },
+  {
+    id: 'thu_do', label: 'Thu nhận đồ đệ', doing: 'thu đồ đệ',
+    months: () => 1,
+    available: (sim, a) => a.realm >= 2 && countRelation(sim, a, 'disciple') < a.realm - 1 && discipleCandidate(sim, a) !== undefined,
+    score: (_sim, a) => 1.4 + a.persona.virtue * 0.3,
+    target: (sim, a) => discipleCandidate(sim, a),
+    finish: (sim, a, t) => {
+      if (!t || !t.alive || t.regionId !== a.regionId) return;
+      sim.relate(a, t, 'disciple', 'master', 60);
+      if (!t.technique) t.technique = sim.pickTechnique(Math.min(3, a.technique?.grade ?? 1), t.elements);
+      if (a.sectId && !t.sectId) { t.sectId = a.sectId; t.sectRank = 'chan_truyen'; }
+      else if (a.sectId && t.sectId === a.sectId && (t.sectRank === 'ngoai_mon' || t.sectRank === 'tap_dich')) t.sectRank = 'chan_truyen';
+      sim.log('relation', `${a.name} (${sim.realmLabel(a)}) thu ${t.name} làm đồ đệ, truyền ${t.technique!.name}.`, [a.id, t.id], { regionId: a.regionId });
+    },
+  },
+  {
+    id: 'khieu_chien', label: 'Tìm kình địch phân thắng bại', doing: 'đi tìm kình địch',
+    months: () => 1,
+    available: (sim, a) => {
+      const r = sim.relationOf(a, 'rival');
+      return r !== undefined && REGION_BY_ID[r.regionId]!.world === inWorld(a) && a.injuredUntil <= sim.month;
+    },
+    score: (_sim, a) => 0.4 + a.persona.ambition * 0.9 - a.persona.caution * 0.4,
+    region: (sim, a) => sim.relationOf(a, 'rival')?.regionId ?? null,
+    target: (sim, a) => sim.relationOf(a, 'rival'),
+    finish: (sim, a, t) => {
+      if (!t || !t.alive || t.regionId !== a.regionId) return;
+      const deadly = (a.relations[t.id]?.bond ?? 0) < -60;
+      const res = duel(sim, a, t, deadly ? 0.5 : 0.06);
+      const verb = deadly ? 'sinh tử chiến' : 'giao thủ';
+      if (res.killed) {
+        sim.kill(res.loser, 'battle', `Chết trong trận ${verb} với kình địch ${res.winner.name}`, res.winner);
+      } else {
+        sim.log('battle', `${a.name} và kình địch ${t.name} ${verb}. ${res.winner.name} thắng, ${res.loser.name} trọng thương.`, [a.id, t.id], { regionId: a.regionId, major: a.realm >= 3 });
+        const rel = a.relations[t.id];
+        if (rel) rel.bond -= 15;
+        const back = t.relations[a.id];
+        if (back) back.bond -= 15;
+      }
+    },
+  },
+  {
+    id: 'cuop_doat', label: 'Giết người đoạt bảo', doing: 'rình giết người đoạt bảo',
+    months: () => 1,
+    available: (sim, a) => a.persona.virtue < -0.3 && a.realm >= 1 && a.injuredUntil <= sim.month && weakerTarget(sim, a) !== undefined,
+    score: (_sim, a) => -a.persona.virtue * 1.6 + (a.sectId === 'huyet_sat' ? 0.6 : 0),
+    target: (sim, a) => weakerTarget(sim, a),
+    finish: (sim, a, t) => {
+      if (!t || !t.alive || t.regionId !== a.regionId) return;
+      const res = duel(sim, a, t, 0.35);
+      if (res.winner === a) {
+        a.linhThach += t.linhThach; a.pills += t.pills;
+        t.linhThach = 0; t.pills = 0;
+        if (res.killed) sim.kill(t, 'battle', `Bị ${a.name} giết người đoạt bảo`, a);
+        else {
+          sim.relate(t, a, 'enemy', 'enemy', -80);
+          sim.log('battle', `${a.name} chặn đường cướp sạch của ${t.name}. ${t.name} thoát chết, thề báo thù.`, [a.id, t.id], { regionId: a.regionId });
+        }
+      } else if (res.killed) {
+        sim.kill(a, 'battle', `Định cướp của ${t.name} thì bị phản sát`, t);
+      } else {
+        sim.relate(t, a, 'enemy', 'enemy', -60);
+        sim.log('battle', `${a.name} ra tay cướp đoạt ${t.name} nhưng thất thủ, ôm thương bỏ chạy.`, [a.id, t.id], { regionId: a.regionId });
+      }
+    },
+  },
+  {
+    id: 'duong_thuong', label: 'Dưỡng thương', doing: 'dưỡng thương',
+    months: () => 3,
+    available: (sim, a) => a.injuredUntil > sim.month,
+    score: (_sim, a) => 1.5 + a.persona.caution * 2,
+    finish: (sim, a) => { a.injuredUntil = Math.max(sim.month, a.injuredUntil - 9); },
+  },
+];
+
+export const ACTION_BY_ID: Record<string, ActionDef> = Object.fromEntries(ACTIONS.map((x) => [x.id, x]));
+
+/** Ranked options with deterministic noise; the AI takes the first, the player sees the top few. */
+export function rankActions(sim: Sim, a: Avatar): { def: ActionDef; score: number }[] {
+  const out: { def: ActionDef; score: number }[] = [];
+  for (const def of ACTIONS) {
+    if (!def.available(sim, a)) continue;
+    out.push({ def, score: def.score(sim, a) * sim.rng.range(0.8, 1.2) });
+  }
+  return out.sort((x, y) => y.score - x.score);
+}
+
+export function startAction(sim: Sim, a: Avatar, def: ActionDef): void {
+  const target = def.target?.(sim, a);
+  const dest = target ? target.regionId : def.region?.(sim, a) ?? null;
+  const route = dest && dest !== a.regionId ? findPath(a.regionId, dest) : null;
+  a.action = {
+    id: def.id,
+    startMonth: sim.month,
+    endMonth: sim.month + def.months(sim, a),
+    regionId: dest ?? a.regionId,
+    targetId: target?.id,
+    path: route?.path,
+  };
+  if (route && route.path.length) {
+    a.action.legUntil = sim.month + legMonthsFor(a.regionId, route.path[0]!);
+  }
+  const repeated = a.lastActionId === def.id;
+  a.lastActionId = def.id;
+  if (sim.isPlayer(a) && !repeated) {
+    const where = dest && dest !== a.regionId ? ` ở ${REGION_BY_ID[dest]!.name}` : '';
+    const who = target ? ` (${relationWord(a.relations[target.id]?.kind)} ${target.name})` : '';
+    sim.log('soul', `${a.name} quyết định ${def.doing}${where}${who}.`, [a.id], { regionId: a.regionId });
+  }
+}
+
+function legMonthsFor(from: string, to: string): number {
+  return findPath(from, to)?.months ?? 1;
+}

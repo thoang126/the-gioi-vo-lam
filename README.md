@@ -14,3 +14,9 @@ Mở `index.html` trong trình duyệt. Trang gồm:
 
 Tên, xác suất và sự kiện lấy nguyên từ dữ liệu game. Vị trí trên bản đồ là phỏng dựng: game chỉ nói rõ
 Thanh Vân châu nằm bên kia biển Đông so với Đại Hạ, và Tiên giới chỉ tới được bằng phi thăng.
+
+## Vạn Kiếp Thiên Hạ (`game/`)
+
+Game mới dựng từ Luân Hồi Vạn Kiếp theo kiến trúc mô phỏng thế giới của cultivation-world-simulator:
+thế giới tự vận hành, người chơi là một linh hồn luân hồi trong đó. Xem `game/README.md`.
+Kế hoạch gốc: `plans/fork-cultivation-world-simulator.md`.
