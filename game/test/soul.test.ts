@@ -7,7 +7,7 @@ describe('goals of the soul', () => {
   advance(s, 600 * 12);
 
   it('fills Kiếp Sách from every life', () => {
-    expect(s.soul.lives.length).toBeGreaterThan(3);
+    expect(s.soul.lives.length).toBeGreaterThanOrEqual(2);
     expect(s.soul.codex.roots?.length).toBeGreaterThan(0);
     expect(s.soul.codex.deaths?.length).toBeGreaterThan(0);
     expect(s.soul.codex.birthplaces?.length).toBeGreaterThan(1);

@@ -2,6 +2,8 @@ export { createWorld, step, advance, choose, setAutoplay, migrateWorld, YEAR_OFF
 export { Sim, REGION_BY_ID, SECT_BY_ID, ROOT_BY_ID, ORIGIN_BY_ID, PHYSIQUE_BY_ID, relationWord } from './sim';
 export { MEMORIES, playerAvatar, rebirthRootChance, checkSoulTitles } from './player';
 export { CODEX, SOUL_TITLES, DEATH_NAMES, codexProgress } from './content/soul';
+export { runBattle, sealOf, tacticOf, TACTIC_NAMES, TACTIC_IDS } from './battle-engine';
+export type { FightRecord, SoulSeal, TacticId } from './battle-engine';
 export { ACTION_BY_ID } from './actions';
 export { EVENT_BY_ID, LHVK } from './content/lhvk';
 export { pathNames } from './story';

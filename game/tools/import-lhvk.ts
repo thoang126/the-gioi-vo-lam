@@ -69,6 +69,11 @@ const out = {
     physiques: byId(read('birth/physiques.yaml'), (o: { modifiers?: unknown }) => o.modifiers ?? {}),
   },
   // Life titles (GDD 6.3), without the two that need Tiên giới realms.
+  // Battle engine (GDD 8): config plus full skill, artifact and technique records.
+  battle: read('battle/battle.yaml'),
+  battleSkills: read('gear/skills.yaml'),
+  battleArtifacts: read('gear/artifacts.yaml'),
+  battleTechniques: read('cultivation/techniques.yaml').map((t: { id: string; name: string; element: string | null; grade: string; skills?: string[] }) => ({ id: t.id, name: t.name, element: t.element, grade: t.grade, skills: t.skills ?? [] })),
   titles: read('scoring/titles.yaml').filter((t: { conditions: { realm_min?: string } }) => !(t.conditions.realm_min && IMMORTAL_REALMS.has(realmIdOf(t.conditions.realm_min)))),
   scoring: read('scoring/scoring.yaml'),
   deathCauses: byId(read('mortality/mortality.yaml').causes, (c: { name: string; told?: unknown }) => ({ name: c.name, told: c.told ?? null })),

@@ -1,3 +1,4 @@
+import { fightAvatars } from './battle-engine';
 import type { Sim } from './sim';
 import type { Avatar } from './types';
 
@@ -8,13 +9,13 @@ export interface DuelResult {
 }
 
 /**
- * Win chance follows power^2: one big realm (×3 power) is ~90%, matching GDD LHVK 8.2
- * ("chênh một đại cảnh giới gần như chắc thắng"). `deathChance` is the loser's risk.
+ * A fight between two people of the world, fought out with the battle engine (GDD 8): one big
+ * realm apart is nearly always decided, elements and tactics matter between equals.
+ * `deathChance` is the loser's risk of dying; otherwise the loser is injured.
  */
 export function duel(sim: Sim, a: Avatar, b: Avatar, deathChance: number): DuelResult {
-  const pa = sim.power(a) ** 2 * (1 + (a.stats.khiVan - 50) / 400);
-  const pb = sim.power(b) ** 2 * (1 + (b.stats.khiVan - 50) / 400);
-  const aWins = sim.rng.next() < pa / (pa + pb);
+  const r = fightAvatars(sim, a, b);
+  const aWins = r.draw ? sim.rng.chance(0.5) : r.aWins;
   const winner = aWins ? a : b;
   const loser = aWins ? b : a;
   const killed = sim.rng.chance(deathChance);

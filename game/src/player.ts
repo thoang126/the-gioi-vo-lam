@@ -4,7 +4,9 @@
 
 import { REALMS, ROOTED_CHANCE, TECHNIQUES, TIEN_DUYEN } from './content/cultivation';
 import { REGIONS, WORLDS, type WorldId } from './content/world';
-import { rankActions, startAction, ACTION_BY_ID } from './actions';
+import { attemptBreakthrough, breakthroughChance, canPrepare, pillFor, rankActions, startAction, ACTION_BY_ID, PREPARE } from './actions';
+import { duel } from './battle';
+import { sealOf } from './battle-engine';
 import { REGION_BY_ID, SECT_BY_ID, Sim, relationWord } from './sim';
 import type { Avatar, PendingChoice } from './types';
 import { joinSect } from './phases';
@@ -17,6 +19,7 @@ export const MEMORIES = {
   luck: { name: 'Luân hồi khí vận', desc: '+2 Khí vận mỗi cấp', cost: (lvl: number) => 40 * (lvl + 1), max: 5 },
   technique: { name: 'Tàn niệm công pháp', desc: '5%/cấp sinh ra đã nhớ công pháp kiếp trước', cost: (lvl: number) => 150 * (lvl + 1), max: 3 },
   sight: { name: 'Lục đạo thị giác', desc: 'Thấy tỉ lệ thành công trước khi chọn', cost: () => 200, max: 1 },
+  seals: { name: 'Ấn khố', desc: '+1 ô giữ Hồn ấn mỗi cấp (gốc 5)', cost: (lvl: number) => 60 * (lvl + 1), max: 5 },
 } as const;
 type MemoryKey = keyof typeof MEMORIES;
 
@@ -58,6 +61,40 @@ function resolveOffer(sim: Sim, choice: PendingChoice, optionId: string): void {
     } else {
       sim.log('soul', `${a.name} không theo ${sect.name}.`, [a.id], { regionId: a.regionId });
     }
+  } else if (d.offer === 'sect_exam') {
+    if (optionId !== 'accept') return;
+    const peers = sim.living().filter((o) => o.sectId === a.sectId && o.id !== a.id && Math.abs(o.realm - a.realm) <= 0 && Math.abs(o.stage - a.stage) <= 2 && o.injuredUntil <= sim.month);
+    const opp = peers.length ? sim.rng.pick(peers) : undefined;
+    const sectName = SECT_BY_ID[a.sectId!]?.name ?? '';
+    if (!opp) { a.sectRank = 'noi_mon'; sim.log('sect', `Không ai dám lên đài với ${a.name}. ${sectName} nhận ${a.name} vào nội môn.`, [a.id], { regionId: a.regionId }); return; }
+    const res = duel(sim, a, opp, 0);
+    if (res.winner === a) {
+      a.sectRank = 'noi_mon';
+      a.contribution += 100;
+      sim.log('sect', `${a.name} thắng ${opp.name} trên đài khảo hạch, được vào nội môn ${sectName}.`, [a.id, opp.id], { regionId: a.regionId });
+    } else {
+      sim.log('sect', `${a.name} thua ${opp.name} trên đài khảo hạch. Phải đợi kỳ sau.`, [a.id, opp.id], { regionId: a.regionId });
+    }
+  } else if (d.offer === 'succession') {
+    const sect = SECT_BY_ID[String(d.sect)]!;
+    const rival = sim.get(Number(d.rival));
+    const st = sim.s.sects[sect.id]!;
+    if (optionId !== 'accept' || !rival || !rival.alive || a.sectId !== sect.id) {
+      if (rival) sim.relate(a, rival, 'friend', 'friend', 40);
+      sim.log('sect', `${a.name} đứng về phía ${rival?.name ?? 'tân chưởng môn'}.`, [a.id], { regionId: a.regionId });
+      return;
+    }
+    const res = duel(sim, a, rival, 0.05);
+    if (res.winner === a) {
+      rival.sectRank = 'truong_lao';
+      a.sectRank = 'chuong_mon';
+      st.leaderId = a.id;
+      sim.log('sect', `${a.name} thắng ${rival.name} trong trận tranh chức, lên làm chưởng môn ${sect.name}.`, [a.id, rival.id], { regionId: a.regionId, major: true });
+    } else {
+      if (res.killed) sim.kill(a, 'battle', `Chết trong trận tranh chức chưởng môn với ${rival.name}`, rival);
+      else sim.relate(a, rival, 'rival', 'rival', -40);
+      sim.log('sect', `${a.name} tranh chức chưởng môn ${sect.name} nhưng thua ${rival.name}.`, [a.id, rival.id], { regionId: a.regionId });
+    }
   } else if (d.offer === 'partner') {
     const o = sim.get(Number(d.other));
     if (!o || !o.alive) return;
@@ -92,6 +129,15 @@ export function playerPhase(sim: Sim): boolean {
       soul.story.flags.sect_leader_counted = true;
       soul.counters.sectLeader += 1;
     }
+    if (a.sectId && (a.sectRank === 'tap_dich' || a.sectRank === 'ngoai_mon') && a.realm >= 1 && a.stage >= 4 && sim.rng.chance(0.35)) {
+      offerToPlayer(sim, {
+        kind: 'offer',
+        prompt: `${SECT_BY_ID[a.sectId]!.name} mở kỳ khảo hạch nội môn. Ai thắng một trận trên đài sẽ được vào nội môn, tu luyện ở nơi linh khí đậm hơn.`,
+        options: [{ id: 'accept', label: 'Lên đài khảo hạch', hint: 'Đấu với một đồng môn cùng cảnh giới' }, { id: 'decline', label: 'Đợi kỳ sau' }],
+        data: { offer: 'sect_exam' },
+      });
+      if (soul.pending) return true;
+    }
     const p = storyYear(sim, a);
     if (p) {
       if (soul.autoplay) resolveStoryChoice(sim, a, p, autoChoose(sim, a, p));
@@ -101,7 +147,14 @@ export function playerPhase(sim: Sim): boolean {
   }
 
   if (a.action || sim.age(a) < 12) return false;
-  const ranked = rankActions(sim, a);
+  if (sim.readyToBreak(a) && a.breakthroughCooldownUntil <= sim.month && (soul.btSnoozeUntil ?? 0) <= sim.month) {
+    const p = breakthroughChoice(sim, a);
+    if (soul.autoplay) { resolveBreakthrough(sim, a, autoBreakthrough(sim, a, p)); return false; }
+    soul.pending = p;
+    return true;
+  }
+  // Breaking through has its own crossroad; the everyday list leaves it out.
+  const ranked = rankActions(sim, a).filter((r) => r.def.id !== 'dot_pha' && r.def.id !== 'chuan_bi');
   const habit = soul.habit;
   if (habit && habit.sig === situation(sim, a) && sim.month - habit.askedAt < ASK_EVERY_YEARS * 12) {
     const def = habit.id ? ACTION_BY_ID[habit.id] : undefined;
@@ -146,6 +199,7 @@ export function resolvePending(sim: Sim, optionId: string): void {
   const a = playerAvatar(sim);
   if (!a || !a.alive) return;
   if (p.kind === 'event') { resolveStoryChoice(sim, a, p, optionId); return; }
+  if (p.kind === 'breakthrough') { resolveBreakthrough(sim, a, optionId); return; }
   const sig = situation(sim, a);
   if (optionId === 'auto') {
     const best = rankActions(sim, a)[0];
@@ -158,6 +212,38 @@ export function resolvePending(sim: Sim, optionId: string): void {
     startAction(sim, a, def);
     soul.habit = { id: def.id, askedAt: sim.month, sig };
   }
+}
+
+function breakthroughChoice(sim: Sim, a: Avatar): PendingChoice {
+  const next = REALMS[a.realm + 1];
+  const sight = (sim.s.soul.memories.sight ?? 0) > 0;
+  const odds = (withPill: boolean) => (sight ? ` · Lục đạo thị giác: ${Math.round(breakthroughChance(sim, a, withPill) * 100)}%` : '');
+  const pill = pillFor(a);
+  const bt = REALMS[a.realm]!.breakthrough!;
+  const options = [{ id: 'bt_now', label: 'Đột phá ngay', hint: `Không dùng đan${odds(false)}` }];
+  if (pill) options.push({ id: 'bt_pill', label: `Uống ${pill.name} rồi đột phá`, hint: `+${Math.round(pill.bonus * 100)}% cơ hội${odds(true)}` });
+  if (canPrepare(sim, a)) options.push({ id: 'bt_prepare', label: `Bế quan chuẩn bị thêm ${PREPARE.years} năm`, hint: `+${PREPARE.bonus * 100}% mỗi lần, đã chuẩn bị ${a.prepare ?? 0}/${PREPARE.maxSteps}; tốn thọ nguyên` });
+  options.push({ id: 'bt_wait', label: 'Chưa vội, làm việc khác', hint: 'Hỏi lại sau 5 năm' });
+  return {
+    kind: 'breakthrough',
+    prompt: `${a.name} đã tới ${sim.realmLabel(a)}, tu vi đủ để đột phá ${next?.name ?? 'phi thăng'}. Thất bại sẽ mất tu vi, có thể trọng thương hoặc tẩu hỏa nhập ma; thành công còn phải vượt ${bt.bolts} đạo thiên kiếp. Thọ nguyên còn ${sim.lifespan(a) - sim.age(a)} năm.`,
+    options,
+  };
+}
+
+/** LHVK auto-choice for breakthroughs: a pill is nearly always taken; else cautious prepare, bold go. */
+function autoBreakthrough(sim: Sim, a: Avatar, p: PendingChoice): string {
+  if (p.options.some((o) => o.id === 'bt_pill')) return 'bt_pill';
+  const cautious = 1 + 0.01 * (a.stats.tamTinh - 50) + (a.persona.caution - 0.5);
+  if (p.options.some((o) => o.id === 'bt_prepare') && cautious > 1) return 'bt_prepare';
+  return 'bt_now';
+}
+
+function resolveBreakthrough(sim: Sim, a: Avatar, optionId: string): void {
+  if (optionId === 'bt_wait') { sim.s.soul.btSnoozeUntil = sim.month + 60; return; }
+  if (optionId === 'bt_prepare') { const def = ACTION_BY_ID.chuan_bi!; if (def.available(sim, a)) startAction(sim, a, def); return; }
+  sim.log('soul', `${a.name} ngồi xuống giữa động phủ, bắt đầu đột phá.`, [a.id], { regionId: a.regionId });
+  attemptBreakthrough(sim, a, optionId === 'bt_pill');
 }
 
 /** Without a change of situation, the player is asked "what next" at most this often. */
@@ -245,6 +331,10 @@ export function checkPlayerDeath(sim: Sim): void {
   soul.habit = null;
   sim.log('soul', `Kiếp thứ ${index + 1} khép lại: ${a.name}, ${sim.realmLabel(a)}, hưởng ${sim.age(a)} tuổi. ${a.deathText}. Đạo Quả ${dq}, nhận ${gained} Luân Hồi Điểm.`, [a.id], { regionId: a.regionId, major: a.realm >= 3 });
   checkSoulTitles(sim, a.id);
+  // The life's official Hồn ấn (GDD 8.1); Ấn khố decides how many are kept.
+  const seals = (soul.seals ??= []);
+  seals.push({ life: index, seal: sealOf(sim, a) });
+  while (seals.length > 5 + (soul.memories.seals ?? 0)) seals.shift();
   if (soul.autoplay) { scheduleRebirth(sim); return; }
   soul.pending = rebirthChoice(sim);
 }

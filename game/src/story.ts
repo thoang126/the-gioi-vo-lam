@@ -10,6 +10,7 @@ import {
 import { BASIC_ELEMENTS, GRADES, MUTANT_ELEMENTS, REALMS, SPIRIT_ROOTS, TECHNIQUES, type Element } from './content/cultivation';
 import { REGIONS, SECTS } from './content/world';
 import { duel } from './battle';
+import { botSealFor, fightBot, type TacticId } from './battle-engine';
 import { REGION_BY_ID, Sim, relationWord } from './sim';
 import type { Avatar, DeathCause, PendingChoice, Stats, StoryState } from './types';
 import { joinSect } from './phases';
@@ -443,12 +444,8 @@ function passCheck(x: Ctx, check: Check): boolean {
     const opp = spec.opponent === 'bot' ? undefined : roleAvatar(x, spec.opponent);
     if (opp) return duel(sim, a, opp, 0).winner === a;
     const lead = sim.rng.int(spec.offset?.[0] ?? 0, spec.offset?.[1] ?? 0) + sim.rng.int(-1, 1);
-    const [r, s] = shiftRealm(Math.max(1, a.realm), a.stage, lead);
-    const ghost: Avatar = { ...a, realm: r, stage: s, stats: { canCot: 50, ngoTinh: 50, khiVan: 50, tamTinh: 50, miLuc: 50 }, technique: TECHNIQUES[0]!, injuredUntil: 0, crippled: false, artifacts: [] };
-    const tactic = spec.tactic === 'cuong_manh' || spec.tactic === 'lieu_mang' ? 1.1 : 1;
-    const pa = (sim.power(a) * tactic) ** 2;
-    const pb = sim.power(ghost) ** 2;
-    const won = sim.rng.next() < pa / (pa + pb);
+    const [r, st] = shiftRealm(Math.max(1, a.realm), a.stage, lead);
+    const won = fightBot(sim, a, botSealFor(sim, a, r, st), spec.tactic as TacticId);
     if (!won) a.injuredUntil = Math.max(a.injuredUntil, sim.month + sim.rng.int(6, 24));
     return won;
   }

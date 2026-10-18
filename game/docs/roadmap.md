@@ -65,7 +65,7 @@ Giai đoạn 3 xử lý phần này bằng ngã rẽ đột phá đúng nghĩa v
   - `migrateWorld` nâng cấp bản lưu cũ, dựng lại Kiếp Sách từ hồ sơ các kiếp.
 - Chưa làm: ký ức "Ấn khố" (cần Hồn ấn ở giai đoạn 3).
 
-### 3. Chiều sâu tu tiên (2–3 tuần)
+### 3. Chiều sâu tu tiên (đã xong)
 
 - **Ngã rẽ đột phá đúng GDD 4.3:** đột phá ngay, bế quan chuẩn bị thêm (+5% mỗi 10 năm), hoặc dùng đan; hiện rõ rủi ro.
 - **Sự nghiệp tông môn:** khảo hạch nội môn, tranh ghế trưởng lão, ứng cử chưởng môn, phản tông.
@@ -73,6 +73,21 @@ Giai đoạn 3 xử lý phần này bằng ngã rẽ đột phá đúng nghĩa v
   sinh tử chiến và đấu với Hồn ấn các kiếp trước; có phát lại từng lượt.
 - **Thêm event cho tu sĩ:** Trúc Cơ trở lên hiện ít event riêng.
 - Đạt khi: Trúc Cơ ≥ 10%, Kim Đan ≥ 2%, có kiếp tới Nguyên Anh trong 1.000 kiếp.
+- Đã làm:
+  - **Ngã rẽ đột phá:** đột phá ngay, uống đan (Trúc Cơ đan… hoặc đan thường), bế quan chuẩn bị 10 năm (+5%, tối đa 4 lần,
+    chỉ khi cơ hội còn dưới 70% và không vượt thọ nguyên), hoặc chưa vội (hỏi lại sau 5 năm). Lục đạo thị giác hiện tỉ lệ.
+    NPC cũng biết bế quan chuẩn bị.
+  - **Sự nghiệp tông môn:** khảo hạch nội môn (thắng một trận trên đài), tranh chức chưởng môn khi chưởng môn mất,
+    đổi điểm cống hiến lấy đan ở Tàng Bảo các.
+  - **Battle Hồn ấn:** engine battle của Luân Hồi Vạn Kiếp (`simulate.ts`, `stats.ts`, `narration.ts`) chép nguyên, chỉ đổi
+    import, qua một lớp nối `battle-engine/content.ts`. Mọi trận có tên tuổi trong thế giới (kình địch, chạm trán chính tà,
+    chiến tranh tông môn, khảo hạch, tranh chức, phép thử `battle` của event) giờ đánh bằng engine thật; NPC chọn chiến thuật
+    theo tâm tính.
+  - **Tab Luận Kiếm:** chọn chiến thuật, xem lại 12 trận gần nhất từng hiệp, Hồn ấn của mỗi kiếp (Ấn khố giữ 5–10) đấu
+    với cao thủ cùng cảnh giới hoặc với Hồn ấn khác.
+  - Chiến tranh tông môn bớt đẫm máu (tỉ lệ chết 35% → 20%, người ra trận chọn trong 8 người mạnh nhất).
+- Đo sau giai đoạn (40 thế giới × 400 năm, chọn ngẫu nhiên): Luyện Khí 33%, Trúc Cơ 12%, Kim Đan 2,0%. Chưa có kiếp
+  Nguyên Anh; cần mẫu lớn hơn để biết tỉ lệ thật.
 
 ### 4. Mở rộng thế giới (3 tuần)
 

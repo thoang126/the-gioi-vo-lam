@@ -245,6 +245,15 @@ export function phaseSects(sim: Sim): void {
         st.leaderId = next.id;
         next.sectRank = 'chuong_mon';
         sim.log('sect', `${next.name} (${sim.realmLabel(next)}) lên làm chưởng môn ${def.name}.`, [next.id], { regionId: def.regionId, major: true });
+        const me = members.find((m) => sim.isPlayer(m));
+        if (me && me !== next && me.realm >= 2 && me.realm >= next.realm - 1) {
+          offerToPlayer(sim, {
+            kind: 'offer',
+            prompt: `Chưởng môn ${def.name} vừa khuất. Các trưởng lão đề cử ${next.name} (${sim.realmLabel(next)}). Theo môn quy, ai muốn tranh chức phải thắng người được đề cử một trận.`,
+            options: [{ id: 'accept', label: 'Ứng cử, giao đấu với ' + next.name, hint: 'Thua có thể trọng thương, hiếm khi mất mạng' }, { id: 'decline', label: `Ủng hộ ${next.name}` }],
+            data: { offer: 'succession', sect: def.id, rival: next.id },
+          });
+        }
       } else st.leaderId = null;
     }
     st.prestige = Math.round(members.reduce((sum, m) => sum + sim.power(m), 0));
@@ -284,7 +293,7 @@ export function phaseSects(sim: Sim): void {
 function raid(sim: Sim, x: string, y: string): void {
   const [att, def] = sim.rng.chance(0.5) ? [x, y] : [y, x];
   const fighters = (id: string) => sim.living().filter((a) => a.sectId === id && a.realm >= 1 && a.injuredUntil <= sim.month)
-    .sort((p, q) => sim.power(q) - sim.power(p)).slice(0, 6);
+    .sort((p, q) => sim.power(q) - sim.power(p)).slice(0, 8);
   const A = fighters(att);
   const D = fighters(def);
   const n = Math.min(3, A.length, D.length);
@@ -293,7 +302,7 @@ function raid(sim: Sim, x: string, y: string): void {
     const a = sim.rng.pick(A);
     const d = sim.rng.pick(D);
     if (!a.alive || !d.alive) continue;
-    const res = duel(sim, a, d, 0.35);
+    const res = duel(sim, a, d, 0.2);
     if (res.killed) {
       dead.push(res.loser.name);
       sim.kill(res.loser, 'war', `Tử trận khi ${SECT_BY_ID[att]!.name} đánh ${SECT_BY_ID[def]!.name}`, res.winner);

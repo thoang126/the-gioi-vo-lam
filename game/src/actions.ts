@@ -27,6 +27,7 @@ export interface ActionDef {
 const isCultivator = (sim: Sim, a: Avatar) => sim.canCultivate(a);
 const inWorld = (a: Avatar) => REGION_BY_ID[a.regionId]!.world;
 const pillCost = (realm: number) => Math.round(50 * 6 ** Math.max(0, realm - 1));
+const contributionCost = (a: Avatar) => 150 * (a.realm + 1);
 
 function lifePressure(sim: Sim, a: Avatar): number {
   return Math.max(0, sim.age(a) / sim.lifespan(a) - 0.5) * 2;
@@ -52,20 +53,45 @@ function countRelation(sim: Sim, a: Avatar, kind: string): number {
   return Object.entries(a.relations).filter(([id, r]) => r.kind === kind && sim.s.avatars[Number(id)]?.alive).length;
 }
 
-export function attemptBreakthrough(sim: Sim, a: Avatar): void {
+/** The pill this avatar would take for its next realm: a named one (Trúc Cơ đan…) or a generic one. */
+export function pillFor(a: Avatar): { id: string | null; name: string; bonus: number } | null {
+  const next = REALMS[a.realm + 1]?.id;
+  const named = Object.keys(a.items).find((id) => (a.items[id] ?? 0) > 0 && LHVK.items[id]?.breakthroughFor === next);
+  if (named) return { id: named, name: LHVK.items[named]!.name, bonus: LHVK.items[named]!.breakthroughBonus };
+  if (a.pills > 0) return { id: null, name: 'đan đột phá', bonus: BREAKTHROUGH.pillBonus };
+  return null;
+}
+
+/** GDD LHVK 4.3, before the tribulation. */
+export function breakthroughChance(sim: Sim, a: Avatar, withPill: boolean): number {
+  const bt = REALMS[a.realm]!.breakthrough;
+  if (!bt) return 0;
+  const pill = withPill ? pillFor(a) : null;
+  const p = bt.base + (a.stats.ngoTinh - 50) / BREAKTHROUGH.insightDivisor + (a.stats.tamTinh - 50) / BREAKTHROUGH.willDivisor
+    + (pill?.bonus ?? 0) + PREPARE.bonus * (a.prepare ?? 0) + (sim.mods(a).breakthroughBonus ?? 0);
+  return Math.min(BREAKTHROUGH.clamp[1], Math.max(BREAKTHROUGH.clamp[0], p));
+}
+
+/** "Chuẩn bị thêm" (GDD 4.3): ten years of retreat, +5% each, at most four times. */
+export const PREPARE = { years: 10, bonus: 0.05, maxSteps: 4 };
+
+export function canPrepare(sim: Sim, a: Avatar): boolean {
+  // Pointless once the odds are already good; ten years of lifespan are not free.
+  return sim.readyToBreak(a) && (a.prepare ?? 0) < PREPARE.maxSteps && sim.age(a) + PREPARE.years < sim.lifespan(a)
+    && breakthroughChance(sim, a, true) < 0.7;
+}
+
+export function attemptBreakthrough(sim: Sim, a: Avatar, usePill = true): void {
   const r = REALMS[a.realm]!;
   const bt = r.breakthrough!;
-  const next0 = REALMS[a.realm + 1]?.id;
-  const named = Object.keys(a.items).find((id) => (a.items[id] ?? 0) > 0 && LHVK.items[id]?.breakthroughFor === next0);
-  let pillBonus = 0;
-  if (named) { a.items[named]! -= 1; pillBonus = LHVK.items[named]!.breakthroughBonus; }
-  else if (a.pills > 0) { a.pills -= 1; pillBonus = BREAKTHROUGH.pillBonus; }
-  const usedPill = pillBonus > 0;
+  const pill = usePill ? pillFor(a) : null;
+  let p = breakthroughChance(sim, a, usePill);
+  const named = pill?.id ?? null;
+  if (pill) { if (pill.id) a.items[pill.id]! -= 1; else a.pills -= 1; }
+  const usedPill = pill !== null;
+  a.prepare = 0;
   const mods = sim.mods(a);
   if (usedPill && sim.isPlayer(a)) sim.s.soul.story.flags.used_pill = true;
-  let p = bt.base + (a.stats.ngoTinh - 50) / BREAKTHROUGH.insightDivisor + (a.stats.tamTinh - 50) / BREAKTHROUGH.willDivisor
-    + pillBonus + (mods.breakthroughBonus ?? 0);
-  p = Math.min(BREAKTHROUGH.clamp[1], Math.max(BREAKTHROUGH.clamp[0], p));
   const next = REALMS[a.realm + 1];
   const pillText = named ? ` Uống ${LHVK.items[named]!.name}.` : usedPill ? ' Uống một viên đan.' : '';
   if (sim.rng.chance(p)) {
@@ -276,6 +302,34 @@ export const ACTIONS: ActionDef[] = [
     available: (sim, a) => sim.readyToBreak(a) && a.breakthroughCooldownUntil <= sim.month,
     score: (sim, a) => (a.pills > 0 ? 6 : 3.5 - a.persona.caution) + 4 * lifePressure(sim, a),
     finish: (sim, a) => attemptBreakthrough(sim, a),
+  },
+  {
+    id: 'chuan_bi', label: 'Bế quan chuẩn bị đột phá', doing: 'bế quan chuẩn bị đột phá',
+    months: () => PREPARE.years * 12,
+    available: (sim, a) => canPrepare(sim, a),
+    score: (sim, a) => (pillFor(a) ? 0.5 : 1) + a.persona.caution * 2.2 - 3 * lifePressure(sim, a),
+    region: (_sim, a) => (a.sectId ? SECT_BY_ID[a.sectId]!.regionId : null),
+    tick: (sim, a) => sim.addTuVi(a, sim.cultivationPerMonth(a) * 0.5),
+    finish: (sim, a) => {
+      a.prepare = (a.prepare ?? 0) + 1;
+      if (sim.isPlayer(a) || a.realm >= 2) sim.log('realm', `${a.name} xuất quan sau ${PREPARE.years} năm chuẩn bị, căn cơ vững thêm một phần (lần ${a.prepare}).`, [a.id], { regionId: a.regionId });
+    },
+  },
+  {
+    id: 'doi_dan', label: 'Đổi điểm cống hiến lấy đan', doing: 'đổi cống hiến lấy đan',
+    months: () => 1,
+    available: (sim, a) => a.sectId !== null && sim.canCultivate(a) && a.realm >= 1 && !pillFor(a)
+      && a.stage >= REALMS[a.realm]!.stages.length - 2 && a.contribution >= contributionCost(a),
+    score: (_sim, a) => 2.6 + a.persona.caution,
+    region: (_sim, a) => SECT_BY_ID[a.sectId!]!.regionId,
+    finish: (sim, a) => {
+      a.contribution -= contributionCost(a);
+      const next = REALMS[a.realm + 1]?.id;
+      const item = Object.entries(LHVK.items).find(([, it]) => it.breakthroughFor === next)?.[0];
+      if (item) a.items[item] = (a.items[item] ?? 0) + 1;
+      else a.pills += 1;
+      if (sim.isPlayer(a)) sim.log('sect', `${a.name} đổi điểm cống hiến lấy ${item ? LHVK.items[item]!.name : 'một viên đan'} ở Tàng Bảo các của tông môn.`, [a.id], { regionId: a.regionId });
+    },
   },
   {
     id: 'mua_dan', label: 'Tới phường thị mua đan đột phá', doing: 'đi mua đan',

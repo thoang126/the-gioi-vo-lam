@@ -10,6 +10,9 @@ const num = (flag: string, dflt: number) => {
   return i >= 0 ? Number(args[i + 1]) : dflt;
 };
 const worlds = num('--worlds', 20);
+/** random: picks anything; focused: a player who wants to cultivate (trains, prepares, takes pills). */
+const policy = args.includes('--focused') ? 'focused' : 'random';
+const FOCUS = ['bt_pill', 'bt_prepare', 'bt_now', 'tu_luyen', 'be_quan', 'linh_mach', 'doi_dan', 'mua_dan', 'tim_tien_duyen', 'vuot_bien', 'accept'];
 const years = num('--years', 400);
 /** Default UI speed "Vừa": 3 months per 250 ms tick, i.e. one year per second. */
 const SECONDS_PER_YEAR = 1;
@@ -44,7 +47,9 @@ for (let w = 0; w < worlds; w++) {
       cur.gaps.push((s.month - lastChoiceMonth) / 12);
       lastChoiceMonth = s.month;
     }
-    choose(s, pick.pick(p.options).id);
+    const ids = p.options.map((o) => o.id);
+    const focused = policy === 'focused' ? FOCUS.find((f) => ids.includes(f)) : undefined;
+    choose(s, focused ?? pick.pick(p.options).id);
     if (s.soul.lives.length > livesSeen) {
       const l = s.soul.lives[livesSeen]!;
       livesSeen += 1;
@@ -75,7 +80,7 @@ const minutes = lives.map((l) => (l.years * SECONDS_PER_YEAR) / 60 + totalChoice
 const causes: Record<string, number> = {};
 for (const l of lives) causes[l.cause] = (causes[l.cause] ?? 0) + 1;
 
-console.log(`${worlds} thế giới × ${years} năm, ${n} kiếp đã khép lại (người chơi chọn ngẫu nhiên).\n`);
+console.log(`${worlds} thế giới × ${years} năm, ${n} kiếp đã khép lại (người chơi ${policy === 'focused' ? 'chủ động tu luyện' : 'chọn ngẫu nhiên'}).\n`);
 console.log('Nhịp');
 console.log(`  Tuổi thọ kiếp: p50 ${quantile(lives.map((l) => l.years), 0.5)}, p90 ${quantile(lives.map((l) => l.years), 0.9)} năm`);
 console.log(`  Thời lượng thật ở tốc độ Vừa (6 giây mỗi lựa chọn): p50 ${quantile(minutes, 0.5).toFixed(1)}, p90 ${quantile(minutes, 0.9).toFixed(1)} phút; trong khoảng 3–10 phút: ${pct(minutes.filter((m) => m >= 3 && m <= 10).length, n)}`);

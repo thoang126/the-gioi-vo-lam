@@ -14038,6 +14038,1300 @@
    }
   }
  },
+ "battle": {
+  "stats": {
+   "hp": {
+    "base": 200,
+    "can_cot": 10
+   },
+   "mp": {
+    "base": 100,
+    "ngo_tinh": 5
+   },
+   "atk": {
+    "base": 20,
+    "can_cot": 0.5,
+    "ngo_tinh": 0.5
+   },
+   "def": {
+    "base": 10,
+    "can_cot": 0.6
+   },
+   "spd": {
+    "base": 50,
+    "ngo_tinh": 0.3,
+    "khi_van": 0.2,
+    "stage": 2
+   },
+   "crit": {
+    "base": 0.05,
+    "khi_van": 0.001
+   }
+  },
+  "stageBonus": 0.08,
+  "critMult": 1.5,
+  "variance": [
+   0.9,
+   1.1
+  ],
+  "defenseConstant": 100,
+  "maxRounds": 30,
+  "mpRegenPct": 0.05,
+  "basicAttackPower": 1,
+  "defendDamageMult": 0.5,
+  "elements": {
+   "advantageMult": 1.25,
+   "disadvantageMult": 0.85,
+   "counters": {
+    "kim": [
+     "moc"
+    ],
+    "moc": [
+     "tho"
+    ],
+    "tho": [
+     "thuy"
+    ],
+    "thuy": [
+     "hoa"
+    ],
+    "hoa": [
+     "kim"
+    ],
+    "loi": [
+     "thuy",
+     "kim"
+    ],
+    "bang": [
+     "hoa",
+     "moc"
+    ],
+    "phong": [
+     "tho"
+    ]
+   }
+  },
+  "statuses": {
+   "bleed": {
+    "name": "Xuất huyết",
+    "kind": "debuff",
+    "turns": 3,
+    "maxStacks": 3,
+    "dotOfAtk": 0.15
+   },
+   "bind": {
+    "name": "Trói buộc",
+    "kind": "debuff",
+    "turns": 2,
+    "spd": -0.3,
+    "skipChance": 0.35
+   },
+   "chill": {
+    "name": "Hàn thấp",
+    "kind": "debuff",
+    "turns": 3,
+    "atk": -0.3
+   },
+   "burn": {
+    "name": "Thiêu đốt",
+    "kind": "debuff",
+    "turns": 3,
+    "dotOfAtk": 0.3
+   },
+   "stone_skin": {
+    "name": "Thạch giáp",
+    "kind": "buff",
+    "turns": 3,
+    "def": 0.7
+   },
+   "paralyze": {
+    "name": "Tê liệt",
+    "kind": "debuff",
+    "turns": 2,
+    "skipChance": 0.3
+   },
+   "freeze": {
+    "name": "Đóng băng",
+    "kind": "debuff",
+    "turns": 2,
+    "spd": -0.5,
+    "skipChance": 0.3
+   },
+   "gale": {
+    "name": "Tật phong",
+    "kind": "buff",
+    "turns": 3,
+    "spd": 0.4,
+    "extraHitChance": 0.4
+   },
+   "poison": {
+    "name": "Trúng độc",
+    "kind": "debuff",
+    "turns": 3,
+    "dotOfAtk": 0.4
+   },
+   "stun": {
+    "name": "Choáng",
+    "kind": "debuff",
+    "turns": 1,
+    "skipChance": 1
+   }
+  },
+  "statusResist": {
+   "perWill": 0.006,
+   "clamp": [
+    0.05,
+    0.95
+   ]
+  },
+  "shield": {
+   "ofMaxHp": 0.12
+  },
+  "heal": {
+   "ofMaxHp": 0.12
+  },
+  "ultimateBelowHp": 0.3,
+  "extraHitPower": 0.5,
+  "treasure": {
+   "usesPerBattle": 1,
+   "gradePower": {
+    "pham": 1.2,
+    "linh": 1.6,
+    "bao": 2.2,
+    "huyen": 3,
+    "tien": 4
+   }
+  },
+  "tactics": {
+   "cuong_manh": {
+    "name": "Cương mãnh"
+   },
+   "on_trong": {
+    "name": "Ổn trọng",
+    "defendBelowHp": 0.4,
+    "damageTakenMult": 0.88
+   },
+   "quy_quyet": {
+    "name": "Quỷ quyệt"
+   },
+   "lieu_mang": {
+    "name": "Liều mạng",
+    "belowHp": 0.2,
+    "atkBonus": 0.5,
+    "hpLossPerTurn": 0.05
+   }
+  },
+  "bots": {
+   "techniqueGrades": {
+    "pham_nhan": [
+     "hoang"
+    ],
+    "luyen_khi": [
+     "hoang",
+     "huyen"
+    ],
+    "truc_co": [
+     "huyen"
+    ],
+    "kim_dan": [
+     "huyen",
+     "dia"
+    ],
+    "nguyen_anh": [
+     "dia"
+    ],
+    "hoa_than": [
+     "dia",
+     "thien"
+    ],
+    "dung_hu": [
+     "thien"
+    ],
+    "hop_the": [
+     "thien"
+    ],
+    "do_kiep": [
+     "thien"
+    ],
+    "dai_thua": [
+     "thien"
+    ],
+    "tan_tien": [
+     "thien"
+    ],
+    "dia_tien": [
+     "thien"
+    ],
+    "thien_tien": [
+     "thien"
+    ],
+    "chan_tien": [
+     "thien"
+    ],
+    "huyen_tien": [
+     "thien"
+    ],
+    "kim_tien": [
+     "thien"
+    ],
+    "dai_la": [
+     "thien"
+    ],
+    "chuan_thanh": [
+     "thien"
+    ],
+    "thanh_nhan": [
+     "thien"
+    ]
+   },
+   "artifactGradeMax": {
+    "pham_nhan": "pham",
+    "luyen_khi": "linh",
+    "truc_co": "linh",
+    "kim_dan": "bao",
+    "nguyen_anh": "huyen",
+    "hoa_than": "tien",
+    "dung_hu": "tien",
+    "hop_the": "tien",
+    "do_kiep": "tien",
+    "dai_thua": "tien",
+    "tan_tien": "tien",
+    "dia_tien": "tien",
+    "thien_tien": "tien",
+    "chan_tien": "tien",
+    "huyen_tien": "tien",
+    "kim_tien": "tien",
+    "dai_la": "tien",
+    "chuan_thanh": "tien",
+    "thanh_nhan": "tien"
+   },
+   "artifactChance": 0.15,
+   "extraSkills": [
+    0,
+    1
+   ]
+  }
+ },
+ "battleSkills": [
+  {
+   "id": "linh_quang_chi",
+   "name": "Linh Quang Chỉ",
+   "description": "Một tia linh lực bắn ra đầu ngón tay.",
+   "element": null,
+   "grade": "hoang",
+   "effect": "damage",
+   "power": 1,
+   "mpCost": 5,
+   "cooldown": 0
+  },
+  {
+   "id": "hoi_khi_quyet",
+   "name": "Hồi Khí Quyết",
+   "description": "Điều tức, vết thương khép lại.",
+   "element": null,
+   "grade": "hoang",
+   "effect": "heal",
+   "power": 0.8,
+   "mpCost": 12,
+   "cooldown": 3
+  },
+  {
+   "id": "ho_than_cuong_khi",
+   "name": "Hộ Thân Cương Khí",
+   "description": "Cương khí bao quanh thân như vỏ trứng.",
+   "element": null,
+   "grade": "huyen",
+   "effect": "shield",
+   "power": 1,
+   "mpCost": 14,
+   "cooldown": 3
+  },
+  {
+   "id": "van_doc_chi",
+   "name": "Vạn Độc Chỉ",
+   "description": "Độc khí theo đầu ngón tay nhập thể.",
+   "element": "moc",
+   "grade": "huyen",
+   "effect": "damage",
+   "power": 0.6,
+   "mpCost": 10,
+   "cooldown": 2,
+   "inflict": {
+    "status": "poison",
+    "chance": 0.9
+   }
+  },
+  {
+   "id": "kim_phong_chi",
+   "name": "Kim Phong Chỉ",
+   "description": "Ngón tay sắc như mũi dùi.",
+   "element": "kim",
+   "grade": "hoang",
+   "effect": "damage",
+   "power": 1.1,
+   "mpCost": 6,
+   "cooldown": 0,
+   "inflict": {
+    "status": "bleed",
+    "chance": 0.3
+   }
+  },
+  {
+   "id": "canh_kim_kiem_khi",
+   "name": "Canh Kim Kiếm Khí",
+   "description": "Kiếm khí sắc lạnh xé gió.",
+   "element": "kim",
+   "grade": "huyen",
+   "effect": "damage",
+   "power": 1.6,
+   "mpCost": 12,
+   "cooldown": 2,
+   "inflict": {
+    "status": "bleed",
+    "chance": 0.5
+   }
+  },
+  {
+   "id": "kim_cang_ho_the",
+   "name": "Kim Cang Hộ Thể",
+   "description": "Da thịt hóa ánh kim.",
+   "element": "kim",
+   "grade": "huyen",
+   "effect": "shield",
+   "power": 1.2,
+   "mpCost": 14,
+   "cooldown": 3
+  },
+  {
+   "id": "kim_quang_tram",
+   "name": "Kim Quang Trảm",
+   "description": "Một vệt kim quang chém ngang trời.",
+   "element": "kim",
+   "grade": "dia",
+   "effect": "damage",
+   "power": 2.2,
+   "mpCost": 22,
+   "cooldown": 2,
+   "inflict": {
+    "status": "bleed",
+    "chance": 0.6
+   }
+  },
+  {
+   "id": "van_kiem_quy_tong",
+   "name": "Vạn Kiếm Quy Tông",
+   "description": "Vạn kiếm hợp nhất, một kích định càn khôn.",
+   "element": "kim",
+   "grade": "thien",
+   "effect": "damage",
+   "power": 4,
+   "mpCost": 40,
+   "cooldown": 0,
+   "ultimate": true,
+   "inflict": {
+    "status": "bleed",
+    "chance": 1
+   }
+  },
+  {
+   "id": "phi_diep_thuat",
+   "name": "Phi Diệp Thuật",
+   "description": "Lá cây hóa phi đao.",
+   "element": "moc",
+   "grade": "hoang",
+   "effect": "damage",
+   "power": 1.1,
+   "mpCost": 6,
+   "cooldown": 0,
+   "inflict": {
+    "status": "bind",
+    "chance": 0.2
+   }
+  },
+  {
+   "id": "man_dang_trien",
+   "name": "Mạn Đằng Triền",
+   "description": "Dây leo quấn chặt địch nhân.",
+   "element": "moc",
+   "grade": "hoang",
+   "effect": "damage",
+   "power": 0.7,
+   "mpCost": 10,
+   "cooldown": 3,
+   "inflict": {
+    "status": "bind",
+    "chance": 0.7
+   }
+  },
+  {
+   "id": "thanh_moc_hoi_xuan",
+   "name": "Thanh Mộc Hồi Xuân",
+   "description": "Mộc khí sinh sôi, nối gân liền xương.",
+   "element": "moc",
+   "grade": "huyen",
+   "effect": "heal",
+   "power": 1.2,
+   "mpCost": 16,
+   "cooldown": 3
+  },
+  {
+   "id": "van_moc_lam_kinh",
+   "name": "Vạn Mộc Lâm Kinh",
+   "description": "Rừng cây mọc lên trong chớp mắt.",
+   "element": "moc",
+   "grade": "dia",
+   "effect": "damage",
+   "power": 2,
+   "mpCost": 22,
+   "cooldown": 2,
+   "inflict": {
+    "status": "bind",
+    "chance": 0.5
+   }
+  },
+  {
+   "id": "than_thu_thien_lam",
+   "name": "Thần Thụ Thiên Lâm",
+   "description": "Một gốc cổ thụ chọc trời đè xuống.",
+   "element": "moc",
+   "grade": "thien",
+   "effect": "damage",
+   "power": 3.8,
+   "mpCost": 40,
+   "cooldown": 0,
+   "ultimate": true,
+   "inflict": {
+    "status": "bind",
+    "chance": 1
+   }
+  },
+  {
+   "id": "lien_ba_chuong",
+   "name": "Liên Ba Chưởng",
+   "description": "Chưởng lực dồn dập như sóng.",
+   "element": "thuy",
+   "grade": "hoang",
+   "effect": "damage",
+   "power": 1,
+   "mpCost": 6,
+   "cooldown": 0,
+   "inflict": {
+    "status": "chill",
+    "chance": 0.3
+   }
+  },
+  {
+   "id": "thuy_tien",
+   "name": "Thủy Tiễn",
+   "description": "Mũi tên nước xuyên giáp.",
+   "element": "thuy",
+   "grade": "huyen",
+   "effect": "damage",
+   "power": 1.4,
+   "mpCost": 9,
+   "cooldown": 1,
+   "inflict": {
+    "status": "chill",
+    "chance": 0.4
+   }
+  },
+  {
+   "id": "huyen_thuy_thuan",
+   "name": "Huyền Thủy Thuẫn",
+   "description": "Màn nước đen đặc chắn trước ngực.",
+   "element": "thuy",
+   "grade": "huyen",
+   "effect": "shield",
+   "power": 1.3,
+   "mpCost": 14,
+   "cooldown": 3
+  },
+  {
+   "id": "thuy_long_quyen",
+   "name": "Thủy Long Quyển",
+   "description": "Rồng nước cuộn lên từ mặt đất.",
+   "element": "thuy",
+   "grade": "dia",
+   "effect": "damage",
+   "power": 2.1,
+   "mpCost": 22,
+   "cooldown": 2,
+   "inflict": {
+    "status": "chill",
+    "chance": 0.6
+   }
+  },
+  {
+   "id": "thuong_hai_dien_dao",
+   "name": "Thương Hải Điên Đảo",
+   "description": "Biển xanh lật ngược, nhấn chìm tất cả.",
+   "element": "thuy",
+   "grade": "thien",
+   "effect": "damage",
+   "power": 3.8,
+   "mpCost": 40,
+   "cooldown": 0,
+   "ultimate": true,
+   "inflict": {
+    "status": "chill",
+    "chance": 1
+   }
+  },
+  {
+   "id": "hoa_xa_tien",
+   "name": "Hỏa Xà Tiễn",
+   "description": "Mũi tên lửa uốn như rắn.",
+   "element": "hoa",
+   "grade": "hoang",
+   "effect": "damage",
+   "power": 1,
+   "mpCost": 6,
+   "cooldown": 0,
+   "inflict": {
+    "status": "burn",
+    "chance": 0.3
+   }
+  },
+  {
+   "id": "hoa_cau_thuat",
+   "name": "Hỏa Cầu Thuật",
+   "description": "Quả cầu lửa to bằng nắm tay.",
+   "element": "hoa",
+   "grade": "hoang",
+   "effect": "damage",
+   "power": 1.3,
+   "mpCost": 10,
+   "cooldown": 1,
+   "inflict": {
+    "status": "burn",
+    "chance": 0.4
+   }
+  },
+  {
+   "id": "liet_hoa_chuong",
+   "name": "Liệt Hỏa Chưởng",
+   "description": "Bàn tay đỏ rực như sắt nung.",
+   "element": "hoa",
+   "grade": "huyen",
+   "effect": "damage",
+   "power": 1.6,
+   "mpCost": 14,
+   "cooldown": 1,
+   "inflict": {
+    "status": "burn",
+    "chance": 0.5
+   }
+  },
+  {
+   "id": "hoa_long_phun_tuc",
+   "name": "Hỏa Long Phún Tức",
+   "description": "Hơi thở rồng lửa thiêu rụi cỏ cây.",
+   "element": "hoa",
+   "grade": "dia",
+   "effect": "damage",
+   "power": 2.2,
+   "mpCost": 22,
+   "cooldown": 2,
+   "inflict": {
+    "status": "burn",
+    "chance": 0.7
+   }
+  },
+  {
+   "id": "phan_thien_liet_diem",
+   "name": "Phần Thiên Liệt Diễm",
+   "description": "Lửa đốt cả bầu trời.",
+   "element": "hoa",
+   "grade": "thien",
+   "effect": "damage",
+   "power": 4,
+   "mpCost": 40,
+   "cooldown": 0,
+   "ultimate": true,
+   "inflict": {
+    "status": "burn",
+    "chance": 1
+   }
+  },
+  {
+   "id": "luu_sa_tien",
+   "name": "Lưu Sa Tiễn",
+   "description": "Cát chảy hóa mũi tên.",
+   "element": "tho",
+   "grade": "hoang",
+   "effect": "damage",
+   "power": 1.35,
+   "mpCost": 6,
+   "cooldown": 0
+  },
+  {
+   "id": "tho_thuan",
+   "name": "Thổ Thuẫn",
+   "description": "Dựng tường đất che thân.",
+   "element": "tho",
+   "grade": "hoang",
+   "effect": "shield",
+   "power": 1,
+   "mpCost": 8,
+   "cooldown": 3
+  },
+  {
+   "id": "thach_giap_thuat",
+   "name": "Thạch Giáp Thuật",
+   "description": "Da thịt hóa đá.",
+   "element": "tho",
+   "grade": "huyen",
+   "effect": "buff",
+   "power": 1,
+   "mpCost": 12,
+   "cooldown": 4,
+   "self": {
+    "status": "stone_skin"
+   }
+  },
+  {
+   "id": "son_nhac_ap_dinh",
+   "name": "Sơn Nhạc Áp Đỉnh",
+   "description": "Một ngọn núi từ trời rơi xuống.",
+   "element": "tho",
+   "grade": "dia",
+   "effect": "damage",
+   "power": 2.7,
+   "mpCost": 24,
+   "cooldown": 3
+  },
+  {
+   "id": "dai_dia_liet",
+   "name": "Đại Địa Liệt",
+   "description": "Mặt đất nứt toác dưới chân địch.",
+   "element": "tho",
+   "grade": "thien",
+   "effect": "damage",
+   "power": 4.5,
+   "mpCost": 40,
+   "cooldown": 0,
+   "ultimate": true
+  },
+  {
+   "id": "loi_quang_chi",
+   "name": "Lôi Quang Chỉ",
+   "description": "Tia sét nhỏ bắn ra đầu ngón tay.",
+   "element": "loi",
+   "grade": "hoang",
+   "effect": "damage",
+   "power": 1.1,
+   "mpCost": 7,
+   "cooldown": 0,
+   "inflict": {
+    "status": "paralyze",
+    "chance": 0.2
+   }
+  },
+  {
+   "id": "chuong_tam_loi",
+   "name": "Chưởng Tâm Lôi",
+   "description": "Lôi quang nổ giữa lòng bàn tay.",
+   "element": "loi",
+   "grade": "huyen",
+   "effect": "damage",
+   "power": 1.7,
+   "mpCost": 15,
+   "cooldown": 2,
+   "inflict": {
+    "status": "paralyze",
+    "chance": 0.35
+   }
+  },
+  {
+   "id": "loi_dinh_van_quan",
+   "name": "Lôi Đình Vạn Quân",
+   "description": "Sấm sét giáng xuống như mưa.",
+   "element": "loi",
+   "grade": "dia",
+   "effect": "damage",
+   "power": 2.3,
+   "mpCost": 24,
+   "cooldown": 2,
+   "inflict": {
+    "status": "paralyze",
+    "chance": 0.45
+   }
+  },
+  {
+   "id": "cuu_tieu_than_loi",
+   "name": "Cửu Tiêu Thần Lôi",
+   "description": "Thiên lôi chín tầng trời.",
+   "element": "loi",
+   "grade": "thien",
+   "effect": "damage",
+   "power": 4,
+   "mpCost": 40,
+   "cooldown": 0,
+   "ultimate": true,
+   "inflict": {
+    "status": "paralyze",
+    "chance": 0.8
+   }
+  },
+  {
+   "id": "bang_chuy_thuat",
+   "name": "Băng Chùy Thuật",
+   "description": "Chùy băng nhọn hoắt.",
+   "element": "bang",
+   "grade": "hoang",
+   "effect": "damage",
+   "power": 1.1,
+   "mpCost": 7,
+   "cooldown": 0,
+   "inflict": {
+    "status": "freeze",
+    "chance": 0.2
+   }
+  },
+  {
+   "id": "bang_phach_chuong",
+   "name": "Băng Phách Chưởng",
+   "description": "Chưởng lực đóng băng kinh mạch.",
+   "element": "bang",
+   "grade": "huyen",
+   "effect": "damage",
+   "power": 1.4,
+   "mpCost": 14,
+   "cooldown": 2,
+   "inflict": {
+    "status": "freeze",
+    "chance": 0.45
+   }
+  },
+  {
+   "id": "han_bang_kinh",
+   "name": "Hàn Băng Kính",
+   "description": "Gương băng phản chiếu ánh trăng.",
+   "element": "bang",
+   "grade": "huyen",
+   "effect": "shield",
+   "power": 1.2,
+   "mpCost": 14,
+   "cooldown": 3
+  },
+  {
+   "id": "bang_phong_thien_ly",
+   "name": "Băng Phong Thiên Lý",
+   "description": "Nghìn dặm hóa băng nguyên.",
+   "element": "bang",
+   "grade": "thien",
+   "effect": "damage",
+   "power": 3.8,
+   "mpCost": 40,
+   "cooldown": 0,
+   "ultimate": true,
+   "inflict": {
+    "status": "freeze",
+    "chance": 1
+   }
+  },
+  {
+   "id": "phong_nhan",
+   "name": "Phong Nhận",
+   "description": "Lưỡi gió vô hình.",
+   "element": "phong",
+   "grade": "hoang",
+   "effect": "damage",
+   "power": 1.1,
+   "mpCost": 6,
+   "cooldown": 0
+  },
+  {
+   "id": "tat_phong_bo",
+   "name": "Tật Phong Bộ",
+   "description": "Thân như gió, đến đi không dấu.",
+   "element": "phong",
+   "grade": "huyen",
+   "effect": "buff",
+   "power": 1,
+   "mpCost": 12,
+   "cooldown": 4,
+   "self": {
+    "status": "gale"
+   }
+  },
+  {
+   "id": "phong_quyen_tan_van",
+   "name": "Phong Quyển Tàn Vân",
+   "description": "Cuồng phong cuốn tan mây trời.",
+   "element": "phong",
+   "grade": "dia",
+   "effect": "damage",
+   "power": 2.2,
+   "mpCost": 22,
+   "cooldown": 2
+  },
+  {
+   "id": "thien_phong_tram",
+   "name": "Thiên Phong Trảm",
+   "description": "Gió trời hóa đao.",
+   "element": "phong",
+   "grade": "thien",
+   "effect": "damage",
+   "power": 4,
+   "mpCost": 40,
+   "cooldown": 0,
+   "ultimate": true
+  }
+ ],
+ "battleArtifacts": [
+  {
+   "id": "thiet_kiem",
+   "name": "Thiết kiếm",
+   "description": "Kiếm sắt thường, thợ rèn nào cũng làm được.",
+   "slot": "weapon",
+   "grade": "pham",
+   "atk": 5
+  },
+  {
+   "id": "moc_truong",
+   "name": "Mộc trượng",
+   "description": "Gậy gỗ đào trừ tà.",
+   "slot": "weapon",
+   "grade": "pham",
+   "atk": 3,
+   "battle": {
+    "statusResist": 0.05
+   }
+  },
+  {
+   "id": "thanh_phong_kiem",
+   "name": "Thanh Phong kiếm",
+   "description": "Kiếm nhẹ như gió, linh khí lưu chuyển.",
+   "slot": "weapon",
+   "grade": "linh",
+   "atk": 20
+  },
+  {
+   "id": "xich_diem_dao",
+   "name": "Xích Diễm đao",
+   "description": "Lưỡi đao đỏ như than hồng.",
+   "slot": "weapon",
+   "grade": "linh",
+   "atk": 16,
+   "battle": {
+    "critBonus": 0.06
+   }
+  },
+  {
+   "id": "huyet_anh_kiem",
+   "name": "Huyết Ảnh kiếm",
+   "description": "Kiếm uống máu, chủ nhân thêm sức.",
+   "slot": "weapon",
+   "grade": "bao",
+   "atk": 45,
+   "battle": {
+    "lifesteal": 0.15
+   }
+  },
+  {
+   "id": "tan_kiem_thuong_co",
+   "name": "Tàn kiếm thượng cổ",
+   "description": "Thanh kiếm gãy vẫn còn kiếm ý kinh người.",
+   "slot": "weapon",
+   "grade": "huyen",
+   "atk": 120,
+   "battle": {
+    "critBonus": 0.08
+   }
+  },
+  {
+   "id": "loi_van_thuong",
+   "name": "Lôi Vân thương",
+   "description": "Mũi thương mang theo tiếng sấm.",
+   "slot": "weapon",
+   "grade": "huyen",
+   "atk": 100,
+   "battle": {
+    "firstStrike": true
+   }
+  },
+  {
+   "id": "van_co_kiem",
+   "name": "Vạn Cổ kiếm",
+   "description": "Kiếm của một vị kiếm tiên đã phi thăng.",
+   "slot": "weapon",
+   "grade": "tien",
+   "atk": 260,
+   "battle": {
+    "critBonus": 0.1,
+    "lifesteal": 0.1
+   }
+  },
+  {
+   "id": "bo_y",
+   "name": "Bố y tẩm dược",
+   "description": "Áo vải ngâm thuốc, chống được chút độc.",
+   "slot": "armor",
+   "grade": "pham",
+   "def": 4,
+   "battle": {
+    "statusResist": 0.05
+   }
+  },
+  {
+   "id": "thanh_ty_bao",
+   "name": "Thanh Ty bào",
+   "description": "Áo dệt từ tơ tằm linh.",
+   "slot": "armor",
+   "grade": "linh",
+   "def": 16,
+   "battle": {
+    "statusResist": 0.15
+   }
+  },
+  {
+   "id": "huyen_quy_giap",
+   "name": "Huyền Quy giáp",
+   "description": "Mai rùa ngàn năm luyện thành giáp.",
+   "slot": "armor",
+   "grade": "bao",
+   "def": 40
+  },
+  {
+   "id": "kinh_cuc_giap",
+   "name": "Kinh Cức giáp",
+   "description": "Giáp gai, ai đánh vào cũng rách tay.",
+   "slot": "armor",
+   "grade": "bao",
+   "def": 30,
+   "battle": {
+    "reflect": 0.15
+   }
+  },
+  {
+   "id": "bat_tu_y",
+   "name": "Bất Tử y",
+   "description": "Áo dệt từ lông phượng, giữ một hơi thở cuối.",
+   "slot": "armor",
+   "grade": "huyen",
+   "def": 70,
+   "battle": {
+    "lastStand": true
+   }
+  },
+  {
+   "id": "tinh_ha_bao",
+   "name": "Tinh Hà bào",
+   "description": "Áo thêu cả dải ngân hà.",
+   "slot": "armor",
+   "grade": "tien",
+   "def": 160,
+   "battle": {
+    "statusResist": 0.3,
+    "reflect": 0.1
+   }
+  },
+  {
+   "id": "ho_menh_phu",
+   "name": "Hộ Mệnh phù",
+   "description": "Lá bùa hộ thân cũ, giữ cho chủ một hơi thở cuối.",
+   "slot": "treasure",
+   "grade": "linh",
+   "battle": {
+    "lastStand": true
+   }
+  },
+  {
+   "id": "van_ly_phu",
+   "name": "Vạn Lý Độn Phù",
+   "description": "Bùa chạy trốn, xé ra là đi ngàn dặm.",
+   "slot": "treasure",
+   "grade": "linh",
+   "modifiers": {
+    "calamityWeightMult": 0.8
+   }
+  },
+  {
+   "id": "tu_kim_hoa_ho_lo",
+   "name": "Tử Kim Hồ Lô",
+   "description": "Hồ lô chứa được cả một hồ nước.",
+   "slot": "treasure",
+   "grade": "bao",
+   "atk": 10,
+   "def": 10,
+   "battle": {
+    "statusResist": 0.15
+   }
+  },
+  {
+   "id": "dong_tam_toa",
+   "name": "Đồng Tâm tỏa",
+   "description": "Khóa đồng giữ tâm không loạn.",
+   "slot": "treasure",
+   "grade": "bao",
+   "battle": {
+    "statusResist": 0.3
+   }
+  },
+  {
+   "id": "co_ngoc_boi",
+   "name": "Cổ ngọc bội",
+   "description": "Ngọc bội cũ, bên trong có tàn hồn lão tổ.",
+   "slot": "treasure",
+   "grade": "huyen",
+   "modifiers": {
+    "cultivationMult": 1.3,
+    "breakthroughBonus": 0.05
+   },
+   "battle": {
+    "lastStand": true
+   }
+  },
+  {
+   "id": "phong_hoa_luan",
+   "name": "Phong Hỏa Luân",
+   "description": "Bánh xe lửa gió, xoay là tới.",
+   "slot": "treasure",
+   "grade": "huyen",
+   "atk": 40,
+   "battle": {
+    "firstStrike": true,
+    "critBonus": 0.04
+   }
+  },
+  {
+   "id": "cuu_long_an",
+   "name": "Cửu Long ấn",
+   "description": "Ấn đồng khắc chín con rồng.",
+   "slot": "treasure",
+   "grade": "tien",
+   "atk": 120,
+   "def": 60,
+   "battle": {
+    "lifesteal": 0.1
+   }
+  },
+  {
+   "id": "tien_chau",
+   "name": "Hỗn Độn Tiên Châu",
+   "description": "Viên châu chứa một phương tiểu thế giới.",
+   "slot": "treasure",
+   "grade": "tien",
+   "modifiers": {
+    "cultivationMult": 1.8,
+    "lifespanBonus": 200
+   }
+  }
+ ],
+ "battleTechniques": [
+  {
+   "id": "dan_khi_quyet",
+   "name": "Dẫn Khí Quyết",
+   "element": null,
+   "grade": "hoang",
+   "skills": [
+    "linh_quang_chi"
+   ]
+  },
+  {
+   "id": "thanh_moc_quyet",
+   "name": "Thanh Mộc Quyết",
+   "element": "moc",
+   "grade": "hoang",
+   "skills": [
+    "man_dang_trien"
+   ]
+  },
+  {
+   "id": "liet_hoa_kinh",
+   "name": "Liệt Hỏa Kinh",
+   "element": "hoa",
+   "grade": "hoang",
+   "skills": [
+    "hoa_cau_thuat"
+   ]
+  },
+  {
+   "id": "hau_tho_cong",
+   "name": "Hậu Thổ Công",
+   "element": "tho",
+   "grade": "hoang",
+   "skills": [
+    "tho_thuan"
+   ]
+  },
+  {
+   "id": "huyen_thuy_chan_kinh",
+   "name": "Huyền Thủy Chân Kinh",
+   "element": "thuy",
+   "grade": "huyen",
+   "skills": [
+    "thuy_tien"
+   ]
+  },
+  {
+   "id": "canh_kim_kiem_quyet",
+   "name": "Canh Kim Kiếm Quyết",
+   "element": "kim",
+   "grade": "huyen",
+   "skills": [
+    "canh_kim_kiem_khi"
+   ]
+  },
+  {
+   "id": "thanh_van_kiem_dien",
+   "name": "Thái Hư Kiếm Điển",
+   "element": "kim",
+   "grade": "dia",
+   "skills": [
+    "canh_kim_kiem_khi",
+    "van_kiem_quy_tong"
+   ]
+  },
+  {
+   "id": "cuu_tieu_loi_quyet",
+   "name": "Cửu Tiêu Lôi Quyết",
+   "element": "loi",
+   "grade": "dia",
+   "skills": [
+    "chuong_tam_loi"
+   ]
+  },
+  {
+   "id": "huyen_bang_quyet",
+   "name": "Huyền Băng Quyết",
+   "element": "bang",
+   "grade": "huyen",
+   "skills": [
+    "bang_phach_chuong"
+   ]
+  },
+  {
+   "id": "thai_thuong_vong_tinh_kinh",
+   "name": "Thái Thượng Vong Tình Kinh",
+   "element": null,
+   "grade": "thien",
+   "skills": [
+    "van_kiem_quy_tong"
+   ]
+  },
+  {
+   "id": "thai_bach_kim_chuong",
+   "name": "Thái Bạch Kim Chương",
+   "element": "kim",
+   "grade": "thien",
+   "skills": [
+    "kim_quang_tram",
+    "van_kiem_quy_tong"
+   ]
+  },
+  {
+   "id": "at_moc_sinh_linh_quyet",
+   "name": "Ất Mộc Sinh Linh Quyết",
+   "element": "moc",
+   "grade": "huyen",
+   "skills": [
+    "thanh_moc_hoi_xuan",
+    "man_dang_trien"
+   ]
+  },
+  {
+   "id": "thanh_de_truong_sinh_kinh",
+   "name": "Thanh Đế Trường Sinh Kinh",
+   "element": "moc",
+   "grade": "dia",
+   "skills": [
+    "van_moc_lam_kinh",
+    "than_thu_thien_lam"
+   ]
+  },
+  {
+   "id": "bich_hai_trieu_sinh_quyet",
+   "name": "Bích Hải Triều Sinh Quyết",
+   "element": "thuy",
+   "grade": "dia",
+   "skills": [
+    "thuy_long_quyen",
+    "thuong_hai_dien_dao"
+   ]
+  },
+  {
+   "id": "xich_viem_chan_kinh",
+   "name": "Xích Viêm Chân Kinh",
+   "element": "hoa",
+   "grade": "huyen",
+   "skills": [
+    "liet_hoa_chuong",
+    "hoa_cau_thuat"
+   ]
+  },
+  {
+   "id": "chu_tuoc_phan_thien_quyet",
+   "name": "Chu Tước Phần Thiên Quyết",
+   "element": "hoa",
+   "grade": "dia",
+   "skills": [
+    "hoa_long_phun_tuc",
+    "phan_thien_liet_diem"
+   ]
+  },
+  {
+   "id": "tran_nhac_quyet",
+   "name": "Trấn Nhạc Quyết",
+   "element": "tho",
+   "grade": "huyen",
+   "skills": [
+    "thach_giap_thuat",
+    "luu_sa_tien"
+   ]
+  },
+  {
+   "id": "dai_dia_long_mach_kinh",
+   "name": "Đại Địa Long Mạch Kinh",
+   "element": "tho",
+   "grade": "dia",
+   "skills": [
+    "son_nhac_ap_dinh",
+    "dai_dia_liet"
+   ]
+  },
+  {
+   "id": "ngu_loi_chinh_phap",
+   "name": "Ngũ Lôi Chính Pháp",
+   "element": "loi",
+   "grade": "huyen",
+   "skills": [
+    "chuong_tam_loi",
+    "loi_quang_chi"
+   ]
+  },
+  {
+   "id": "huyen_minh_han_bang_kinh",
+   "name": "Huyền Minh Hàn Băng Kinh",
+   "element": "bang",
+   "grade": "dia",
+   "skills": [
+    "bang_phach_chuong",
+    "bang_phong_thien_ly"
+   ]
+  },
+  {
+   "id": "thanh_phong_ngu_khi_quyet",
+   "name": "Thanh Phong Ngự Khí Quyết",
+   "element": "phong",
+   "grade": "huyen",
+   "skills": [
+    "tat_phong_bo",
+    "phong_nhan"
+   ]
+  },
+  {
+   "id": "cuu_thien_cuong_phong_kinh",
+   "name": "Cửu Thiên Cương Phong Kinh",
+   "element": "phong",
+   "grade": "dia",
+   "skills": [
+    "phong_quyen_tan_van",
+    "thien_phong_tram"
+   ]
+  }
+ ],
  "titles": [
   {
    "id": "ascended",

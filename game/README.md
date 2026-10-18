@@ -9,7 +9,7 @@ bia mộ của chính mình.
 
 ```bash
 npm install
-npm test            # 19 test: tái lập theo seed và lựa chọn, lưu/tải, dân số, tông môn, luân hồi, event
+npm test            # 23 test: tái lập theo seed và lựa chọn, lưu/tải, dân số, tông môn, luân hồi, event
 npm run import:lhvk # nhập lại event từ repo luan-hoi-van-kiep (mặc định ../../luan-hoi-van-kiep)
 npm run sim -- --years 300 --seed 7 --news   # mô phỏng không giao diện để cân bằng
 npm run analyze -- --worlds 30 --years 400   # chỉ số trải nghiệm người chơi (nhịp, lựa chọn, cái chết, tiến trình)
@@ -60,6 +60,13 @@ diễn dịch `src/story.ts`, giữ đúng luật của game gốc:
 - **Vạn Cổ Bia:** 20 kiếp có Đạo Quả cao nhất trên máy, giữ qua mọi thế giới.
 - **Ký ức Lục đạo thị giác:** thấy tỉ lệ thành công trước khi chọn.
 - **Phi thăng:** có thể khép lại linh hồn và bắt đầu linh hồn mới.
+
+## Tu tiên và battle
+
+- **Ngã rẽ đột phá (GDD 4.3):** đột phá ngay, dùng đan, bế quan chuẩn bị (+5% mỗi 10 năm, tối đa 4), hoặc chưa vội.
+- **Tông môn:** khảo hạch nội môn, tranh chức chưởng môn, đổi cống hiến lấy đan.
+- **Battle (GDD 8):** engine của Luân Hồi Vạn Kiếp nằm trong `src/battle-engine/` (chép nguyên, chỉ đổi import). Mọi trận
+  có tên tuổi đánh bằng engine này; tab Luận Kiếm cho chọn chiến thuật, xem lại trận và cho Hồn ấn các kiếp đấu với nhau.
 
 ## Tiên duyên
 

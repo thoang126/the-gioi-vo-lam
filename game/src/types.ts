@@ -1,5 +1,6 @@
 import type { Element } from './content/cultivation';
 import type { SectRankId, WorldId } from './content/world';
+import type { FightRecord, SoulSeal, TacticId } from './battle-engine';
 
 export type Gender = 'male' | 'female';
 export type RelationKind = 'master' | 'disciple' | 'partner' | 'rival' | 'friend' | 'enemy' | 'parent' | 'child';
@@ -70,6 +71,8 @@ export interface Avatar {
   artifacts: string[];
   skills: string[];
   lifespanBonus: number;
+  /** Times the avatar spent ten years preparing the current breakthrough (GDD 4.3, +5% each). */
+  prepare?: number;
   renown: number;
   injuredUntil: number;
   breakthroughCooldownUntil: number;
@@ -131,7 +134,7 @@ export interface ChoiceOption {
 }
 
 export interface PendingChoice {
-  kind: 'action' | 'offer' | 'rebirth' | 'event';
+  kind: 'action' | 'offer' | 'rebirth' | 'event' | 'breakthrough';
   prompt: string;
   options: ChoiceOption[];
   /** Opaque data the resolver needs (offer type, the other avatar…). */
@@ -180,7 +183,7 @@ export interface Soul {
   currentAvatarId: number | null;
   points: number;
   /** Levels of past-life memories (GDD LHVK §9). */
-  memories: { manhBa: number; luck: number; technique: number; sight?: number };
+  memories: { manhBa: number; luck: number; technique: number; sight?: number; seals?: number };
   /** Avatars bound to a past incarnation: id → what they were to it. */
   pastLinks: Record<number, { life: number; kind: RelationKind | 'self_grave' }>;
   /** Past-life reunions already shown in the current life. */
@@ -198,6 +201,14 @@ export interface Soul {
   /** Soul titles earned (ids from content/soul.ts). */
   achievements: string[];
   counters: { reunions: number; ownGraves: number; sectLeader: number; crossedSea: number };
+  /** No breakthrough crossroad before this month (the player chose "chưa vội"). */
+  btSnoozeUntil?: number;
+  /** Tactic the player's characters fight with (GDD 8.5). */
+  tactic?: TacticId;
+  /** Replays of the player's recent fights. */
+  fights?: FightRecord[];
+  /** Hồn ấn kept from past lives (GDD 8.1), newest last. */
+  seals?: { life: number; seal: SoulSeal }[];
   /** While the soul waits in the cycle of rebirth: the month it is born again. */
   rebirthAt: number | null;
 }

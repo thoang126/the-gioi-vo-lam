@@ -2,16 +2,17 @@ import {
   advance, choose, createWorld, setAutoplay, Sim, YEAR_OFFSET, ACTION_BY_ID, MEMORIES,
   REGIONS, ROUTES, SEA_ROUTE, SECTS, SECT_RANKS, REALMS, WORLDS, ELEMENT_NAMES,
   REGION_BY_ID, SECT_BY_ID, ROOT_BY_ID, ORIGIN_BY_ID, PHYSIQUE_BY_ID, relationWord, EVENT_BY_ID, LHVK, pathNames, rebirthRootChance,
-  CODEX, SOUL_TITLES, codexProgress, migrateWorld,
+  CODEX, SOUL_TITLES, codexProgress, migrateWorld, runBattle, sealOf, tacticOf, TACTIC_NAMES, TACTIC_IDS,
 } from '../src/index';
 import type { Avatar, EventKind, LifeRecord, WorldEvent, WorldState } from '../src/types';
+import type { FightRecord, SoulSeal, TacticId } from '../src/index';
 
 const SAVE_KEY = 'van-kiep-thien-ha/save';
 const PREFS_KEY = 'van-kiep-thien-ha/prefs';
 const TICK_MS = 250;
 const AUTOSAVE_MS = 15000;
 
-type Tab = 'news' | 'sects' | 'people' | 'here' | 'profile' | 'lives' | 'codex';
+type Tab = 'news' | 'sects' | 'people' | 'here' | 'profile' | 'lives' | 'codex' | 'arena';
 type MapView = 'all' | 'mortal' | 'cultivation';
 type NewsFilter = 'all' | 'war' | 'sect' | 'life' | 'fortune';
 
@@ -32,6 +33,7 @@ const ui = {
   mapView: null as MapView | null,
   news: 'all' as NewsFilter,
   confirmNew: 0,
+  replay: null as { rec: Omit<FightRecord, 'month'>; shown: number } | null,
   savedAt: 0,
 };
 let s: WorldState = loadOrCreate();
@@ -158,6 +160,7 @@ function titleFor(): string {
   const p = s.soul.pending;
   if (!p) return '';
   const ev = p.kind === 'event' ? EVENT_BY_ID[String(p.data?.event)] : undefined;
+  if (p.kind === 'breakthrough') return 'Đột phá';
   return p.kind === 'rebirth' ? 'Cầu Nại Hà' : p.kind === 'offer' ? 'Cơ duyên' : ev?.kind === 'milestone' ? 'Bước ngoặt' : ev?.kind === 'acquaintance' ? 'Người quen nhờ cậy' : 'Ngã rẽ';
 }
 
@@ -182,7 +185,7 @@ function intro(): string {
 function tabs(): string {
   const list: [Tab, string][] = [['news', 'Tin giang hồ'], ['sects', 'Tông môn'], ['people', 'Cao thủ'], ['here', ui.region ? REGION_BY_ID[ui.region]!.name : 'Địa danh']];
   if (ui.avatar) list.push(['profile', 'Hồ sơ']);
-  list.push(['codex', 'Kiếp Sách'], ['lives', 'Tiền kiếp']);
+  list.push(['arena', 'Luận Kiếm'], ['codex', 'Kiếp Sách'], ['lives', 'Tiền kiếp']);
   return list.map(([id, label]) => `<button class="tab" role="tab" id="tab-${id}" aria-controls="tabpanel" aria-selected="${ui.tab === id}" tabindex="${ui.tab === id ? 0 : -1}" data-tab="${id}">${esc(label)}</button>`).join('');
 }
 
@@ -275,6 +278,7 @@ function tabContent(sim: Sim): string {
     case 'profile': return profile(sim, sim.get(ui.avatar));
     case 'lives': return livesView();
     case 'codex': return codexView();
+    case 'arena': return arenaView(sim);
   }
 }
 
@@ -443,6 +447,76 @@ function chronicle(sim: Sim): string {
   return feed(s.events.filter((e) => e.avatarIds.includes(a.id)).slice(-80).reverse(), (e) => Math.max(0, Math.floor((e.month - a.birthMonth) / 12)), rewrite);
 }
 
+// ---- Luận Kiếm: tactic, replays, Hồn ấn duels ----------------------------------------------------
+
+const TACTIC_HINTS: Record<TacticId, string> = {
+  cuong_manh: 'Luôn ra chiêu mạnh nhất',
+  on_trong: 'Dưới 40% khí huyết thì thủ hoặc hồi, giữ linh lực cho chiêu lớn',
+  quy_quyet: 'Khống chế trước, rồi hạ độc, rồi đánh vào hệ bị khắc',
+  lieu_mang: 'Dưới 20% khí huyết: +50% công, mỗi lượt mất 5% khí huyết',
+};
+
+function replayView(): string {
+  const r = ui.replay;
+  if (!r) return '';
+  const rec = r.rec;
+  const cur = rec.turns[Math.max(0, r.shown - 1)];
+  const hp = cur ? cur.hp : rec.maxHp;
+  const done = r.shown >= rec.turns.length;
+  const bar = (i: 0 | 1) => `<div class="fighter${done && rec.winner === i ? ' won' : ''}"><b>${esc(rec.names[i])}</b><span class="small muted">${esc(rec.realms[i])} · ${TACTIC_NAMES[rec.tactics[i]]}</span>
+    <div class="meter life"><div class="track"><span style="width:${Math.max(0, (hp[i] / rec.maxHp[i]) * 100).toFixed(1)}%"></span></div><span>${Math.max(0, hp[i]).toLocaleString('vi-VN')} / ${rec.maxHp[i].toLocaleString('vi-VN')}</span></div></div>`;
+  return `<div class="card replay"><div class="eyebrow">Phát lại trận đấu · ${rec.rounds} hiệp</div>
+    <div class="fighters">${bar(0)}<span class="vs">đấu</span>${bar(1)}</div>
+    <ol class="turns">${rec.turns.slice(0, r.shown).slice(-8).map((t) => `<li class="tone-${t.tone}">${esc(t.text)}</li>`).join('')}</ol>
+    ${done ? `<p class="prompt">${esc(rec.ending)}</p>` : ''}
+    <div class="controls"><button class="btn" data-act="replay-end">${done ? 'Xem lại từ đầu' : 'Xem hết'}</button><button class="btn" data-act="replay-close">Đóng</button></div></div>`;
+}
+
+function arenaView(_sim: Sim): string {
+  const soul = s.soul;
+  const tactic = soul.tactic ?? 'on_trong';
+  const fights = (soul.fights ?? []).slice().reverse();
+  const seals = (soul.seals ?? []).slice().reverse();
+  const realmOf = (seal: SoulSeal) => REALMS.find((r) => r.id === seal.realm.id)!;
+  return `${replayView()}
+    <div class="eyebrow">Chiến thuật của ngươi</div>
+    <div class="seg small" role="group" aria-label="Chiến thuật">${TACTIC_IDS.map((t) => `<button class="seg-btn ${t === tactic ? 'on' : ''}" aria-pressed="${t === tactic}" data-tactic="${t}" title="${TACTIC_HINTS[t]}">${TACTIC_NAMES[t]}</button>`).join('')}</div>
+    <p class="small muted">${esc(TACTIC_HINTS[tactic])}. Dùng cho mọi trận của nhân vật: kình địch, khảo hạch, tranh chức, chạm trán.</p>
+    <div class="eyebrow" style="margin-top:12px">Trận gần đây</div>
+    ${fights.length ? `<ul class="feed">${fights.map((f, i) => `<li class="g-war"><span class="yr">${yearOf(f.month)}</span><span class="txt">${esc(f.names[0])} đấu ${esc(f.names[1])}: ${f.winner === null ? 'hòa' : `${esc(f.names[f.winner])} thắng`} sau ${f.rounds} hiệp. <button class="linkish" data-replay="${fights.length - 1 - i}">Xem lại</button></span></li>`).join('')}</ul>` : '<p class="small muted">Nhân vật của ngươi chưa đánh trận nào.</p>'}
+    <div class="eyebrow" style="margin-top:12px">Hồn ấn các kiếp trước</div>
+    ${seals.length ? `<div class="table-wrap"><table><thead><tr><th>Hồn ấn</th><th>Cảnh giới</th><th>Đạo Quả</th><th>Giao đấu</th></tr></thead><tbody>${seals.map((x) => {
+      const r = realmOf(x.seal);
+      return `<tr><td>${esc(x.seal.name)}<br><span class="small muted">kiếp ${x.life + 1}</span></td><td>${esc(r.name)} ${esc(r.stages[x.seal.realm.stage - 1] ?? '')}</td><td class="num">${x.seal.daoQua.toLocaleString('vi-VN')}</td>
+        <td><button class="btn small" data-duel="npc:${x.life}">Cao thủ cùng cảnh giới</button>${seals.length > 1 ? ` <button class="btn small" data-duel="seal:${x.life}">Hồn ấn khác</button>` : ''}</td></tr>`;
+    }).join('')}</tbody></table></div>
+    <p class="small muted">Trận Hồn ấn chỉ là luận kiếm, không ảnh hưởng thế giới. Ấn khố giữ ${5 + (soul.memories.seals ?? 0)} Hồn ấn.</p>` : '<p class="small muted">Mỗi kiếp khép lại để lại một Hồn ấn. Chưa có kiếp nào.</p>'}`;
+}
+
+/** A practice duel between a past life's Hồn ấn and someone of the world (or another Hồn ấn). */
+function startDuel(spec: string): void {
+  const [kind, lifeStr] = spec.split(':');
+  const seals = s.soul.seals ?? [];
+  const mine = seals.find((x) => x.life === Number(lifeStr));
+  if (!mine) return;
+  const sim = new Sim(s);
+  let opp: SoulSeal | undefined;
+  let oppTactic: TacticId = 'cuong_manh';
+  if (kind === 'seal') {
+    const others = seals.filter((x) => x.life !== mine.life);
+    opp = others[Math.floor(Math.random() * others.length)]?.seal;
+    oppTactic = TACTIC_IDS[Math.floor(Math.random() * 4)]!;
+  } else {
+    const rank = REALMS.findIndex((r) => r.id === mine.seal.realm.id);
+    const pool = sim.living().filter((a) => a.realm === rank && !sim.isPlayer(a)).sort((a, b) => sim.power(b) - sim.power(a));
+    const pick = pool[0] ?? sim.living().filter((a) => !sim.isPlayer(a)).sort((a, b) => Math.abs(a.realm - rank) - Math.abs(b.realm - rank))[0];
+    if (pick) { opp = sealOf(sim, pick); oppTactic = tacticOf(pick); }
+  }
+  if (!opp) return;
+  const { record } = runBattle(`luan-kiem:${Date.now()}`, mine.seal, s.soul.tactic ?? 'on_trong', opp, oppTactic);
+  ui.replay = { rec: record, shown: 0 };
+}
+
 // ---- Vạn Cổ Bia: best lives on this device, across every world and soul ------------------------
 
 const BIA_KEY = 'van-kiep-thien-ha/van-co-bia';
@@ -519,7 +593,7 @@ function pick(optionId: string): void {
 }
 
 document.addEventListener('click', (ev) => {
-  const el = (ev.target as HTMLElement).closest<HTMLElement>('[data-act],[data-tab],[data-region],[data-avatar],[data-choose],[data-speed],[data-mapview],[data-news]');
+  const el = (ev.target as HTMLElement).closest<HTMLElement>('[data-act],[data-tab],[data-region],[data-avatar],[data-choose],[data-speed],[data-mapview],[data-news],[data-tactic],[data-replay],[data-duel]');
   if (!el) return;
   const d = el.dataset;
   if (d.choose) { pick(d.choose); return; }
@@ -532,6 +606,11 @@ document.addEventListener('click', (ev) => {
   else if (d.avatar) { ui.avatar = Number(d.avatar); ui.tab = 'profile'; }
   else if (d.mapview) ui.mapView = d.mapview as MapView;
   else if (d.news) ui.news = d.news as NewsFilter;
+  else if (d.tactic) { s.soul.tactic = d.tactic as TacticId; save(); }
+  else if (d.replay) { const f = (s.soul.fights ?? [])[Number(d.replay)]; if (f) ui.replay = { rec: f, shown: 0 }; }
+  else if (d.duel) startDuel(d.duel);
+  else if (d.act === 'replay-close') ui.replay = null;
+  else if (d.act === 'replay-end' && ui.replay) ui.replay.shown = ui.replay.shown >= ui.replay.rec.turns.length ? 0 : ui.replay.rec.turns.length;
   else if (d.act === 'save') save();
   else if (d.act === 'hide-intro') { prefs.introHidden = true; savePrefs(); }
   else if (d.act === 'new') {
@@ -579,6 +658,7 @@ window.addEventListener('resize', () => render());
 
 let lastSave = Date.now();
 setInterval(() => {
+  if (ui.replay && ui.replay.shown < ui.replay.rec.turns.length) ui.replay.shown += 1;
   if (ui.running && s.soul.pending === null) advance(s, SPEEDS[ui.speed]!.months);
   if (Date.now() - lastSave > AUTOSAVE_MS) { save(); lastSave = Date.now(); }
   render();
