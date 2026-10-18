@@ -1,6 +1,7 @@
 import { REALMS, SPIRIT_ROOTS, BASIC_ELEMENTS, type Element } from './content/cultivation';
 import { REGIONS, SECTS, SECT_RELATIONS, type SectRankId } from './content/world';
 import { phaseClans, seedClans } from './clans';
+import { phaseDynasty, seedDynasty } from './dynasty';
 import { phaseDecide, phaseEncounters, phaseExecute, phaseHousekeeping, phaseLifecycle, phaseSects, phaseWorld } from './phases';
 import { checkPlayerDeath, playerPhase, resolvePending } from './player';
 import { Sim } from './sim';
@@ -47,6 +48,7 @@ export function createWorld(seed: number, opts: CreateOptions = {}): WorldState 
   }
   seedSects(sim);
   seedClans(sim);
+  seedDynasty(sim);
   seedSettlements(sim);
   seedImmortals(sim);
   s.rng = sim.rng.state;
@@ -189,6 +191,7 @@ export function step(s: WorldState): StepResult {
   phaseEncounters(sim);
   phaseSects(sim);
   phaseClans(sim);
+  phaseDynasty(sim);
   phaseWorld(sim);
   phaseLifecycle(sim);
   checkPlayerDeath(sim);

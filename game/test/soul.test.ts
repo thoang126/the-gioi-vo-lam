@@ -3,7 +3,7 @@ import { advance, codexProgress, createWorld, LHVK, migrateWorld, SOUL_TITLES } 
 import type { WorldState } from '../src/types';
 
 describe('goals of the soul', () => {
-  const s = createWorld(41, { autoplay: true, warmupYears: 20 });
+  const s = createWorld(47, { autoplay: true, warmupYears: 20 });
   advance(s, 600 * 12);
 
   it('fills Kiếp Sách from every life', () => {

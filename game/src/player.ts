@@ -133,6 +133,35 @@ function resolveOffer(sim: Sim, choice: PendingChoice, optionId: string): void {
       if (head && head.id !== a.id) { const r = a.relations[head.id]; if (r) r.bond -= 20; }
       sim.log('relation', `${a.name} cự tuyệt hôn sự gia tộc sắp đặt. Hai nhà mất mặt.`, [a.id, o.id], { regionId: a.regionId });
     }
+  } else if (d.offer === 'dynasty_exile') {
+    const founder = sim.get(Number(d.founder));
+    if (optionId === 'accept') {
+      const to = sim.rng.pick(['dao_tan_tu', 'phuong_thi', 'huyet_uyen']);
+      a.regionId = to;
+      a.action = null;
+      a.linhThach = Math.floor(a.linhThach * 0.2);
+      a.renown = Math.floor(a.renown / 2);
+      sim.log('travel', `${a.name} cải trang thành dân chạy loạn, trốn tới ${REGION_BY_ID[to]!.name}. Từ nay không ai gọi là điện hạ nữa.`, [a.id], { regionId: to });
+    } else if (founder && sim.rng.chance(a.realm >= 1 ? 0.35 : 0.7)) {
+      sim.kill(a, 'war', `Tử thủ cổng cung khi hoàng tộc sụp đổ`, founder);
+    } else {
+      a.injuredUntil = Math.max(a.injuredUntil, sim.month + 24);
+      a.renown += 40;
+      if (!a.titles.includes('Trung thần tiền triều')) a.titles.push('Trung thần tiền triều');
+      sim.log('battle', `${a.name} giữ cổng cung tới người cuối cùng, trọng thương ngã xuống mà không chết. Tân triều nể khí tiết, tha cho.`, [a.id], { regionId: a.regionId });
+    }
+  } else if (d.offer === 'dynasty_join') {
+    const founder = sim.get(Number(d.founder));
+    if (optionId !== 'accept' || !founder) return;
+    if (sim.rng.chance(a.realm >= 1 ? 0.05 : 0.15)) {
+      sim.kill(a, 'war', `Tử trận khi theo ${founder.name} dựng tân triều`, undefined);
+      return;
+    }
+    a.renown += 60;
+    a.linhThach += 200;
+    if (!a.titles.includes('Khai quốc công thần')) a.titles.push('Khai quốc công thần');
+    sim.relate(a, founder, 'friend', 'friend', 60);
+    sim.log('world', `${a.name} theo ${founder.name} từ những ngày đầu, được phong Khai quốc công thần.`, [a.id, founder.id], { regionId: a.regionId });
   } else if (d.offer === 'found_clan') {
     if (optionId !== 'accept' || a.clanId) return;
     const kids = Object.entries(a.relations).filter(([, r]) => r.kind === 'child').map(([id]) => sim.get(Number(id))).filter((k): k is Avatar => !!k?.alive);

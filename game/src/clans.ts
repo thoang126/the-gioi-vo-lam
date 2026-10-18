@@ -22,7 +22,7 @@ export function clanMembers(sim: Sim, id: string): Avatar[] {
   return sim.living().filter((a) => a.clanId === id);
 }
 
-function headTitle(c: ClanState): string {
+export function headTitle(c: ClanState): string {
   return c.kind === 'royal' ? 'Hoàng đế Đại Hạ' : c.kind === 'yeu' ? `Tộc trưởng ${c.name}` : `Gia chủ ${c.name}`;
 }
 
@@ -123,7 +123,7 @@ export function phaseClans(sim: Sim): void {
         offerToPlayer(sim, {
           kind: 'offer',
           prompt: c.kind === 'royal'
-            ? `Tiên đế băng hà. Triều thần ủng hộ ${heir.name} nối ngôi. Ngươi cũng mang huyết thống Hạ thị: tranh ngôi nghĩa là đổ máu.`
+            ? `Tiên đế băng hà. Triều thần ủng hộ ${heir.name} nối ngôi. Ngươi cũng mang huyết thống ${c.surname} thị: tranh ngôi nghĩa là đổ máu.`
             : `Ghế ${c.kind === 'yeu' ? 'tộc trưởng' : 'gia chủ'} ${c.name} bỏ trống. Tộc lão chọn ${heir.name} (${sim.realmLabel(heir)}). Theo tộc quy, ai không phục phải thắng người được chọn một trận trước từ đường.`,
           options: [
             { id: 'accept', label: c.kind === 'royal' ? `Tranh ngôi với ${heir.name}` : `Tranh chức với ${heir.name}`, hint: 'Thua có thể trọng thương, hiếm khi mất mạng' },
@@ -273,18 +273,18 @@ function foundClans(sim: Sim, living: Avatar[]): void {
   }
 }
 
-export function foundClan(sim: Sim, a: Avatar, kids: Avatar[]): ClanState {
+export function foundClan(sim: Sim, a: Avatar, kids: Avatar[], opts: { kind?: ClanKind; seat?: string; name?: string; silent?: boolean } = {}): ClanState {
   const clans = sim.s.clans!;
   const surname = surnameOf(a.name);
   const yeu = a.race === 'yeu';
-  const kind: ClanKind = yeu ? 'yeu' : a.realm >= 1 ? 'cultivation' : 'martial';
+  const kind: ClanKind = opts.kind ?? (yeu ? 'yeu' : a.realm >= 1 ? 'cultivation' : 'martial');
   const region = REGION_BY_ID[a.regionId]!;
-  const seat = region.population > 0 && region.kind !== 'sect' ? region.id
-    : REGION_BY_ID[a.bornRegion]!.population > 0 && REGION_BY_ID[a.bornRegion]!.kind !== 'sect' ? a.bornRegion : WORLDS[region.world].entry;
+  const seat = opts.seat ?? (region.population > 0 && region.kind !== 'sect' ? region.id
+    : REGION_BY_ID[a.bornRegion]!.population > 0 && REGION_BY_ID[a.bornRegion]!.kind !== 'sect' ? a.bornRegion : WORLDS[region.world].entry);
   let n = 1;
   while (clans[`clan_${n}`]) n += 1;
   const taken = Object.values(clans).some((c) => c.extinctMonth === null && c.surname === surname);
-  const name = `${surname} ${yeu ? 'tộc' : 'gia'}${taken ? ` ở ${REGION_BY_ID[seat]!.name}` : ''}`;
+  const name = opts.name ?? `${surname} ${yeu ? 'tộc' : 'gia'}${taken ? ` ở ${REGION_BY_ID[seat]!.name}` : ''}`;
   const c: ClanState = {
     id: `clan_${n}`, name, surname, kind, seat, headId: a.id, prestige: 0, relations: {},
     foundedMonth: sim.month, extinctMonth: null, technique: a.technique ? { ...a.technique } : null,
@@ -297,6 +297,6 @@ export function foundClan(sim: Sim, a: Avatar, kids: Avatar[]): ClanState {
     const cnt = sim.s.soul.counters;
     cnt.clanFounded = (cnt.clanFounded ?? 0) + 1;
   }
-  sim.log('world', `${a.name} (${sim.realmLabel(a)}) khai tông lập tộc ở ${REGION_BY_ID[seat]!.name}: ${name} ra đời, ${CLAN_KIND_NAMES[kind].toLowerCase()} mới của ${WORLDS[REGION_BY_ID[seat]!.world].name}.`, [a.id], { regionId: seat, major: true });
+  if (!opts.silent) sim.log('world', `${a.name} (${sim.realmLabel(a)}) khai tông lập tộc ở ${REGION_BY_ID[seat]!.name}: ${name} ra đời, ${CLAN_KIND_NAMES[kind].toLowerCase()} mới của ${WORLDS[REGION_BY_ID[seat]!.world].name}.`, [a.id], { regionId: seat, major: true });
   return c;
 }

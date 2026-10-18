@@ -69,6 +69,36 @@ export const CLAN_RELATIONS: [string, string, number][] = [
   ['thanh_khau', 'kim_bang', -40], ['ha', 'mo_dung', 30],
 ];
 
+/**
+ * Dynasties of Đại Hạ. Yearly fall hazard follows a Weibull curve (rises with age): with these numbers
+ * an untroubled dynasty lasts about 350 years, a typical one a little over 300, rarely under 100. Weak reigns fall sooner.
+ */
+export const DYNASTY = {
+  scaleYears: 430,
+  shape: 2.6,
+  /** Hazard multipliers. */
+  childEmperor: 1.3,
+  /** Royal house with fewer living members than this. */
+  fewHeirsBelow: 3,
+  fewHeirs: 1.3,
+  /** Another clan of Đại Hạ this many times as strong as the royal house. */
+  strongerClanRatio: 2.5,
+  strongerClan: 1.3,
+  /** A house raised from nothing comes with this many kin (spouse, children, brothers). */
+  founderKin: 4,
+  /** Age of the reigning dynasty at world creation. */
+  startAge: [40, 240] as [number, number],
+  /** Weights of how a dynasty falls, before the world's state adjusts them. */
+  endWeights: { usurp: 3, rebellion: 2.5, invasion: 1.5, cultivator: 1, abdication: 0.6 },
+  /** Share of the old royal house killed after the fall, by cause. */
+  purge: { usurp: 0.5, rebellion: 0.4, invasion: 0.5, cultivator: 0.3, abdication: 0, extinct: 0, restoration: 0.5 },
+};
+
+export const DYNASTY_END_NAMES: Record<string, string> = {
+  usurp: 'Quyền thần soán ngôi', rebellion: 'Khởi nghĩa nông dân', invasion: 'Ngoại xâm', cultivator: 'Tu sĩ nhúng tay',
+  abdication: 'Thiện nhượng', extinct: 'Tuyệt tự', restoration: 'Phục quốc',
+};
+
 export const CLAN = {
   /** Most clans that may exist at once (new ones are founded by Kim Đan cultivators). */
   max: 16,

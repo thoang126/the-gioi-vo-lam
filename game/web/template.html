@@ -46,11 +46,13 @@ header.bar { display: grid; grid-template-columns: auto 1fr auto; align-items: c
 .brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .brand h1 { font-size: 1.7rem; font-weight: 800; }
 .date { font-family: var(--font-display); font-size: 1.1rem; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.date .era { font-size: .85rem; }
+@media (max-width: 560px) { .date .era { display: block; } }
 .timebar, .seg { display: inline-flex; border: 1px solid var(--ink); border-radius: 4px; overflow: hidden; justify-self: center; }
 .seg-btn { border: none; background: var(--paper); padding: 7px 12px; border-left: 1px solid var(--line); white-space: nowrap; }
 .seg-btn:first-child { border-left: none; }
 .seg-btn:hover:not(:disabled) { background: var(--paper-3); }
-.seg-btn.on { background: var(--ink); color: var(--paper); }
+.seg-btn.on, .seg-btn.on:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
 #mapview { flex-wrap: wrap; max-width: 100%; justify-self: auto; }
 .seg.small .seg-btn { padding: 4px 10px; font-size: .82rem; }
 .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
@@ -72,7 +74,12 @@ label.toggle { display: inline-flex; align-items: center; gap: 6px; font-size: .
 .map-head .seg { justify-self: auto; }
 .map-wrap { border: 1px solid var(--line); border-radius: 4px; background: var(--sea); overflow: hidden; }
 .map-wrap svg { display: block; width: 100%; height: auto; max-height: 70vh; }
-.land { fill: var(--paper-2); stroke: var(--ink); stroke-opacity: .45; stroke-width: 1.3; }
+.land { fill: var(--paper-2); stroke: var(--ink); stroke-opacity: .45; stroke-width: 1.3; vector-effect: non-scaling-stroke; }
+.capital { fill: none; stroke: var(--seal); stroke-width: 2; }
+.province-label { font-family: var(--font-display); font-size: 13px; letter-spacing: 3px; fill: var(--ink-2); opacity: .55; pointer-events: none; }
+.view-all .province-label { font-size: 15px; }
+.view-all .region text { font-size: 14px; }
+.view-all .region .count { font-size: 11px; }
 .land.evil { fill: color-mix(in srgb, var(--paper-2) 82%, #7a1f1f); }
 .land.wildland { fill: color-mix(in srgb, var(--paper-2) 82%, #2f6b3a); }
 .land.heaven { fill: color-mix(in srgb, var(--paper-2) 85%, #c9a227); stroke-dasharray: 6 4; }
@@ -87,10 +94,12 @@ label.toggle { display: inline-flex; align-items: center; gap: 6px; font-size: .
 .region.sel .dot { stroke: var(--seal); stroke-width: 3; }
 .region text { font-family: var(--font-display); font-weight: 700; font-size: 14px; fill: var(--ink); paint-order: stroke; stroke: var(--paper-2); stroke-width: 4px; stroke-linejoin: round; }
 .region .count { font-family: var(--font-body); font-size: 10.5px; font-weight: 500; fill: var(--ink-2); }
-.view-mortal .region text, .view-cultivation .region text { font-size: 12px; }
+.view-mortal .region text { font-size: 15px; }
+.view-mortal .region .count { font-size: 11px; }
+.view-cultivation .region text { font-size: 12px; }
 .view-overseas .region text, .view-demonic .region text, .view-demon_beast .region text { font-size: 10px; }
 .view-overseas .region .count, .view-demonic .region .count, .view-demon_beast .region .count { font-size: 8px; }
-.view-mortal .region .count, .view-cultivation .region .count { font-size: 9.5px; }
+.view-cultivation .region .count { font-size: 9.5px; }
 .player-ring { fill: none; stroke: var(--seal); stroke-width: 2.5; }
 .player-ring.waiting { animation: pulse 1.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 @keyframes pulse { 50% { stroke-width: 5; opacity: .55; } }

@@ -148,6 +148,19 @@ export interface ClanState {
   technique: { name: string; grade: number; element: Element | null } | null;
 }
 
+export type DynastyEnd = 'usurp' | 'rebellion' | 'invasion' | 'cultivator' | 'abdication' | 'extinct' | 'restoration';
+
+/** One reign of a royal house over Đại Hạ. */
+export interface Dynasty {
+  clanId: string;
+  surname: string;
+  founder: string;
+  since: number;
+  until: number | null;
+  /** How it ended (set on the dynasty that fell). */
+  end: DynastyEnd | null;
+}
+
 export interface ChoiceOption {
   id: string;
   label: string;
@@ -247,6 +260,8 @@ export interface WorldState {
   sects: Record<string, SectState>;
   /** Missing in saves from before clans. */
   clans?: Record<string, ClanState>;
+  /** Dynasties of Đại Hạ, oldest first; the last one reigns. Missing in older saves. */
+  dynasties?: Dynasty[];
   events: WorldEvent[];
   /** Region id → month the secret realm closes, when open. */
   secretRealmOpenUntil: number;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advance, choose, createWorld, step, Sim } from '../src/index';
+import { advance, choose, createWorld, step, Sim, REGIONS } from '../src/index';
 import type { WorldState } from '../src/types';
 
 function playInteractive(seed: number, months: number, pick: (ids: string[], i: number) => string): { s: WorldState; picks: string[] } {
@@ -55,7 +55,8 @@ describe('world simulation', () => {
       advance(s, 50 * 12);
       const n = new Sim(s).living().length;
       expect(n).toBeGreaterThan(100);
-      expect(n).toBeLessThan(450);
+      // Settlements are topped up toward their population; sects, wanderers and families add more.
+      expect(n).toBeLessThan(REGIONS.reduce((t, r) => t + r.population, 0) * 1.6);
     }
   });
 

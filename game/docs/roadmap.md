@@ -110,7 +110,20 @@ Giai đoạn 3 xử lý phần này bằng ngã rẽ đột phá đúng nghĩa v
   hợp Đại Hạ/Thanh Vân bị giới hạn lại.
 - **Tiên giới (bước đầu):** người phi thăng không biến mất mà sống tiếp ở Tiên giới; thế giới có sẵn vài tiên nhân.
 
+- **Đại Hạ rộng lớn kiểu võ hiệp:** Đại Hạ vẽ to gấp 1,6 lần, chia 6 châu quận (Kinh kỳ, Yên Bắc, Lũng Tây, Đông Hải,
+  Giang Nam, Lĩnh Nam). Kinh thành trăm vạn dân (vẽ vòng thành), phủ thành Yên Bắc, Lũng Tây, Lâm An; Long Môn khách
+  điếm, Trung Nguyên trấn, Vân Mộng sơn, Hoàng lăng, Thủy trại Bạch Lãng, Vạn Độc lĩnh; môn phái Kim Đao môn và Bích
+  Thủy kiếm phái. Thêm Vạn Tiên thành, Loạn Thạch hạp, Bồng Lai đảo, U Minh hà, Nguyệt Hồ. Tổng cộng 74 địa danh.
+- **Triều đại** (`src/dynasty.ts`): nguy cơ sụp đổ tăng theo tuổi triều (Weibull), nặng hơn khi vua nhỏ tuổi, hoàng tộc
+  thưa người hay có thế gia mạnh át. Lý do đổi chủ: quyền thần soán ngôi, khởi nghĩa nông dân, ngoại xâm, tu sĩ dựng
+  vua bù nhìn, thiện nhượng, tuyệt tự, phục quốc. Hoàng tộc cũ thành "tiền triều" (bị thanh trừng một phần, mang huyết
+  thù với tân triều, có thể phục quốc). Người chơi trong hoàng tộc cũ được chọn trốn hay tử thủ; người ngoài được mời
+  theo tân triều làm khai quốc công thần. Đo 6 thế giới × 2.000 năm: triều đại trung bình 317 năm, trung vị 295,
+  10% ngắn nhất dưới 172 năm.
+
 Còn lại:
+- Gặp lại tiền kiếp giảm từ 43% xuống 26% vì thế giới rộng và đông hơn (~590 người); cần cho linh hồn đầu thai gần
+  nơi có người cũ hơn.
 - Chơi tiếp ở Tiên giới: 9 cảnh giới tiên và 36 event Tiên giới của Luân Hồi Vạn Kiếp.
 - Tin tức người quen (`people.yaml`).
 - Đo sau giai đoạn (20 thế giới × 400 năm, chọn ngẫu nhiên): Luyện Khí 38,5%, Trúc Cơ 12,5%, Kim Đan 1,0%; dân số

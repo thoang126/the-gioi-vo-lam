@@ -2,7 +2,7 @@ import {
   advance, choose, createWorld, setAutoplay, Sim, YEAR_OFFSET, ACTION_BY_ID, MEMORIES,
   REGIONS, ROUTES, SEA_ROUTES, SECTS, SECT_RANKS, REALMS, WORLDS, ELEMENT_NAMES,
   REGION_BY_ID, SECT_BY_ID, ROOT_BY_ID, ORIGIN_BY_ID, PHYSIQUE_BY_ID, relationWord, EVENT_BY_ID, LHVK, pathNames, rebirthRootChance,
-  CODEX, SOUL_TITLES, codexProgress, migrateWorld, CLAN, CLAN_KIND_NAMES, TRAIT_BY_ID, runBattle, sealOf, tacticOf, TACTIC_NAMES, TACTIC_IDS,
+  CODEX, SOUL_TITLES, codexProgress, migrateWorld, PROVINCES, WORLD_LAYOUT, CLAN, CLAN_KIND_NAMES, TRAIT_BY_ID, DYNASTY_END_NAMES, runBattle, sealOf, tacticOf, TACTIC_NAMES, TACTIC_IDS,
 } from '../src/index';
 import type { Avatar, EventKind, LifeRecord, WorldEvent, WorldState } from '../src/types';
 import type { FightRecord, SoulSeal, TacticId } from '../src/index';
@@ -139,7 +139,8 @@ function render(): void {
   const sim = new Sim(s);
   sim.reindex();
   const waiting = s.soul.pending !== null;
-  patch('date', `Năm ${yearOf(s.month)} · tháng ${(s.month % 12) + 1}`);
+  const reign = s.dynasties?.[s.dynasties.length - 1];
+  patch('date', `Năm ${yearOf(s.month)} · tháng ${(s.month % 12) + 1}${reign ? `<span class="era" title="Triều đại đang trị vì Đại Hạ"> · ${esc(reign.surname)} triều năm ${Math.floor((s.month - reign.since) / 12) + 1}</span>` : ''}`);
   patch('timebar', timebar(waiting));
   const auto = document.getElementById('autoplay') as HTMLInputElement;
   if (auto.checked !== s.soul.autoplay) auto.checked = s.soul.autoplay;
@@ -198,12 +199,31 @@ const LAND_MA_VUC = 'M40 590 C130 570 260 575 360 590 C420 600 440 640 420 690 C
 const LAND_YEU_VUC = 'M640 590 C730 572 860 570 975 588 C992 640 990 700 970 752 C880 772 760 774 660 760 C630 720 626 640 640 590 Z';
 const LAND_ISLANDS = ['M478 418 C500 404 530 408 538 430 C542 452 520 464 498 460 C478 456 468 436 478 418 Z',
   'M452 515 C466 500 492 504 494 524 C494 544 470 552 456 542 C446 534 446 524 452 515 Z',
-  'M540 504 C560 494 584 504 584 524 C582 542 560 548 546 538 C534 528 532 512 540 504 Z'];
+  'M540 504 C560 494 584 504 584 524 C582 542 560 548 546 538 C534 528 532 512 540 504 Z',
+  'M584 444 C596 434 616 440 618 456 C618 470 600 476 588 468 C580 462 578 452 584 444 Z'];
 const LAND_TIEN_GIOI = 'M80 830 C260 812 740 812 940 830 C975 880 975 950 940 985 C740 996 260 996 80 985 C40 950 40 880 80 830 Z';
-const VIEWBOX: Record<MapView, string> = {
-  all: '0 0 1000 790', mortal: '0 0 540 540', cultivation: '560 0 440 540', overseas: '400 380 240 280',
-  demonic: '20 560 440 230', demon_beast: '620 560 380 230', immortal: '40 800 940 200',
-};
+function reignLabel(): string {
+  const d = s.dynasties?.[s.dynasties.length - 1];
+  return d ? `${d.surname} triều năm ${Math.floor((s.month - d.since) / 12) + 1}` : 'Đại Hạ';
+}
+
+/** View box of a map view: the whole lower world, or one world framed around its places. */
+function viewBox(view: MapView): [number, number, number, number] {
+  if (view === 'all') return [0, 0, 1240, 1090];
+  if (view === 'immortal') return [40, 800, 940, 200];
+  const rs = REGIONS.filter((r) => r.world === view);
+  const x0 = Math.min(...rs.map((r) => r.x)) - 50;
+  const y0 = Math.min(...rs.map((r) => r.y)) - 50;
+  const x1 = Math.max(...rs.map((r) => r.x)) + 110;
+  const y1 = Math.max(...rs.map((r) => r.y)) + 50;
+  return [x0, y0, x1 - x0, y1 - y0];
+}
+
+/** A world's land and name, drawn in its own frame and placed by WORLD_LAYOUT. */
+function landGroup(world: WorldId, inner: string): string {
+  const L = WORLD_LAYOUT[world];
+  return `<g transform="translate(${L.dx} ${L.dy}) scale(${L.k})">${inner}</g>`;
+}
 
 function currentMapView(sim: Sim): MapView {
   if (ui.mapView) return ui.mapView;
@@ -222,6 +242,7 @@ function mapViewButtons(sim: Sim): string {
 
 function mapSvg(sim: Sim): string {
   const view = currentMapView(sim);
+  const vb = viewBox(view);
   const player = sim.get(s.soul.currentAvatarId);
   const routes = ROUTES.map(([a, b]) => {
     const A = REGION_BY_ID[a]!;
@@ -247,29 +268,34 @@ function mapSvg(sim: Sim): string {
     const wild = r.kind === 'beast' || r.kind === 'ruin' || r.kind === 'cave' || r.kind === 'secret';
     const evil = r.sectId && SECT_BY_ID[r.sectId]!.alignment === 'evil';
     const cls = ['region', wild ? 'wild' : '', r.sectId ? 'sect' : '', evil ? 'evil' : '', ui.region === r.id ? 'sel' : ''].join(' ');
-    const anchorEnd = r.x > 900;
+    const anchorEnd = r.x > vb[0] + vb[2] - 130;
     const tx = anchorEnd ? r.x - rad - 4 : r.x + rad + 4;
     const sub = [n ? `${n} người` : '', graves[r.id] ? `${graves[r.id]} mộ` : ''].filter(Boolean).join(' · ');
     const secret = r.kind === 'secret' && s.secretRealmOpenUntil > s.month ? `<circle class="secret-ring" cx="${r.x}" cy="${r.y}" r="${rad + 7}"><title>Bí cảnh đang mở</title></circle>` : '';
     const me = player && player.regionId === r.id
       ? `<circle class="player-ring${s.soul.pending ? ' waiting' : ''}" cx="${r.x}" cy="${r.y}" r="${rad + 5}"/><text class="player-tag" x="${r.x}" y="${r.y - rad - 9}" text-anchor="middle">ngươi</text>` : '';
     return `<g class="${cls}" data-region="${r.id}" tabindex="0" role="button" aria-label="${esc(r.name)}, ${n} người">
-      ${secret}<circle class="dot" cx="${r.x}" cy="${r.y}" r="${rad}"/>${me}
+      ${secret}${r.id === 'kinh_thanh' ? `<rect class="capital" x="${r.x - rad - 6}" y="${r.y - rad - 6}" width="${2 * rad + 12}" height="${2 * rad + 12}"><title>Kinh đô, ${esc(reignLabel())}</title></rect>` : ''}<circle class="dot" cx="${r.x}" cy="${r.y}" r="${rad}"/>${me}
       <text x="${tx}" y="${r.y + 4}" text-anchor="${anchorEnd ? 'end' : 'start'}">${esc(r.name)}</text>
       ${sub ? `<text class="count" x="${tx}" y="${r.y + 17}" text-anchor="${anchorEnd ? 'end' : 'start'}">${sub}</text>` : ''}
     </g>`;
   }).join('');
+  // Châu quận of Đại Hạ, named at the middle of their places.
+  const provinces = Object.entries(PROVINCES).map(([id, p]) => {
+    const rs = REGIONS.filter((r) => r.province === id);
+    const cx = rs.reduce((t, r) => t + r.x, 0) / rs.length;
+    const cy = rs.reduce((t, r) => t + r.y, 0) / rs.length;
+    return `<text class="province-label" x="${cx.toFixed(0)}" y="${(cy + 30).toFixed(0)}" text-anchor="middle">${esc(p.name.toUpperCase())}</text>`;
+  }).join('');
   const lands = view === 'immortal'
     ? `<path class="land heaven" d="${LAND_TIEN_GIOI}"/><text class="region-label-big" x="500" y="930" text-anchor="middle" font-size="34">TIÊN GIỚI</text>`
-    : `<path class="land" d="${LAND_DAI_HA}"/><path class="land" d="${LAND_THANH_VAN}"/>
-    <path class="land evil" d="${LAND_MA_VUC}"/><path class="land wildland" d="${LAND_YEU_VUC}"/>${LAND_ISLANDS.map((d) => `<path class="land" d="${d}"/>`).join('')}
-    <text class="region-label-big" x="230" y="280" text-anchor="middle" font-size="40">ĐẠI HẠ</text>
-    <text class="region-label-big" x="790" y="330" text-anchor="middle" font-size="30">THANH VÂN CHÂU</text>
-    <text class="region-label-big" x="230" y="760" text-anchor="middle" font-size="24">MA VỰC</text>
-    <text class="region-label-big" x="800" y="760" text-anchor="middle" font-size="24">YÊU VỰC</text>
-    <text class="sea-label" x="520" y="250" text-anchor="middle">BIỂN ĐÔNG</text>
-    <text class="sea-label" x="520" y="490" text-anchor="middle">HẢI NGOẠI</text>`;
-  return `<svg viewBox="${VIEWBOX[view]}" class="view-${view}" role="img" aria-label="Bản đồ thiên hạ">
+    : `${landGroup('mortal', `<path class="land" d="${LAND_DAI_HA}"/><text class="region-label-big" x="400" y="510" text-anchor="middle" font-size="30">ĐẠI HẠ</text>`)}
+    ${landGroup('cultivation', `<path class="land" d="${LAND_THANH_VAN}"/><text class="region-label-big" x="790" y="300" text-anchor="middle" font-size="30">THANH VÂN CHÂU</text>`)}
+    ${landGroup('demonic', `<path class="land evil" d="${LAND_MA_VUC}"/><text class="region-label-big" x="230" y="760" text-anchor="middle" font-size="24">MA VỰC</text>`)}
+    ${landGroup('demon_beast', `<path class="land wildland" d="${LAND_YEU_VUC}"/><text class="region-label-big" x="800" y="760" text-anchor="middle" font-size="24">YÊU VỰC</text>`)}
+    ${landGroup('overseas', `${LAND_ISLANDS.map((d) => `<path class="land" d="${d}"/>`).join('')}<text class="sea-label" x="520" y="490" text-anchor="middle">HẢI NGOẠI</text>`)}
+    <text class="sea-label" x="800" y="330" text-anchor="middle">BIỂN ĐÔNG</text>${provinces}`;
+  return `<svg viewBox="${vb.join(' ')}" class="view-${view}" role="img" aria-label="Bản đồ thiên hạ">
     ${lands}
     ${routes}${wars.join('')}${regions}
   </svg>`;
@@ -292,7 +318,7 @@ function tabContent(sim: Sim): string {
       const r = REGION_BY_ID[ui.region]!;
       const people = (sim.byRegion[r.id] ?? []).slice().sort((a, b) => sim.power(b) - sim.power(a));
       const graves = s.graves.filter((g) => g.regionId === r.id).slice(-12).reverse();
-      return `<p class="small"><b>${esc(r.name)}</b> · ${esc(WORLDS[r.world].name)}. ${esc(r.desc)}</p>
+      return `<p class="small"><b>${esc(r.name)}</b> · ${r.province ? `${esc(PROVINCES[r.province]!.name)}, ` : ''}${esc(WORLDS[r.world].name)}. ${esc(r.desc)}</p>
         ${peopleTable(sim, people.slice(0, 30))}
         ${graves.length ? `<p class="eyebrow" style="margin-top:12px">Bia mộ</p><ul class="feed">${graves.map((g) => `<li class="${g.soulLife !== null ? 'k-past_life' : ''}"><span class="yr">${yearOf(g.month)}</span><span class="txt">${esc(g.name)}, ${esc(REALMS[g.realm]!.name)}. ${esc(g.epitaph)}.${g.soulLife !== null ? ` (Kiếp thứ ${g.soulLife + 1} của ngươi)` : ''}</span></li>`).join('')}</ul>` : ''}`;
     }
@@ -328,7 +354,13 @@ function clansTable(sim: Sim): string {
     return `<tr><td><b>${esc(c.name)}</b><br><span class="small muted">${CLAN_KIND_NAMES[c.kind]} · ${esc(REGION_BY_ID[c.seat]!.name)}${c.foundedMonth > 0 ? ` · lập năm ${yearOf(c.foundedMonth)}` : ''}</span></td>
       <td class="num">${members.length}</td><td>${personLink(sim.get(c.headId), sim)}</td><td>${top}</td><td class="num">${c.prestige.toLocaleString('vi-VN')}</td><td class="small">${stance || '—'}</td></tr>`;
   }).join('');
-  return `<div class="table-wrap"><table><thead><tr><th>Thế gia</th><th>Người</th><th>Gia chủ</th><th>Cao nhất</th><th>Uy thế</th><th>Ân oán</th></tr></thead><tbody>${rows}</tbody></table></div>
+  const dyn = s.dynasties ?? [];
+  const history = dyn.length ? `<p class="eyebrow" style="margin:14px 0 6px">Sử Đại Hạ</p><ol class="feed dynasties">${dyn.slice().reverse().map((d) => {
+    const until = d.until ?? s.month;
+    const yrs = Math.round((until - d.since) / 12);
+    return `<li><span class="yr">${d.since < 0 ? '…' : yearOf(d.since)}</span><span class="txt"><b>${esc(d.surname)} triều</b>, ${d.until === null ? `đang trị vì, đã ${yrs} năm` : `${yrs} năm, mất vì ${esc(DYNASTY_END_NAMES[d.end ?? ''] ?? '').toLowerCase()} (năm ${yearOf(until)})`}. Khai quốc: ${esc(d.founder)}.</span></li>`;
+  }).join('')}</ol>` : '';
+  return `${history}<div class="table-wrap"><table><thead><tr><th>Thế gia</th><th>Người</th><th>Gia chủ</th><th>Cao nhất</th><th>Uy thế</th><th>Ân oán</th></tr></thead><tbody>${rows}</tbody></table></div>
     ${gone.length ? `<p class="small muted" style="margin-top:10px">Đã tuyệt tự: ${gone.slice(0, 12).map((c) => `${esc(c.name)} (năm ${yearOf(c.extinctMonth!)})`).join(', ')}.</p>` : ''}`;
 }
 

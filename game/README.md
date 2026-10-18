@@ -74,6 +74,8 @@ diễn dịch `src/story.ts`, giữ đúng luật của game gốc:
 - **Yêu tộc:** sinh ở Yêu vực, thọ nguyên ×1,5, thù với nhân tộc.
 - **Thiên phú:** 24 thiên phú/khuyết tật của Luân Hồi Vạn Kiếp.
 - **Gia tộc, thế gia:** họ và gia tộc truyền qua con cái, gia chủ kế vị, huyết thù, thông gia, khai tông lập tộc.
+- **Đại Hạ:** 6 châu quận, kinh thành, phủ thành, khách điếm, môn phái võ lâm. Triều đại trung bình hơn 300 năm thì đổi
+  chủ (soán ngôi, khởi nghĩa, ngoại xâm, tu sĩ nhúng tay, thiện nhượng, tuyệt tự, phục quốc).
 
 ## Tiên duyên
 
@@ -109,6 +111,7 @@ Xem `docs/roadmap.md`: định nghĩa bản 1.0, bảng chỉ số đo được,
 | `src/sim.ts` | Trạng thái dùng chung, công thức tu vi và sức mạnh, sinh, chết |
 | `src/actions.ts` | 23 hành động và AI chấm điểm |
 | `src/phases.ts` | Các phase mỗi tháng |
+| `src/dynasty.ts` | Triều đại Đại Hạ: nguy cơ sụp đổ, lý do đổi chủ, tiền triều, phục quốc |
 | `src/clans.ts` | Gia tộc, thế gia: kế vị, huyết thù, thông gia, nhận con nuôi, lập tộc |
 | `src/content/peoples.ts` | Thiên phú, yêu tộc, danh sách thế gia |
 | `src/content/events-extra.ts` | Event riêng cho Hải ngoại, Ma vực, Yêu vực, thế gia |
